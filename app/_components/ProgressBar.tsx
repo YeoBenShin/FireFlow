@@ -3,10 +3,9 @@ interface ProgressBarProps {
   total: number
 }
 
-export function ProgressBar({current, total}: ProgressBarProps) {
+export default function ProgressBar({current, total}: ProgressBarProps) {
   const percentage = (current / total) * 100
-
-
+  
   return (
     <div className="w-lg">
       <div className="w-full bg-gray-400 rounded-full h-8 overflow-hidden">

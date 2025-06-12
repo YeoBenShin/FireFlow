@@ -1,3 +1,4 @@
+// Don't use. Just for reference.
 import { ArrowUpRight, ArrowDownRight } from "lucide-react"
 
 interface Transaction {
@@ -40,7 +41,7 @@ const transactions: Transaction[] = [
   },
 ]
 
-export default function RecentTransaction() {
+export function RecentTransaction() {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Transactions</h3>
