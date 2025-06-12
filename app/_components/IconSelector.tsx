@@ -1,3 +1,4 @@
+// Need to find a way to make the dropdown disappear when clicking outside of it
 'use client';
 
 import { useState } from "react";
@@ -61,7 +62,7 @@ const iconOptions: Record<IconName, LucideIcon> = {
   rss: Rss,
 };
 
-export function IconSelector() {
+export default function IconSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<IconName>("mousePointerClick");
   const SelectedIcon = iconOptions[selected];
@@ -72,10 +73,10 @@ export function IconSelector() {
   };
 
   return (
-    <div className="relative w-fit">
+    <div>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-20 h-20 flex bg-orange-500 p-3 rounded-lg hover:bg-orange-600 transition">
+        className="w-12 h-12 flex bg-orange-500 p-3 rounded-lg hover:bg-orange-600 transition">
         <span className="flex items-center justify-center text-white gap-2"> 
           {<SelectedIcon className="w-6 h-6" />}
         </span>
@@ -83,7 +84,7 @@ export function IconSelector() {
       
 
       {isOpen && (
-        <div className="absolute mt-2 w-full max-h-48 overflow-y-scroll bg-white shadow-md border rounded-md z-10">
+        <div className="absolute mt-2 max-h-48 overflow-y-scroll bg-white shadow-md border rounded-md z-10">
           {Object.entries(iconOptions).map(([name, Icon]) => (
             <button
               key={name}
