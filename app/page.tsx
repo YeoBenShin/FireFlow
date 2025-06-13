@@ -3,10 +3,12 @@ import Transaction, {Transaction as TransactionType} from './_components/Transac
 import ProgressBar from './_components/ProgressBar';
 import IconSelector from './_components/IconSelector';
 
-export default function Home() {
+import {Cake, Dog, Home} from "lucide-react";
+
+export default function HomePage() {
   const defaultStyles = {
         margin: "10px"
-        };
+  };
 
   const transactions: TransactionType[] = [
   {
@@ -16,6 +18,7 @@ export default function Home() {
     amount: -12.3,
     date: "Today, 18 May 2025",
     time: "10:30",
+    icon: Cake,
     type: "expense",
   },
   {
@@ -25,6 +28,7 @@ export default function Home() {
     amount: 4000.0,
     date: "Today, 18 May 2025",
     time: "16:27",
+    icon: Dog,
     type: "income",
   },
   {
@@ -34,6 +38,7 @@ export default function Home() {
     amount: 2000.0,
     date: "Tue, 29 April 2025",
     time: "15:47",
+    icon: Home,
     type: "income",
   },
 ]
