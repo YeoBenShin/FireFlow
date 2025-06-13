@@ -2,6 +2,7 @@ import {RecentTransaction} from './_components/RecentTransaction';
 import Transaction, {Transaction as TransactionType} from './_components/Transaction';
 import ProgressBar from './_components/ProgressBar';
 import IconSelector from './_components/IconSelector';
+import Image from 'next/image';
 
 import {Cake, Dog, Home} from "lucide-react";
 
@@ -52,6 +53,15 @@ export default function HomePage() {
       <div className="hidden lg:block text-green-600 font-bold text-xl">
         Laptop UI
       </div>
+      <header>
+        <Image
+          src="/image.svg"
+          alt="Logo"
+          width={96} 
+          height={96}
+          className="mx-auto mb-4"
+        />
+      </header>
 
       {/* Testing the components */}
       <div className="flex flex-col items-center justify-center min-h-screen">
