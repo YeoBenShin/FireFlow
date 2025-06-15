@@ -7,7 +7,7 @@ import transactionRoutes from './routes/transactionRoutes';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5100;
 
 app.use(cors());
 app.use(express.json());
