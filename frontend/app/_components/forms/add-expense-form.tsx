@@ -5,7 +5,7 @@ import { Button } from "@/app/_components/ui/button"
 import { Input } from "@/app/_components/ui/input"
 import { Textarea } from "@/app/_components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/_components/ui/select"
-import { Calendar } from "lucide-react"
+// import { Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/_components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -50,23 +50,42 @@ export function AddExpenseForm({ onClose }: { onClose?: () => void }) {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
 
+    console.log("Form data ready to send:", values) //check in console if the object is really created
     // Simulate adding the expense
-    setTimeout(() => {
-      console.log("Expense added:", {
+     try {
+      const payload = {
         ...values,
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "expense",
+      }
+
+      // Send POST request to backend
+      const response = await fetch("/api/expense", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       })
 
-      setIsSubmitting(false)
-      if (onClose) onClose()
+      if (!response.ok) {
+        throw new Error(`Failed to add expense: ${response.statusText}`)
+      }
 
-      // Refresh the page to simulate data update
+      const data = await response.json()
+      console.log("Expense added:", data)
+
+      if (onClose) onClose()
       router.refresh()
-    }, 500)
+    } catch (error) {
+      console.error("Error submitting form:", error)
+      // Optionally, show user-friendly error notification here
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -105,8 +124,8 @@ export function AddExpenseForm({ onClose }: { onClose?: () => void }) {
               <FormLabel>Date</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input {...field} className="bg-orange-50" />
-                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
+                  <Input {...field} type = "date" className="bg-orange-50" />
+                  {/* <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" /> */}
                 </div>
               </FormControl>
               <FormMessage />
