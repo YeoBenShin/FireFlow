@@ -4,10 +4,23 @@ import { useState } from "react"
 import { Button } from "@/app/_components/ui/button"
 import { Input } from "@/app/_components/ui/input"
 import { Textarea } from "@/app/_components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/_components/ui/select"
-import { Calendar } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/_components/ui/select"
+// import { Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/_components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/app/_components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -49,23 +62,41 @@ export function AddIncomeForm({ onClose }: { onClose?: () => void }) {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
 
-    // Simulate adding the income
-    setTimeout(() => {
-      console.log("Income added:", {
+    console.log("Form data ready to send:", values) //check in console if the object is really created
+    try {
+      const payload = {
         ...values,
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "income",
+      }
+
+      // Send POST request to backend
+      const response = await fetch("/api/income", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       })
 
-      setIsSubmitting(false)
-      if (onClose) onClose()
+      if (!response.ok) {
+        throw new Error(`Failed to add income: ${response.statusText}`)
+      }
 
-      // Refresh the page to simulate data update
+      const data = await response.json()
+      console.log("Income added:", data)
+
+      if (onClose) onClose()
       router.refresh()
-    }, 500)
+    } catch (error) {
+      console.error("Error submitting form:", error)
+      // Optionally, show user-friendly error notification here
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -104,8 +135,8 @@ export function AddIncomeForm({ onClose }: { onClose?: () => void }) {
               <FormLabel>Date</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input {...field} className="bg-orange-50" />
-                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
+                  <Input {...field} type="date" className="bg-orange-50" />
+                  {/* <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" /> */}
                 </div>
               </FormControl>
               <FormMessage />
@@ -156,7 +187,11 @@ export function AddIncomeForm({ onClose }: { onClose?: () => void }) {
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Enter Message" className="bg-teal-50 min-h-[100px] resize-none" />
+                <Textarea
+                  {...field}
+                  placeholder="Enter Message"
+                  className="bg-teal-50 min-h-[100px] resize-none"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
