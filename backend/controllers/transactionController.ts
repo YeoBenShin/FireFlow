@@ -1,17 +1,19 @@
 import { Request, Response } from 'express';
+import { supabase } from "../db/supabaseClient";
+import { Transaction } from '../models/transaction';
 
-export const getTransactions = (_req: Request, res: Response) => {
-  res.json([
-    {
-      id: "1",
-      title: "Salary",
-      category: "Income",
-      amount: 4000,
-      date: "2025-06-10",
-      time: "14:30",
-      type: "income",
-    },
-  ]);
+export const getAllTransactions = async (_req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase.from('transaction').select('*');
+    
+    if (error) {
+      throw error;
+    }
+    res.status(200).json(data);
+    
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
 };
 
 export const createTransaction = (req: Request, res: Response) => {

@@ -9,10 +9,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5100;
 
+// middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// routes
 app.use('/api/transactions', transactionRoutes);
 
 app.get('/', (_req, res) => {
