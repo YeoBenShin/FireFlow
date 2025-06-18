@@ -15,6 +15,7 @@ app.use(express.json());
 
 // routes
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/create-transaction', transactionRoutes);
 
 app.get('/', (_req, res) => {
   res.send('API is running...');
