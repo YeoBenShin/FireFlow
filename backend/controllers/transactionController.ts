@@ -57,8 +57,8 @@ export const deleteTransaction = async (req: Request, res: Response) => {
 
 export const updateTransaction = async (req: Request, res: Response) => {
   try {
-    const incomingTransaction: Transaction = req.body;
-    const { data, error } = await supabase.from('transaction').update(incomingTransaction).select('*').eq('id', incomingTransaction.id);
+    const {id, ...updateFields}: Transaction = req.body;
+    const { data, error } = await supabase.from('transaction').update(updateFields).eq('id', id).select('*');
     
     if (error) {
       throw error;
