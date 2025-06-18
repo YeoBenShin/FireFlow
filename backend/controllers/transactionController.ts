@@ -41,9 +41,9 @@ export const createTransaction = async (req: Request, res: Response) => {
 
 export const deleteTransaction = async (req: Request, res: Response) => {
   try {
-    const transactionId: Transaction = req.body;
-    // console.log("Received transactionId:", transactionId.id);
-    const { data, error } = await supabase.from('transaction').delete().eq('id', transactionId.id);
+    const incomingTransaction: Transaction = req.body;
+    // console.log("Received transactionId:", incomingTransaction.id);
+    const { data, error } = await supabase.from('transaction').delete().eq('id', incomingTransaction.id);
     
     if (error) {
       throw error;
@@ -52,5 +52,20 @@ export const deleteTransaction = async (req: Request, res: Response) => {
 
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete transaction' });
+  }
+};
+
+export const updateTransaction = async (req: Request, res: Response) => {
+  try {
+    const incomingTransaction: Transaction = req.body;
+    const { data, error } = await supabase.from('transaction').update(incomingTransaction).select('*').eq('id', incomingTransaction.id);
+    
+    if (error) {
+      throw error;
+    }
+    res.status(200).json(data);
+
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update transaction' });
   }
 };

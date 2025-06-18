@@ -15,8 +15,6 @@ app.use(express.json());
 
 // transaction routes
 app.use('/api/transactions', transactionRoutes);
-app.use('/api/create-transaction', transactionRoutes);
-app.use('/api/delete-transaction', transactionRoutes);
 
 app.get('/', (_req, res) => {
   res.send('API is running...');
