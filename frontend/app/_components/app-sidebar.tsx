@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/app/_components/ui/sidebar"
+import Image from "next/image"
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", href: "/", active: false },
@@ -38,13 +39,13 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="border-r border-orange-100">
-      <SidebarHeader className="bg-orange-50 p-6">
+    <Sidebar className="border-r border-orange-600">
+      <SidebarHeader className="bg-orange-200 p-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-sm">🔥</span>
-          </div>
+           <Image
+            src="/Fireflow.svg" alt="FireFlow Logo" width={48} height={48} className="object-contain"
+          />
           <span className="font-bold text-lg">FireFlow</span>
         </Link>
 
@@ -61,7 +62,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-orange-50 p-6 pt-0">
+      <SidebarContent className="bg-orange-200 p-6 pt-0">
         {/* Navigation */}
         <SidebarMenu>
           {navigationItems.map((item) => {
@@ -85,7 +86,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="bg-orange-50 p-6">
+      <SidebarFooter className="bg-orange-200 p-6">
         {/* Action Buttons - Now navigate to cashflows page */}
         <div className="space-y-3">
           <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" onClick={handleAddExpense}>
