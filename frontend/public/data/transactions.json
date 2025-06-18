@@ -1,0 +1,33 @@
+[
+  {
+    "id": 1,
+    "title": "Salary For The Month",
+    "category": "Income",
+    "amount": 4000,
+    "date": "April 30, 18:27",
+    "type": "income",
+    "icon": "DollarSign",
+    "month": "April"
+  },
+  {
+    "id": 2,
+    "title": "Pantry",
+    "category": "Groceries",
+    "amount": -100,
+    "date": "May 24, 17:00",
+    "type": "expense",
+    "icon": "ShoppingBag",
+    "month": "May"
+  },
+
+    {
+      "id": 3,
+      "title": "Rent For The Month",
+      "category": "Housing",
+      "amount": -1574.5,
+      "date": "April 15, 09:30",
+      "type": "expense",
+      "icon": "Home",
+      "month": "April"
+    }
+]

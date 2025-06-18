@@ -131,58 +131,32 @@ export default function CashflowsPage() {
     },
   }
 
-  const transactions = [
-    {
-      id: 1,
-      title: "Salary For The Month",
-      category: "Income",
-      amount: 4000,
-      date: "April 30, 18:27",
-      type: "income",
-      icon: <DollarSign className="w-5 h-5" />,
-      month: "April",
-    },
-    {
-      id: 2,
-      title: "Pantry",
-      category: "Groceries",
-      amount: -100,
-      date: "April 24, 17:00",
-      type: "expense",
-      icon: <ShoppingBag className="w-5 h-5" />,
-      month: "April",
-    },
-    {
-      id: 3,
-      title: "Rent For The Month",
-      category: "Housing",
-      amount: -1574.5,
-      date: "April 15, 09:30",
-      type: "expense",
-      icon: <Home className="w-5 h-5" />,
-      month: "April",
-    },
-    {
-      id: 4,
-      title: "Train Concession",
-      category: "Transport",
-      amount: -48,
-      date: "April 08, 08:30",
-      type: "expense",
-      icon: <Bus className="w-5 h-5" />,
-      month: "April",
-    },
-    {
-      id: 5,
-      title: "Monthsary Dinner",
-      category: "Food",
-      amount: -70.4,
-      date: "March 22, 19:30",
-      type: "expense",
-      icon: <Utensils className="w-5 h-5" />,
-      month: "March",
-    },
-  ]
+  const iconMap = {
+  DollarSign: <DollarSign className="w-5 h-5" />,
+  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
+  Home: <Home className="w-5 h-5" />,
+  Bus: <Bus className="w-5 h-5" />,
+  Utensils: <Utensils className="w-5 h-5" />,
+};
+
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch("/data/transactions.json");
+      const data = await res.json();
+
+      // Replace icon string with JSX component
+      const withIcons = data.map((tx) => ({
+        ...tx,
+        icon: iconMap[tx.icon] || null,
+      }));
+
+      setTransactions(withIcons);
+    };
+
+    fetchData();
+  }, []);
 
   const groupedTransactions = transactions.reduce(
     (acc, transaction) => {
