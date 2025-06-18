@@ -13,9 +13,10 @@ const PORT = process.env.PORT || 5100;
 app.use(cors());
 app.use(express.json());
 
-// routes
+// transaction routes
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/create-transaction', transactionRoutes);
+app.use('/api/delete-transaction', transactionRoutes);
 
 app.get('/', (_req, res) => {
   res.send('API is running...');

@@ -38,3 +38,19 @@ export const createTransaction = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to create transaction' });
   }
 };
+
+export const deleteTransaction = async (req: Request, res: Response) => {
+  try {
+    const transactionId: Transaction = req.body;
+    // console.log("Received transactionId:", transactionId.id);
+    const { data, error } = await supabase.from('transaction').delete().eq('id', transactionId.id);
+    
+    if (error) {
+      throw error;
+    }
+    res.status(200).json(data);
+
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete transaction' });
+  }
+};
