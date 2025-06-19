@@ -41,9 +41,9 @@ export const createTransaction = async (req: Request, res: Response) => {
 
 export const deleteTransaction = async (req: Request, res: Response) => {
   try {
-    const incomingTransaction: Transaction = req.body;
+    const {trans_id}: Transaction = req.body;
     // console.log("Received transactionId:", incomingTransaction.id);
-    const { data, error } = await supabase.from('transaction').delete().eq('id', incomingTransaction.id).select('*');
+    const { data, error } = await supabase.from('transaction').delete().eq('id', trans_id).select('*');
     
     if (error) {
       throw error;
@@ -59,8 +59,8 @@ export const deleteTransaction = async (req: Request, res: Response) => {
 
 export const updateTransaction = async (req: Request, res: Response) => {
   try {
-    const {id, ...updateFields}: Transaction = req.body;
-    const { data, error } = await supabase.from('transaction').update(updateFields).eq('id', id).select('*');
+    const {trans_id, ...updateFields}: Transaction = req.body;
+    const { data, error } = await supabase.from('transaction').update(updateFields).eq('id', trans_id).select('*');
     
     if (error) {
       throw error;

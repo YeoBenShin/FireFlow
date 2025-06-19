@@ -1,8 +1,9 @@
 export interface Transaction {
-    id: number;
+    trans_id: number;
     description: string;
     type: 'income' | 'expense';
     amount: number;
     dateTime: string;
-    category: string;    
+    category: string;
+    user_id: number;  
 }
