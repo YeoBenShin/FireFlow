@@ -5,6 +5,13 @@ import { Button } from "@/app/_components/ui/button"
 import { Input } from "@/app/_components/ui/input"
 import { Textarea } from "@/app/_components/ui/textarea"
 import {
+  DollarSign,
+  ShoppingBag,
+  Home,
+  Bus,
+  Utensils,
+} from "lucide-react"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -47,7 +54,21 @@ const formSchema = z.object({
   notes: z.string().optional(),
 })
 
-export function AddIncomeForm({ onClose }: { onClose?: () => void }) {
+  const iconMap = {
+  DollarSign: <DollarSign className="w-5 h-5" />,
+  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
+  Home: <Home className="w-5 h-5" />,
+  Bus: <Bus className="w-5 h-5" />,
+  Utensils: <Utensils className="w-5 h-5" />,
+};
+
+export function AddIncomeForm({
+  onClose,
+  onAddTransaction,
+}: {
+  onClose?: () => void;
+  onAddTransaction?: (newTx: any) => void;
+}) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -71,9 +92,10 @@ export function AddIncomeForm({ onClose }: { onClose?: () => void }) {
         ...values,
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "income",
+        month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
+        icon: "DollarSign", // fallback icon string
       }
 
-      // Send POST request to backend
       const response = await fetch("/api/income", {
         method: "POST",
         headers: {
@@ -88,6 +110,12 @@ export function AddIncomeForm({ onClose }: { onClose?: () => void }) {
 
       const data = await response.json()
       console.log("Income added:", data)
+      const newTx = {
+        ...data,
+        icon: iconMap[data.icon] || null,
+      };
+
+      onAddTransaction?.(newTx);
 
       if (onClose) onClose()
       router.refresh()

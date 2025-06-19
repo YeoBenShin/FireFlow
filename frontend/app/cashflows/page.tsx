@@ -158,6 +158,10 @@ export default function CashflowsPage() {
     fetchData();
   }, []);
 
+  const handleAddTransaction = (newTx) => {
+  setTransactions((prev) => [...prev, newTx]);
+};
+
   const groupedTransactions = transactions.reduce(
     (acc, transaction) => {
       if (!acc[transaction.month]) {
@@ -213,7 +217,7 @@ export default function CashflowsPage() {
                 <SheetContent side="right" className="w-[90%] sm:w-[400px]">
                   <div className="py-6">
                     <h2 className="text-xl font-semibold mb-4">Add Expense</h2>
-                    <AddExpenseForm onClose={handleCloseForm} />
+                    <AddExpenseForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction} />
                   </div>
                 </SheetContent>
               </Sheet>
@@ -224,7 +228,7 @@ export default function CashflowsPage() {
                 <SheetContent side="right" className="w-[90%] sm:w-[400px]">
                   <div className="py-6">
                     <h2 className="text-xl font-semibold mb-4">Add Income</h2>
-                    <AddIncomeForm onClose={handleCloseForm} />
+                    <AddIncomeForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction}/>
                   </div>
                 </SheetContent>
               </Sheet>
@@ -254,9 +258,9 @@ export default function CashflowsPage() {
                 </CardHeader>
                 <CardContent>
                   {activeForm === "expense" ? (
-                    <AddExpenseForm onClose={handleCloseForm} />
+                    <AddExpenseForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction}/>
                   ) : (
-                    <AddIncomeForm onClose={handleCloseForm} />
+                    <AddIncomeForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction}/>
                   )}
                 </CardContent>
               </Card>

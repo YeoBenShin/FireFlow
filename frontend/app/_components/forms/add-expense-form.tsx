@@ -11,6 +11,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import {
+  DollarSign,
+  ShoppingBag,
+  Home,
+  Bus,
+  Utensils,
+} from "lucide-react"
 
 const expenseCategories = [
   { id: "food", name: "Food & Dining" },
@@ -27,6 +34,22 @@ const expenseCategories = [
   { id: "other", name: "Other" },
 ]
 
+const categoryIconMap: Record<string, string> = {
+  food: "Utensils",
+  transport: "Bus",
+  medicine: "DollarSign", 
+  groceries: "ShoppingBag",
+  rent: "Home",
+  gifts: "ShoppingBag",
+  savings: "DollarSign",
+  entertainment: "ShoppingBag",
+  utilities: "DollarSign",
+  shopping: "ShoppingBag",
+  education: "DollarSign",
+  other: "DollarSign",
+}
+
+
 const formSchema = z.object({
   category: z.string().min(1, "Please select a category"),
   date: z.string().min(1, "Date is required"),
@@ -35,7 +58,21 @@ const formSchema = z.object({
   notes: z.string().optional(),
 })
 
-export function AddExpenseForm({ onClose }: { onClose?: () => void }) {
+  const iconMap = {
+  DollarSign: <DollarSign className="w-5 h-5" />,
+  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
+  Home: <Home className="w-5 h-5" />,
+  Bus: <Bus className="w-5 h-5" />,
+  Utensils: <Utensils className="w-5 h-5" />,
+};
+
+export function AddExpenseForm({
+  onClose,
+  onAddTransaction,
+}: {
+  onClose?: () => void;
+  onAddTransaction?: (newTx: any) => void;
+}) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -43,7 +80,7 @@ export function AddExpenseForm({ onClose }: { onClose?: () => void }) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       category: "",
-      date: "April 30, 2024",
+      date: "",
       amount: "25.00",
       title: "",
       notes: "",
@@ -60,6 +97,8 @@ export function AddExpenseForm({ onClose }: { onClose?: () => void }) {
         ...values,
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "expense",
+        month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
+        icon: categoryIconMap[values.category] || "DollarSign", // fallback icon string
       }
 
       // Send POST request to backend
@@ -77,6 +116,13 @@ export function AddExpenseForm({ onClose }: { onClose?: () => void }) {
 
       const data = await response.json()
       console.log("Expense added:", data)
+
+       const newTx = {
+        ...data,
+        icon: iconMap[data.icon] || null,
+      };
+
+      onAddTransaction?.(newTx);
 
       if (onClose) onClose()
       router.refresh()
