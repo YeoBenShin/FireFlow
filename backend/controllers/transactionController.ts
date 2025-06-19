@@ -43,13 +43,15 @@ export const deleteTransaction = async (req: Request, res: Response) => {
   try {
     const incomingTransaction: Transaction = req.body;
     // console.log("Received transactionId:", incomingTransaction.id);
-    const { data, error } = await supabase.from('transaction').delete().eq('id', incomingTransaction.id);
+    const { data, error } = await supabase.from('transaction').delete().eq('id', incomingTransaction.id).select('*');
     
     if (error) {
       throw error;
+    } else if (data.length === 0) {
+      res.status(404).json({ error: 'Transaction not found' });
     }
-    res.status(200).json(data);
 
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete transaction' });
   }
@@ -62,7 +64,10 @@ export const updateTransaction = async (req: Request, res: Response) => {
     
     if (error) {
       throw error;
+    } else if (data.length === 0) {
+      res.status(404).json({ error: 'Transaction not found' });
     }
+    
     res.status(200).json(data);
 
   } catch (error) {

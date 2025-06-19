@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 import transactionRoutes from './routes/transactionRoutes';
+import recurringTransactionRoutes from './routes/recurringTransactionRoutes';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // transaction routes
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/recurring-transactions', recurringTransactionRoutes);
 
 app.get('/', (_req, res) => {
   res.send('API is running...');
