@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { supabase } from "../db/supabaseClient";
-import { Transaction } from '../models/transaction';
+import { Transaction, FilteredTransaction } from '../models/transaction';
 
-export const getAllTransactions = async (_req: Request, res: Response) => {
+// DECIDE HOW WE WANT TO SEND IN USER ID
+// is it in the request body or as a query parameter?
+
+export const getAllTransactions = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase.from('transaction').select('*');
     
@@ -74,3 +77,49 @@ export const updateTransaction = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to update transaction' });
   }
 };
+
+export const getFilterTransactions = async (req: Request, res: Response) => {
+  const { user_id, description, type, amount, amountDirection, dateTime, dateDirection, category}: FilteredTransaction = req.body;
+
+  try {
+    let query = supabase.from('transaction').select('*').eq('user_id', user_id);
+
+    if (description) {
+      query = query.ilike('description', `%${description}%`);
+    }
+    if (type) {
+      query = query.eq('type', type);
+    }
+    if (category) {
+      query = query.in('category', category);
+    }
+
+    if (amountDirection === 'equal' && amount) {
+      query = query.eq('amount', amount);
+    } else if (amountDirection === 'greater' && amount) {
+      query = query.gt('amount', amount);
+    } else if (amountDirection === 'less' && amount) {
+      query = query.lt('amount', amount);
+    }
+
+    if (dateDirection === 'on' && dateTime) {
+      query = query.gte('dateTime', dateTime);
+      query = query.lt('dateTime', dateTime + 'T23:59:59');
+    } else if (dateDirection === 'before' && dateTime) {
+      query = query.lt('dateTime', dateTime);
+    } else if (dateDirection === 'after' && dateTime) {
+      query = query.gt('dateTime', dateTime);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Supabase fetch error:", error);
+    // maybe can add more specific error handling based on the error type to differentiate between user errors and server errors
+    res.status(500).json({ error: 'Failed to filter transactions' });
+  }
+}
