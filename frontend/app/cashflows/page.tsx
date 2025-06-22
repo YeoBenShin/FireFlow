@@ -130,14 +130,24 @@ export default function CashflowsPage() {
       ],
     },
   }
+const categoryToIconMap = {
+  "Food & Dining": <Utensils className="w-5 h-5" />,
+  "Transportation": <Bus className="w-5 h-5" />,
+  "Health": <DollarSign className="w-5 h-5" />,
+  "Medicine": <DollarSign className="w-5 h-5" />,
+  "Groceries": <ShoppingBag className="w-5 h-5" />,
+  "Housing": <Home className="w-5 h-5" />,
+  "Rent": <Home className="w-5 h-5" />,
+  "Gifts": <ShoppingBag className="w-5 h-5" />,
+  "Savings": <DollarSign className="w-5 h-5" />,
+  "Entertainment": <ShoppingBag className="w-5 h-5" />,
+  "Utilities": <DollarSign className="w-5 h-5" />,
+  "Shopping": <ShoppingBag className="w-5 h-5" />,
+  "Education": <DollarSign className="w-5 h-5" />,
+  "Other": <DollarSign className="w-5 h-5" />,
+}
 
-  const iconMap = {
-  DollarSign: <DollarSign className="w-5 h-5" />,
-  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
-  Home: <Home className="w-5 h-5" />,
-  Bus: <Bus className="w-5 h-5" />,
-  Utensils: <Utensils className="w-5 h-5" />,
-};
+
 
   const [transactions, setTransactions] = useState([]);
 
@@ -149,7 +159,8 @@ export default function CashflowsPage() {
       // Replace icon string with JSX component
       const withIcons = data.map((tx) => ({
         ...tx,
-        icon: iconMap[tx.icon] || null,
+        icon: categoryToIconMap[tx.category] || <DollarSign className="w-5 h-5" />,
+        month: new Date(tx.date).toLocaleString("default", { month: "long" })
       }));
 
       setTransactions(withIcons);

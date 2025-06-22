@@ -5,9 +5,7 @@
     "category": "Income",
     "amount": 4000,
     "date": "April 30, 18:27",
-    "type": "income",
-    "icon": "DollarSign",
-    "month": "April"
+    "type": "income"
   },
   {
     "id": 2,
@@ -15,9 +13,7 @@
     "category": "Groceries",
     "amount": -100,
     "date": "May 24, 17:00",
-    "type": "expense",
-    "icon": "ShoppingBag",
-    "month": "May"
+    "type": "expense"
   },
 
     {
@@ -26,8 +22,6 @@
       "category": "Housing",
       "amount": -1574.5,
       "date": "April 15, 09:30",
-      "type": "expense",
-      "icon": "Home",
-      "month": "April"
+      "type": "expense"
     }
 ]

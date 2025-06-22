@@ -90,6 +90,7 @@ export function AddIncomeForm({
     try {
       const payload = {
         ...values,
+        date: new Date(values.date).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "income",
         month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
