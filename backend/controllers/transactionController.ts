@@ -1,13 +1,12 @@
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { supabase } from "../db/supabaseClient";
 import { Transaction, FilteredTransaction } from '../models/transaction';
 
-// DECIDE HOW WE WANT TO SEND IN USER ID
-// is it in the request body or as a query parameter?
-
 export const getAllTransactions = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
   try {
-    const { data, error } = await supabase.from('transaction').select('*');
+    const { data, error } = await supabase.from('transaction').select('*').eq('user_id', userId).order('dateTime', { ascending: false });
     
     if (error) {
       throw error;
@@ -20,6 +19,7 @@ export const getAllTransactions = async (req: Request, res: Response) => {
 };
 
 export const createTransaction = async (req: Request, res: Response) => {
+  req.body.user_id = (req.user as jwt.JwtPayload).sub;
   const newTransaction: Transaction = req.body;
   // console.log("Received body:", newTransaction);
 
@@ -44,9 +44,9 @@ export const createTransaction = async (req: Request, res: Response) => {
 
 export const deleteTransaction = async (req: Request, res: Response) => {
   try {
-    const {trans_id}: Transaction = req.body;
-    // console.log("Received transactionId:", incomingTransaction.id);
-    const { data, error } = await supabase.from('transaction').delete().eq('id', trans_id).select('*');
+    const {transId} = req.body;
+    console.log("Received transactionId:", transId);
+    const { data, error } = await supabase.from('transaction').delete().eq('trans_id', transId).select('*');
     
     if (error) {
       throw error;
@@ -62,8 +62,8 @@ export const deleteTransaction = async (req: Request, res: Response) => {
 
 export const updateTransaction = async (req: Request, res: Response) => {
   try {
-    const {trans_id, ...updateFields}: Transaction = req.body;
-    const { data, error } = await supabase.from('transaction').update(updateFields).eq('id', trans_id).select('*');
+    const {transId, ...updateFields}: Transaction = req.body;
+    const { data, error } = await supabase.from('transaction').update(updateFields).eq('trans_id', transId).select('*');
     
     if (error) {
       throw error;
@@ -79,10 +79,11 @@ export const updateTransaction = async (req: Request, res: Response) => {
 };
 
 export const getFilterTransactions = async (req: Request, res: Response) => {
-  const { user_id, description, type, amount, amountDirection, dateTime, dateDirection, category}: FilteredTransaction = req.body;
+  const userId = (req.user as jwt.JwtPayload).sub;
+  const { description, type, amount, amountDirection, dateTime, dateDirection, category}: FilteredTransaction = req.body;
 
   try {
-    let query = supabase.from('transaction').select('*').eq('user_id', user_id);
+    let query = supabase.from('transaction').select('*').eq('user_id', userId);
 
     if (description) {
       query = query.ilike('description', `%${description}%`);
