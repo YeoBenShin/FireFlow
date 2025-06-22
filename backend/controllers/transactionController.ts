@@ -44,9 +44,9 @@ export const createTransaction = async (req: Request, res: Response) => {
 
 export const deleteTransaction = async (req: Request, res: Response) => {
   try {
-    const {trans_id}: Transaction = req.body;
+    const {transId}: Transaction = req.body;
     // console.log("Received transactionId:", incomingTransaction.id);
-    const { data, error } = await supabase.from('transaction').delete().eq('id', trans_id).select('*');
+    const { data, error } = await supabase.from('transaction').delete().eq('id', transId).select('*');
     
     if (error) {
       throw error;
@@ -62,8 +62,8 @@ export const deleteTransaction = async (req: Request, res: Response) => {
 
 export const updateTransaction = async (req: Request, res: Response) => {
   try {
-    const {trans_id, ...updateFields}: Transaction = req.body;
-    const { data, error } = await supabase.from('transaction').update(updateFields).eq('id', trans_id).select('*');
+    const {transId, ...updateFields}: Transaction = req.body;
+    const { data, error } = await supabase.from('transaction').update(updateFields).eq('id', transId).select('*');
     
     if (error) {
       throw error;
@@ -79,10 +79,10 @@ export const updateTransaction = async (req: Request, res: Response) => {
 };
 
 export const getFilterTransactions = async (req: Request, res: Response) => {
-  const { user_id, description, type, amount, amountDirection, dateTime, dateDirection, category}: FilteredTransaction = req.body;
+  const { userId, description, type, amount, amountDirection, dateTime, dateDirection, category}: FilteredTransaction = req.body;
 
   try {
-    let query = supabase.from('transaction').select('*').eq('user_id', user_id);
+    let query = supabase.from('transaction').select('*').eq('user_id', userId);
 
     if (description) {
       query = query.ilike('description', `%${description}%`);

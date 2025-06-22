@@ -1,11 +1,11 @@
 export interface Transaction {
-    trans_id: number;
+    transId: number;
     description: string;
     type: 'income' | 'expense';
     amount: number;
     dateTime: string;
     category: string;
-    user_id: number;  
+    userId: number;  
 }
 
 export interface FilteredTransaction {
@@ -16,5 +16,5 @@ export interface FilteredTransaction {
     dateTime: string;
     dateDirection: 'before' | 'after' | 'on';
     category: Array<string>;
-    user_id: number;  
+    userId: number;  
 }

@@ -51,8 +51,8 @@ export const deleteRecurringTransaction = async (req: Request, res: Response) =>
 
 export const updateRecurringTransaction = async (req: Request, res: Response) => {
   try {
-    const { rec_trans_id, ...updateFields }: RecurringTransaction = req.body;
-    const { data, error } = await supabase.from('recurring_transaction').update(updateFields).eq('id', rec_trans_id).select('*');
+    const { recTransId, ...updateFields }: RecurringTransaction = req.body;
+    const { data, error } = await supabase.from('recurring_transaction').update(updateFields).eq('id', recTransId).select('*');
     
     if (error) {
       throw error;
