@@ -130,22 +130,29 @@ export default function CashflowsPage() {
       ],
     },
   }
-const categoryToIconMap = {
-  "Food & Dining": <Utensils className="w-5 h-5" />,
-  "Transportation": <Bus className="w-5 h-5" />,
-  "Health": <DollarSign className="w-5 h-5" />,
-  "Medicine": <DollarSign className="w-5 h-5" />,
-  "Groceries": <ShoppingBag className="w-5 h-5" />,
-  "Housing": <Home className="w-5 h-5" />,
-  "Rent": <Home className="w-5 h-5" />,
-  "Gifts": <ShoppingBag className="w-5 h-5" />,
-  "Savings": <DollarSign className="w-5 h-5" />,
-  "Entertainment": <ShoppingBag className="w-5 h-5" />,
-  "Utilities": <DollarSign className="w-5 h-5" />,
-  "Shopping": <ShoppingBag className="w-5 h-5" />,
-  "Education": <DollarSign className="w-5 h-5" />,
-  "Other": <DollarSign className="w-5 h-5" />,
+
+const categoryIconMap: Record<string, string> = {
+  food: "Utensils",
+  transport: "Bus",
+  medicine: "DollarSign", 
+  groceries: "ShoppingBag",
+  rent: "Home",
+  gifts: "ShoppingBag",
+  savings: "DollarSign",
+  entertainment: "ShoppingBag",
+  utilities: "DollarSign",
+  shopping: "ShoppingBag",
+  education: "DollarSign",
+  other: "DollarSign",
 }
+
+  const iconMap = {
+  DollarSign: <DollarSign className="w-5 h-5" />,
+  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
+  Home: <Home className="w-5 h-5" />,
+  Bus: <Bus className="w-5 h-5" />,
+  Utensils: <Utensils className="w-5 h-5" />,
+};
 
 
 
@@ -153,14 +160,15 @@ const categoryToIconMap = {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch("/data/transactions.json");
+      const res = await fetch("http://localhost:5100/api/transactions");
       const data = await res.json();
 
       // Replace icon string with JSX component
       const withIcons = data.map((tx) => ({
         ...tx,
-        icon: categoryToIconMap[tx.category] || <DollarSign className="w-5 h-5" />,
-        month: new Date(tx.date).toLocaleString("default", { month: "long" })
+        dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
+        icon: iconMap[categoryIconMap[tx.category]]  || <DollarSign className="w-5 h-5" />,
+        month: new Date(tx.dateTime).toLocaleString("default", { month: "long" })
       }));
 
       setTransactions(withIcons);
@@ -170,6 +178,7 @@ const categoryToIconMap = {
   }, []);
 
   const handleAddTransaction = (newTx) => {
+    console.log("🧾 New transaction added:", newTx);
   setTransactions((prev) => [...prev, newTx]);
 };
 
@@ -367,16 +376,16 @@ const categoryToIconMap = {
                           .filter((transaction) => activeTab === "all" || transaction.type === activeTab)
                           .map((transaction) => (
                             <div
-                              key={transaction.id}
+                              key={transaction.trans_id}
                               className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                             >
                               <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
                                 {transaction.icon}
                               </div>
                               <div className="flex-1">
-                                <div className="font-semibold text-gray-800">{transaction.title}</div>
+                                <div className="font-semibold text-gray-800">{transaction.description}</div>
                                 <div className="text-sm text-gray-600">{transaction.category}</div>
-                                <div className="text-xs text-orange-500">{transaction.date}</div>
+                                <div className="text-xs text-orange-500">{transaction.dateTime}</div>
                               </div>
                               <div
                                 className={`font-bold ${transaction.type === "income" ? "text-green-600" : "text-red-600"}`}

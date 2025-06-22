@@ -52,10 +52,10 @@ const categoryIconMap: Record<string, string> = {
 
 const formSchema = z.object({
   category: z.string().min(1, "Please select a category"),
-  date: z.string().min(1, "Date is required"),
+  dateTime: z.string().min(1, "Date is required"),
   amount: z.string().min(1, "Amount is required"),
-  title: z.string().min(1, "Title is required"),
-  notes: z.string().optional(),
+  description: z.string().min(1, "Title is required"),
+  //notes: z.string().optional(),
 })
 
   const iconMap = {
@@ -80,10 +80,10 @@ export function AddExpenseForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       category: "",
-      date: "",
+      dateTime: "",
       amount: "25.00",
-      title: "",
-      notes: "",
+      description: "",
+      //notes: "",
     },
   })
 
@@ -95,15 +95,14 @@ export function AddExpenseForm({
      try {
       const payload = {
         ...values,
-        date: new Date(values.date).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
+        trans_id: Math.floor(Math.random() * 10000), // Simulate unique ID
+        dateTime: new Date(values.dateTime).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "expense",
-        month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
-        icon: categoryIconMap[values.category] || "DollarSign", // fallback icon string
       }
 
       // Send POST request to backend
-      const response = await fetch("/api/expense", {
+      const response = await fetch("http://localhost:5100/api/transactions/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -115,12 +114,14 @@ export function AddExpenseForm({
         throw new Error(`Failed to add expense: ${response.statusText}`)
       }
 
-      const data = await response.json()
-      console.log("Expense added:", data)
+      const result = await response.json()
+      console.log("Expense added:", result)
+      const data = result.data;
 
        const newTx = {
         ...data,
-        icon: iconMap[data.icon] || null,
+        month: new Date(values.dateTime).toLocaleString("default", { month: "long" }), // e.g., "April"
+        icon: iconMap[categoryIconMap[data.category] || "DollarSign"] || null,
       };
 
       onAddTransaction?.(newTx);
@@ -165,7 +166,7 @@ export function AddExpenseForm({
 
         <FormField
           control={form.control}
-          name="date"
+          name="dateTime"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
@@ -203,7 +204,7 @@ export function AddExpenseForm({
 
         <FormField
           control={form.control}
-          name="title"
+          name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Expense Title</FormLabel>
@@ -215,7 +216,7 @@ export function AddExpenseForm({
           )}
         />
 
-        <FormField
+        {/* <FormField
           control={form.control}
           name="notes"
           render={({ field }) => (
@@ -227,7 +228,7 @@ export function AddExpenseForm({
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
         <Button
           type="submit"

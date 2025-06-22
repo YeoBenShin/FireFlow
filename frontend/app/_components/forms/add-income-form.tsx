@@ -48,10 +48,10 @@ const incomeCategories = [
 
 const formSchema = z.object({
   category: z.string().min(1, "Please select a category"),
-  date: z.string().min(1, "Date is required"),
+  dateTime: z.string().min(1, "Date is required"),
   amount: z.string().min(1, "Amount is required"),
-  title: z.string().min(1, "Title is required"),
-  notes: z.string().optional(),
+  description: z.string().min(1, "Title is required"),
+  // notes: z.string().optional(),
 })
 
   const iconMap = {
@@ -76,10 +76,10 @@ export function AddIncomeForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       category: "",
-      date: "April 30, 2024",
+      dateTime: "April 30, 2024",
       amount: "",
-      title: "",
-      notes: "",
+      description: "",
+      //notes: "",
     },
   })
 
@@ -90,14 +90,13 @@ export function AddIncomeForm({
     try {
       const payload = {
         ...values,
-        date: new Date(values.date).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
+        trans_id: Math.floor(Math.random() * 10000), // Generate a unique ID for the transaction
+        dateTime: new Date(values.dateTime).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "income",
-        month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
-        icon: "DollarSign", // fallback icon string
       }
 
-      const response = await fetch("/api/income", {
+      const response = await fetch("http://localhost:5100/api/transactions/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,11 +108,13 @@ export function AddIncomeForm({
         throw new Error(`Failed to add income: ${response.statusText}`)
       }
 
-      const data = await response.json()
-      console.log("Income added:", data)
+      const result = await response.json()
+      console.log("Income added:", result)
+      const data = result.data
       const newTx = {
         ...data,
-        icon: iconMap[data.icon] || null,
+        month: new Date(values.dateTime).toLocaleString("default", { month: "long" }), // e.g., "April"
+        icon: iconMap["DollarSign"] || null,
       };
 
       onAddTransaction?.(newTx);
@@ -158,7 +159,7 @@ export function AddIncomeForm({
 
         <FormField
           control={form.control}
-          name="date"
+          name="dateTime"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
@@ -197,7 +198,7 @@ export function AddIncomeForm({
 
         <FormField
           control={form.control}
-          name="title"
+          name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Income Title</FormLabel>
@@ -209,7 +210,7 @@ export function AddIncomeForm({
           )}
         />
 
-        <FormField
+        {/* <FormField
           control={form.control}
           name="notes"
           render={({ field }) => (
@@ -225,7 +226,7 @@ export function AddIncomeForm({
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
         <Button
           type="submit"

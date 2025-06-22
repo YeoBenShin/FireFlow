@@ -31,7 +31,7 @@ export const createTransaction = async (req: Request, res: Response) => {
   // }
 
   try {
-    const {data, error} = await supabase.from('transaction').insert(newTransaction);
+    const {data, error} = await supabase.from('transaction').insert(newTransaction).select();
     if (error) {  
       throw error;
     }
