@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import { supabase } from "../db/supabaseClient";
+import jwt from 'jsonwebtoken';
 import { RecurringTransaction } from '../models/recurringTransaction';
 
-export const getAllRecurringTransactions = async (_req: Request, res: Response) => {
+export const getAllRecurringTransactions = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub
   try {
-    const { data, error } = await supabase.from('recurring_transaction').select('*');
+    const { data, error } = await supabase.from('recurring_transaction').select('*').eq('user_id', userId);
     
     if (error) {
       throw error;
@@ -17,6 +19,7 @@ export const getAllRecurringTransactions = async (_req: Request, res: Response) 
 };
 
 export const createRecurringTransaction = async (req: Request, res: Response) => {
+  req.body.user_id = (req.user as jwt.JwtPayload).sub;
   const newRecurringTransaction: RecurringTransaction = req.body;
 
   try {
@@ -32,10 +35,10 @@ export const createRecurringTransaction = async (req: Request, res: Response) =>
 };
 
 export const deleteRecurringTransaction = async (req: Request, res: Response) => {
-    const { id } = req.body;
+    const { recTransId } = req.body;
 
     try {
-        const { data, error } = await supabase.from('recurring_transaction').delete().eq('id', id).select('*');
+        const { data, error } = await supabase.from('recurring_transaction').delete().eq('rec_trans_id', recTransId).select('*');
         if (error) {
             throw error;
         } else if (data.length === 0) {
@@ -51,8 +54,8 @@ export const deleteRecurringTransaction = async (req: Request, res: Response) =>
 
 export const updateRecurringTransaction = async (req: Request, res: Response) => {
   try {
-    const { recTransId, ...updateFields }: RecurringTransaction = req.body;
-    const { data, error } = await supabase.from('recurring_transaction').update(updateFields).eq('id', recTransId).select('*');
+    const { recTransId, ...updateFields } = req.body;
+    const { data, error } = await supabase.from('recurring_transaction').update(updateFields).eq('rec_trans_id', recTransId).select('*');
     
     if (error) {
       throw error;

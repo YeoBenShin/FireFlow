@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 import { verifyJWT } from './jwt';
 import loginRoutes from './routes/loginRoutes';
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || 5100;
 
 // middleware
 app.use(cors());
+app.use(cookieParser());
 app.use(express.json());
 
 // transaction routes

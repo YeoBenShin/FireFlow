@@ -1,5 +1,5 @@
 export interface User {
   username: string,
-  monthlyExpenses: number,
+  monthlySavings: number,
   monthlyResetDate: number
 }
