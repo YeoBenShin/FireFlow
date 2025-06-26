@@ -7,6 +7,7 @@ import { verifyJWT } from './jwt';
 import loginRoutes from './routes/loginRoutes';
 import userRoutes from './routes/userRoutes';
 import transactionRoutes from './routes/transactionRoutes';
+import dashboardRoutes from './routes/dashboardRoutes';
 import recurringTransactionRoutes from './routes/recurringTransactionRoutes';
 import friendRoutes from './routes/friendRoutes';
 
@@ -25,6 +26,7 @@ app.use('/login', loginRoutes);
 app.use('/api', verifyJWT);
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/recurring-transactions', recurringTransactionRoutes);
 app.use('/api/friends', friendRoutes);
 
