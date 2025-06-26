@@ -52,7 +52,7 @@ export const loginUser = async (req: Request, res: Response) => {
       sameSite: 'strict',
       maxAge: 1000 * 60 * 60, // 1 hour
     });
-    res.status(200).json({ message: 'Login successful' });
+    res.status(200).json({ message: 'Login successful', token: access_token  });
 
   } catch (error: any) {
     console.error(error);
