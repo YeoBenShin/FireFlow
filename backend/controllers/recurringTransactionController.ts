@@ -43,6 +43,7 @@ export const deleteRecurringTransaction = async (req: Request, res: Response) =>
             throw error;
         } else if (data.length === 0) {
             res.status(404).json({ error: 'Recurring transaction not found' });
+            return;
         }
 
         res.status(200).json({ message: "Recurring transaction deleted successfully" });
@@ -61,6 +62,7 @@ export const updateRecurringTransaction = async (req: Request, res: Response) =>
       throw error;
     } else if (data.length === 0) {
         res.status(404).json({ error: 'Recurring transaction not found' });
+        return;
     }
 
     res.status(200).json({ message: "Recurring transaction updated", data });

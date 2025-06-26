@@ -5,7 +5,7 @@ export interface Transaction {
     amount: number;
     dateTime: string;
     category: string;
-    userId: number;  
+    userId: string;  
 }
 
 export interface FilteredTransaction {
@@ -16,5 +16,5 @@ export interface FilteredTransaction {
     dateTime: string;
     dateDirection: 'before' | 'after' | 'on';
     category: Array<string>;
-    userId: number;  
+    userId: string;  
 }

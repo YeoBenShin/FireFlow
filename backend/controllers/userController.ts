@@ -3,7 +3,7 @@ import { supabase } from "../db/supabaseClient";
 import { User } from '../models/user';
 import jwt from 'jsonwebtoken';
 
-export const getUser = async (req: Request, res: Response) => {
+export const getMyUser = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
   // console.log("Fetching user with ID:", userId);
 
@@ -30,6 +30,7 @@ export const getUser = async (req: Request, res: Response) => {
 };
 
 // this will also be used on the first creation of a user
+// username is unique, so need to prompt the user to change it if it already exists
 export const updateUser = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
   const newUser: User = req.body;

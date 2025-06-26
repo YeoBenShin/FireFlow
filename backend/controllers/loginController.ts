@@ -50,7 +50,7 @@ export const loginUser = async (req: Request, res: Response) => {
       httpOnly: true, 
       secure: true, // set to true in production with HTTPS
       sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      maxAge: 1000 * 60 * 60, // 1 hour
     });
     res.status(200).json({ message: 'Login successful' });
 

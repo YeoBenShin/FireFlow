@@ -1,11 +1,11 @@
 import express from 'express';
 import { 
-    getUser,
+    getMyUser,
     updateUser,
     deleteUser } from '../controllers/userController';
 
 const router = express.Router();
-router.get('/', getUser);
+router.get('/', getMyUser);
 router.post('/update', updateUser);
 router.delete('/delete', deleteUser);
 

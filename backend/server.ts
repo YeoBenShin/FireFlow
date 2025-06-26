@@ -8,6 +8,7 @@ import loginRoutes from './routes/loginRoutes';
 import userRoutes from './routes/userRoutes';
 import transactionRoutes from './routes/transactionRoutes';
 import recurringTransactionRoutes from './routes/recurringTransactionRoutes';
+import friendRoutes from './routes/friendRoutes';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/api', verifyJWT);
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/recurring-transactions', recurringTransactionRoutes);
+app.use('/api/friends', friendRoutes);
 
 app.get('/', (_req, res) => {
   res.send('API is running...');

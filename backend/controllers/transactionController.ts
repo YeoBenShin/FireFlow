@@ -52,6 +52,7 @@ export const deleteTransaction = async (req: Request, res: Response) => {
       throw error;
     } else if (data.length === 0) {
       res.status(404).json({ error: 'Transaction not found' });
+      return;
     }
 
     res.status(200).json(data);
@@ -69,6 +70,7 @@ export const updateTransaction = async (req: Request, res: Response) => {
       throw error;
     } else if (data.length === 0) {
       res.status(404).json({ error: 'Transaction not found' });
+      return;
     }
     
     res.status(200).json(data);
