@@ -1,12 +1,17 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import { MainLayout } from "../_components/layout/main-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card"
-import { Button } from "@/app/_components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/app/_components/ui/tabs"
-import { LineChart } from "../_components/charts/line-chart"
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { MainLayout } from "../_components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/_components/ui/card";
+import { Button } from "@/app/_components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/app/_components/ui/tabs";
+import { LineChart } from "../_components/charts/line-chart";
 import {
   Download,
   Info,
@@ -20,28 +25,30 @@ import {
   CalendarDays,
   CalendarRange,
   X,
-} from "lucide-react"
-import { AddExpenseForm } from "../_components/forms/add-expense-form"
-import { AddIncomeForm } from "../_components/forms/add-income-form"
-import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet"
-import { useIsMobile } from "../_hooks/use-mobile"
+} from "lucide-react";
+import { AddExpenseForm } from "../_components/forms/add-expense-form";
+import { AddIncomeForm } from "../_components/forms/add-income-form";
+import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
+import { useIsMobile } from "../_hooks/use-mobile";
 
 export default function CashflowsPage() {
-  const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState("all")
-  const [timeFilter, setTimeFilter] = useState("monthly")
-  const [activeForm, setActiveForm] = useState<"expense" | "income" | null>(null)
-  const isMobile = useIsMobile()
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("monthly");
+  const [activeForm, setActiveForm] = useState<"expense" | "income" | null>(
+    null
+  );
+  const isMobile = useIsMobile();
 
   // Check URL parameters on component mount
   useEffect(() => {
-    const openForm = searchParams.get("openForm")
+    const openForm = searchParams.get("openForm");
     if (openForm === "expense") {
-      setActiveForm("expense")
+      setActiveForm("expense");
     } else if (openForm === "income") {
-      setActiveForm("income")
+      setActiveForm("income");
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   // Chart data for different time periods
   const chartData = {
@@ -129,46 +136,54 @@ export default function CashflowsPage() {
         },
       ],
     },
-  }
+  };
 
-const categoryIconMap: Record<string, string> = {
-  food: "Utensils",
-  transport: "Bus",
-  medicine: "DollarSign", 
-  groceries: "ShoppingBag",
-  rent: "Home",
-  gifts: "ShoppingBag",
-  savings: "DollarSign",
-  entertainment: "ShoppingBag",
-  utilities: "DollarSign",
-  shopping: "ShoppingBag",
-  education: "DollarSign",
-  other: "DollarSign",
-}
+  const categoryIconMap: Record<string, string> = {
+    food: "Utensils",
+    transport: "Bus",
+    medicine: "DollarSign",
+    groceries: "ShoppingBag",
+    rent: "Home",
+    gifts: "ShoppingBag",
+    savings: "DollarSign",
+    entertainment: "ShoppingBag",
+    utilities: "DollarSign",
+    shopping: "ShoppingBag",
+    education: "DollarSign",
+    other: "DollarSign",
+  };
 
   const iconMap = {
-  DollarSign: <DollarSign className="w-5 h-5" />,
-  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
-  Home: <Home className="w-5 h-5" />,
-  Bus: <Bus className="w-5 h-5" />,
-  Utensils: <Utensils className="w-5 h-5" />,
-};
-
-
+    DollarSign: <DollarSign className="w-5 h-5" />,
+    ShoppingBag: <ShoppingBag className="w-5 h-5" />,
+    Home: <Home className="w-5 h-5" />,
+    Bus: <Bus className="w-5 h-5" />,
+    Utensils: <Utensils className="w-5 h-5" />,
+  };
 
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch("http://localhost:5100/api/transactions");
+      const res = await fetch("http://localhost:5100/api/transactions", {
+        credentials: "include",
+      });
       const data = await res.json();
 
       // Replace icon string with JSX component
       const withIcons = data.map((tx) => ({
         ...tx,
-        dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
-        icon: iconMap[categoryIconMap[tx.category]]  || <DollarSign className="w-5 h-5" />,
-        month: new Date(tx.dateTime).toLocaleString("default", { month: "long" })
+        dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
+        icon: iconMap[categoryIconMap[tx.category]] || (
+          <DollarSign className="w-5 h-5" />
+        ),
+        month: new Date(tx.dateTime).toLocaleString("default", {
+          month: "long",
+        }),
       }));
 
       setTransactions(withIcons);
@@ -179,32 +194,38 @@ const categoryIconMap: Record<string, string> = {
 
   const handleAddTransaction = (newTx) => {
     console.log("🧾 New transaction added:", newTx);
-  setTransactions((prev) => [...prev, newTx]);
-};
+    setTransactions((prev) => [...prev, newTx]);
+  };
 
-  const groupedTransactions = transactions.reduce(
-    (acc, transaction) => {
-      if (!acc[transaction.month]) {
-        acc[transaction.month] = []
-      }
-      acc[transaction.month].push(transaction)
-      return acc
-    },
-    {} as Record<string, typeof transactions>,
-  )
+  const groupedTransactions = transactions.reduce((acc, transaction) => {
+    if (!acc[transaction.month]) {
+      acc[transaction.month] = [];
+    }
+    acc[transaction.month].push(transaction);
+    return acc;
+  }, {} as Record<string, typeof transactions>);
 
-  const filteredTransactions = activeTab === "all" ? transactions : transactions.filter((t) => t.type === activeTab)
+  const filteredTransactions =
+    activeTab === "all"
+      ? transactions
+      : transactions.filter((t) => t.type === activeTab);
 
   // Calculate totals
-  const totalIncome = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0)
-  const totalExpenses = Math.abs(transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0))
-  const totalBalance = totalIncome - totalExpenses
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = Math.abs(
+    transactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + t.amount, 0)
+  );
+  const totalBalance = totalIncome - totalExpenses;
 
   const handleCloseForm = () => {
-    setActiveForm(null)
+    setActiveForm(null);
     // Clear URL parameters
-    window.history.replaceState({}, "", "/cashflows")
-  }
+    window.history.replaceState({}, "", "/cashflows");
+  };
 
   return (
     <MainLayout>
@@ -232,33 +253,49 @@ const categoryIconMap: Record<string, string> = {
             <>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button className="bg-orange-500 hover:bg-orange-600">Add Expense</Button>
+                  <Button className="bg-orange-500 hover:bg-orange-600">
+                    Add Expense
+                  </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[90%] sm:w-[400px]">
                   <div className="py-6">
                     <h2 className="text-xl font-semibold mb-4">Add Expense</h2>
-                    <AddExpenseForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction} />
+                    <AddExpenseForm
+                      onClose={handleCloseForm}
+                      onAddTransaction={handleAddTransaction}
+                    />
                   </div>
                 </SheetContent>
               </Sheet>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button className="bg-orange-500 hover:bg-orange-600">Add Income</Button>
+                  <Button className="bg-orange-500 hover:bg-orange-600">
+                    Add Income
+                  </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[90%] sm:w-[400px]">
                   <div className="py-6">
                     <h2 className="text-xl font-semibold mb-4">Add Income</h2>
-                    <AddIncomeForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction}/>
+                    <AddIncomeForm
+                      onClose={handleCloseForm}
+                      onAddTransaction={handleAddTransaction}
+                    />
                   </div>
                 </SheetContent>
               </Sheet>
             </>
           ) : (
             <>
-              <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => setActiveForm("expense")}>
+              <Button
+                className="bg-orange-500 hover:bg-orange-600"
+                onClick={() => setActiveForm("expense")}
+              >
                 Add Expense
               </Button>
-              <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => setActiveForm("income")}>
+              <Button
+                className="bg-orange-500 hover:bg-orange-600"
+                onClick={() => setActiveForm("income")}
+              >
                 Add Income
               </Button>
             </>
@@ -271,16 +308,29 @@ const categoryIconMap: Record<string, string> = {
             {!isMobile && activeForm ? (
               <Card className="mb-6">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl">{activeForm === "expense" ? "Add Expense" : "Add Income"}</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={handleCloseForm} className="rounded-full h-8 w-8">
+                  <CardTitle className="text-xl">
+                    {activeForm === "expense" ? "Add Expense" : "Add Income"}
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCloseForm}
+                    className="rounded-full h-8 w-8"
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </CardHeader>
                 <CardContent>
                   {activeForm === "expense" ? (
-                    <AddExpenseForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction}/>
+                    <AddExpenseForm
+                      onClose={handleCloseForm}
+                      onAddTransaction={handleAddTransaction}
+                    />
                   ) : (
-                    <AddIncomeForm onClose={handleCloseForm} onAddTransaction={handleAddTransaction}/>
+                    <AddIncomeForm
+                      onClose={handleCloseForm}
+                      onAddTransaction={handleAddTransaction}
+                    />
                   )}
                 </CardContent>
               </Card>
@@ -314,7 +364,9 @@ const categoryIconMap: Record<string, string> = {
                 </CardHeader>
                 <CardContent>
                   <div className="h-80 mb-6">
-                    <LineChart data={chartData[timeFilter as keyof typeof chartData]} />
+                    <LineChart
+                      data={chartData[timeFilter as keyof typeof chartData]}
+                    />
                   </div>
 
                   {/* Legend */}
@@ -334,25 +386,37 @@ const categoryIconMap: Record<string, string> = {
                     <Card className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">Total Income</span>
+                        <span className="text-sm text-gray-600">
+                          Total Income
+                        </span>
                       </div>
-                      <div className="text-2xl font-bold text-gray-800">${totalIncome}</div>
+                      <div className="text-2xl font-bold text-gray-800">
+                        ${totalIncome}
+                      </div>
                     </Card>
 
                     <Card className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">Total Expenses</span>
+                        <span className="text-sm text-gray-600">
+                          Total Expenses
+                        </span>
                       </div>
-                      <div className="text-2xl font-bold text-gray-800">-${totalExpenses}</div>
+                      <div className="text-2xl font-bold text-gray-800">
+                        -${totalExpenses}
+                      </div>
                     </Card>
 
                     <Card className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">Total Balance</span>
+                        <span className="text-sm text-gray-600">
+                          Total Balance
+                        </span>
                       </div>
-                      <div className="text-2xl font-bold text-gray-800">${totalBalance}</div>
+                      <div className="text-2xl font-bold text-gray-800">
+                        ${totalBalance}
+                      </div>
                     </Card>
                   </div>
                 </CardContent>
@@ -368,35 +432,52 @@ const categoryIconMap: Record<string, string> = {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {Object.entries(groupedTransactions).map(([month, monthTransactions]) => (
-                    <div key={month}>
-                      <h3 className="font-semibold text-lg mb-4">{month}</h3>
-                      <div className="space-y-4">
-                        {monthTransactions
-                          .filter((transaction) => activeTab === "all" || transaction.type === activeTab)
-                          .map((transaction) => (
-                            <div
-                              key={transaction.trans_id}
-                              className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
-                            >
-                              <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
-                                {transaction.icon}
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-semibold text-gray-800">{transaction.description}</div>
-                                <div className="text-sm text-gray-600">{transaction.category}</div>
-                                <div className="text-xs text-orange-500">{transaction.dateTime}</div>
-                              </div>
+                  {Object.entries(groupedTransactions).map(
+                    ([month, monthTransactions]) => (
+                      <div key={month}>
+                        <h3 className="font-semibold text-lg mb-4">{month}</h3>
+                        <div className="space-y-4">
+                          {monthTransactions
+                            .filter(
+                              (transaction) =>
+                                activeTab === "all" ||
+                                transaction.type === activeTab
+                            )
+                            .map((transaction) => (
                               <div
-                                className={`font-bold ${transaction.type === "income" ? "text-green-600" : "text-red-600"}`}
+                                key={transaction.trans_id}
+                                className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                               >
-                                {transaction.type === "income" ? "+" : ""}${Math.abs(transaction.amount).toFixed(2)}
+                                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+                                  {transaction.icon}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold text-gray-800">
+                                    {transaction.description}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {transaction.category}
+                                  </div>
+                                  <div className="text-xs text-orange-500">
+                                    {transaction.dateTime}
+                                  </div>
+                                </div>
+                                <div
+                                  className={`font-bold ${
+                                    transaction.type === "income"
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {transaction.type === "income" ? "+" : ""}$
+                                  {Math.abs(transaction.amount).toFixed(2)}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -404,5 +485,5 @@ const categoryIconMap: Record<string, string> = {
         </div>
       </div>
     </MainLayout>
-  )
+  );
 }

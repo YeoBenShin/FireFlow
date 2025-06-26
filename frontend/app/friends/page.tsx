@@ -1,93 +1,129 @@
-import { MainLayout } from "../_components/layout/main-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card"
-import { Button } from "@/app/_components/ui/button"
-import { Input } from "@/app/_components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/_components/ui/avatar"
-import { Badge } from "@/app/_components/ui/badge"
-import { Progress } from "@/app/_components/ui/progress"
-import { Check, X, Search, Car, Heart } from "lucide-react"
+"use client";
+
+import { useState, useEffect } from "react";
+import { MainLayout } from "../_components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/_components/ui/card";
+import { Button } from "@/app/_components/ui/button";
+import { Input } from "@/app/_components/ui/input";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/app/_components/ui/avatar";
+import { Badge } from "@/app/_components/ui/badge";
+import { Progress } from "@/app/_components/ui/progress";
+import { Check, X, Search, Car, Heart } from "lucide-react";
+import { ToastProvider, Toast, ToastViewport } from "@radix-ui/react-toast";
 
 export default function FriendsPage() {
-  const friends = [
-    {
-      id: "1",
-      name: "Yeo Ben Shin",
-      username: "@benshin01",
-      avatar: "/placeholder.svg?height=40&width=40",
-      relationship: "Colleagues",
-      status: "online",
-    },
-    {
-      id: "2",
-      name: "Easan Saravan",
-      username: "@easan7",
-      avatar: "/placeholder.svg?height=40&width=40",
-      relationship: "Housemates",
-      status: "Cousins",
-    },
-    {
-      id: "3",
-      name: "Chong Wei Choon",
-      username: "@chongwc",
-      avatar: "/placeholder.svg?height=40&width=40",
-      relationship: "Housemates",
-      status: "Cousins",
-    },
-    {
-      id: "4",
-      name: "Liau Jun Rong",
-      username: "@junrong2",
-      avatar: "/placeholder.svg?height=40&width=40",
-      relationship: "Housemates",
-      status: "Cousins",
-    },
-  ]
+  const [friends, setFriends] = useState([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [message, setMessage] = useState("");
 
-  const friendRequests = [
-    {
-      id: "1",
-      name: "Newbie",
-      username: "@new",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  ]
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
-  const collaborations = [
-    {
-      id: "1",
-      title: "Korea Trip",
-      daysLeft: 20,
-      date: "31 May 2025",
-      savingToAllocate: 800,
-      presentSaving: 500,
-      goalAmount: 4000,
-      contributors: [
-        { name: "Ben", amount: 1000, calculation: "$1,000.00 + $800.00 = $1,800.00" },
-        { name: "Weichoon", amount: 1000 },
-      ],
-      amountLeft: 1200,
-      progress: 60,
-    },
-  ]
+  // Fetch friends with token
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch("http://localhost:5100/api/friends", {
+          credentials: "include",
+        });
 
-  const invitations = [
-    {
-      id: "1",
-      title: "Wedding Ceremony",
-      category: "Wedding",
-      amount: 35000,
-      targetDate: "July 24, 2026",
-      icon: <Heart className="w-5 h-5" />,
-    },
-    {
-      id: "2",
-      title: "Red Tesla",
-      category: "Car",
-      amount: 35000,
-      targetDate: "June 8, 2026",
-      icon: <Car className="w-5 h-5" />,
-    },
-  ]
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Server response:", errorText);
+          throw new Error("Server returned an error");
+        }
+
+        // Only parse as JSON if the content-type is application/json
+        const contentType = res.headers.get("content-type");
+        if (!contentType?.includes("application/json")) {
+          const errorText = await res.text();
+          console.error("Expected JSON, got:", errorText);
+          throw new Error("Server did not return JSON");
+        }
+
+        // if (!res.ok) throw new Error("Failed to fetch friends");
+
+        const data = await res.json();
+        console.log(data);
+
+        setFriends(data);
+      } catch (err) {
+        setError(err.message || "Error loading friends");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [authToken]); // Re-run when token changes
+
+  // Filter friends by search term
+  const filteredFriends = friends.filter(
+    (friend) =>
+      friend.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      friend.username?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Add friend to selection
+  const handleAddSelectedFriend = (friend) => {
+    if (!selectedFriends.some((f) => f.user_id === friend.user_id)) {
+      setSelectedFriends([...selectedFriends, friend]);
+    }
+  };
+
+  // Remove friend from selection
+  const handleRemoveFriend = (user_id) => {
+    setSelectedFriends(selectedFriends.filter((f) => f.user_id !== user_id));
+  };
+
+  // Submit selected friends to backend
+  const handleAddFriend = async () => {
+    try {
+      const response = await fetch("http://localhost:5100/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // Add this
+        body: JSON.stringify(selectedFriends.map((f) => f.user_id)),
+      });
+
+      if (!response.ok) throw new Error("Failed to add friends");
+
+      setMessage("Friends added successfully!");
+      setSelectedFriends([]);
+
+      // Refresh friends list
+      const res = await fetch("http://localhost:5100/api/friends");
+      setFriends(await res.json());
+    } catch (err) {
+      setMessage(err.message || "Error adding friends");
+    }
+  };
+
+  // Loading state
+  // if (loading) return <div>Loading friends...</div>;
+
+  // Error state
+  if (error) return <div>Error: {error}</div>;
+
+  const acceptedFriends = friends.filter(
+    (friend: Friend) => friend.status === "accepted"
+  );
+
+  const pendingFriends = friends.filter(
+    (friend: Friend) => friend.status === "pending"
+  );
 
   return (
     <MainLayout>
@@ -99,8 +135,11 @@ export default function FriendsPage() {
               <CardTitle className="text-xl">Friends</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {friends.map((friend) => (
-                <div key={friend.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+              {acceptedFriends.map((friend) => (
+                <div
+                  key={friend.id}
+                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={friend.avatar || "/placeholder.svg"} />
@@ -117,10 +156,16 @@ export default function FriendsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-orange-200 text-orange-800">
+                    <Badge
+                      variant="secondary"
+                      className="bg-orange-200 text-orange-800"
+                    >
                       {friend.relationship}
                     </Badge>
-                    <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    <Badge
+                      variant="outline"
+                      className="text-orange-600 border-orange-600"
+                    >
                       {friend.status}
                     </Badge>
                   </div>
@@ -135,30 +180,39 @@ export default function FriendsPage() {
               <CardTitle className="text-lg">Requests (1)</CardTitle>
             </CardHeader>
             <CardContent>
-              {friendRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              {pendingFriends.map((friend) => (
+                <div
+                  key={friend.user_id}
+                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
-                      <AvatarImage src={request.avatar || "/placeholder.svg"} />
+                      <AvatarImage src={friend.avatar || "/placeholder.svg"} />
                       <AvatarFallback className="bg-orange-500 text-white">
-                        {request.name
+                        {friend.name
                           .split(" ")
                           .map((n) => n[0])
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-semibold">{request.name}</h4>
-                      <p className="text-sm text-gray-600">{request.username}</p>
+                      <h4 className="font-semibold">{friend.name}</h4>
+                      <p className="text-sm text-gray-600">{friend.username}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="bg-green-500 hover:bg-green-600">
-                      <Check className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="destructive">
-                      <X className="w-4 h-4" />
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="bg-orange-200 text-orange-800"
+                    >
+                      {friend.relationship}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="text-orange-600 border-orange-600"
+                    >
+                      {friend.status}
+                    </Badge>
                   </div>
                 </div>
               ))}
@@ -173,21 +227,92 @@ export default function FriendsPage() {
             <CardContent>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder="Search By Username" className="pl-10 bg-teal-50" />
+                <Input
+                  placeholder="Search By Username"
+                  className="pl-10 bg-teal-50"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="mt-4 space-y-2">
+                {searchTerm &&
+                  filteredFriends.map((friend) => (
+                    <div
+                      key={friend.user_id}
+                      className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+                    >
+                      <span>
+                        {friend.name} (@{friend.username})
+                      </span>
+                      <button
+                        onClick={() => handleAddSelectedFriend(friend)}
+                        className="p-1 rounded-full hover:bg-teal-100"
+                        title="Add friend"
+                      >
+                        <Check className="w-4 h-4 text-teal-600" />
+                      </button>
+                    </div>
+                  ))}
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Collabs and Invitations */}
-        <div className="space-y-6">
-          {/* Collabs */}
+          {/* Selected Friends */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl underline">Collabs</CardTitle>
+              <CardTitle className="text-lg">Selected Friends</CardTitle>
             </CardHeader>
             <CardContent>
-              {collaborations.map((collab) => (
+              <ul className="space-y-2">
+                {selectedFriends.map((friend) => (
+                  <li
+                    key={friend.user_id}
+                    className="flex items-center justify-between"
+                  >
+                    <span>
+                      {friend.name} (@{friend.username})
+                    </span>
+                    <button
+                      onClick={() => handleRemoveFriend(friend.userid)}
+                      className="p-1 rounded-full hover:bg-red-100"
+                      title="Remove friend"
+                    >
+                      <X className="w-4 h-4 text-red-600" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {selectedFriends.length > 0 && (
+                <Button
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 mt-4"
+                  onClick={handleAddFriend}
+                >
+                  Add Friend
+                </Button>
+              )}
+              {message && (
+                <div
+                  className={`mt-2 text-sm ${
+                    message.includes("success")
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {message}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        {/* ... rest of the code ... */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Collabs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* {collaborations.map((collab) => (
                 <div key={collab.id} className="p-4 bg-orange-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-semibold">{collab.title}</h4>
@@ -198,18 +323,27 @@ export default function FriendsPage() {
 
                   <div className="space-y-2 text-sm mb-3">
                     <div>Saving To Allocate: ${collab.savingToAllocate}</div>
-                    <div>Present Saving To Allocate (5%): ${collab.presentSaving}</div>
-                    <div>Goal Amount: ${collab.goalAmount.toLocaleString()}</div>
+                    <div>
+                      Present Saving To Allocate (5%): ${collab.presentSaving}
+                    </div>
+                    <div>
+                      Goal Amount: ${collab.goalAmount.toLocaleString()}
+                    </div>
                   </div>
 
                   <Progress value={collab.progress} className="mb-3" />
-                  <div className="text-right text-sm text-orange-500 mb-3">+800 (60%)</div>
+                  <div className="text-right text-sm text-orange-500 mb-3">
+                    +800 (60%)
+                  </div>
 
                   <div className="space-y-2">
                     {collab.contributors.map((contributor, idx) => (
                       <div key={idx} className="flex justify-between text-sm">
                         <span className="font-medium">{contributor.name}</span>
-                        <span>{contributor.calculation || `$${contributor.amount.toLocaleString()}`}</span>
+                        <span>
+                          {contributor.calculation ||
+                            `$${contributor.amount.toLocaleString()}`}
+                        </span>
                       </div>
                     ))}
                     <div className="flex justify-between text-sm pt-2 border-t">
@@ -218,7 +352,7 @@ export default function FriendsPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))} */}
             </CardContent>
           </Card>
 
@@ -228,7 +362,7 @@ export default function FriendsPage() {
               <CardTitle className="text-lg">Invitations (2)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {invitations.map((invitation) => (
+              {/* {invitations.map((invitation) => (
                 <div key={invitation.id} className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
@@ -252,11 +386,11 @@ export default function FriendsPage() {
                     </Button>
                   </div>
                 </div>
-              ))}
+              ))} */}
             </CardContent>
           </Card>
         </div>
       </div>
     </MainLayout>
-  )
+  );
 }
