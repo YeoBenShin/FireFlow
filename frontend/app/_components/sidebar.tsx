@@ -21,6 +21,8 @@ const navigationItems = [
   { icon: RotateCcw, label: "Recurring Items", href: "/recurring", active: false },
   { icon: Users, label: "Friends", href: "/friends", active: false },
   { icon: Target, label: "Goals", href: "/goals", active: false },
+  { icon: Target, label: "Login", href: "/login", active: false },
+  { icon: Target, label: "SignUp", href: "/signup", active: false },
 ]
 
 export function Sidebar() {
