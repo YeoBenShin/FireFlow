@@ -8,8 +8,10 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies.token;
 
-  if (!token) 
+  if (!token) {
     res.status(401).json({ error: 'No token provided' });
+    return;
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;

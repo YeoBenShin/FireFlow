@@ -29,6 +29,27 @@ export const getMyUser = async (req: Request, res: Response) => {
   }
 };
 
+export const getFilteredUsers = async (req: Request, res: Response) => {
+  const { username } = req.body;
+
+  try {
+    // Example filter: { name: 'John' }
+    const { data, error } = await supabase
+      .from('user')
+      .select('username, name')
+      .ilike('username', `%${username}%`); // case-insensitive search
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Supabase filter error:", error);
+    res.status(500).json({ error: 'Failed to fetch filtered users' });
+  }
+};
+
 // this will also be used on the first creation of a user
 // username is unique, so need to prompt the user to change it if it already exists
 export const updateUser = async (req: Request, res: Response) => {
