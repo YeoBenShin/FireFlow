@@ -6,7 +6,9 @@ import { Friend } from '../models/friend';
 export const getAllFriends = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
   try {
-    const { data, error } = await supabase.from('friend').select('*').eq('user_id', userId);
+    let query = await supabase.from('friend').select('*').eq('user_id', userId);
+    query = await supabase.from('friend').select('*').eq('friend_id', userId);
+    const { data, error } = await query;
     
     if (error) {
       throw error;
