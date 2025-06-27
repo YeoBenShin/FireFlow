@@ -28,7 +28,7 @@ const navigationItems = [
   { icon: Users, label: "Friends", href: "/friends" },
   { icon: Target, label: "Goals", href: "/goals" },
   { icon: Target, label: "Login", href: "/login" },
-  { icon: Target, label: "Sign Up", href: "/signup" },
+  { icon: Target, label: "Sign Up", href: "/sign-up" },
 ];
 
 function useLocalStorage(key, initialValue) {
