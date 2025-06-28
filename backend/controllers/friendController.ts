@@ -3,17 +3,51 @@ import { supabase } from "../db/supabaseClient";
 import jwt from 'jsonwebtoken';
 import { Friend } from '../models/friend';
 
+/**
+ * 
+ * @param req 
+ * @param res 
+ * @returns username + name of all friends
+ */
 export const getAllFriends = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
   try {
-    const { data, error } = await supabase.from('friend').select('*').or(`user_id.eq.${userId},friend_id.eq.${userId}`); // Fetch friends where user_id is the current user or friend_id is the current user
     
+    const {data: friend1, error: friend1Error}= await supabase
+      .from('friend')
+      .select('friend_id')
+      .eq('user_id', userId);
+    
+    const {data: friend2, error: friend2Error} = await supabase
+      .from('friend')
+      .select('user_id')
+      .eq('friend_id', userId);
+
+      //console.log(friend1);
+    
+      // Extract friend_ids from friend1
+      const friend1Ids = friend1 ? friend1.map(row => row.friend_id) : [];
+      // Extract user_ids from friend2
+      const friend2Ids = friend2 ? friend2.map(row => row.user_id) : [];
+      // Combine them
+      const allFriendIds = [...friend1Ids, ...friend2Ids];
+
+      // console.log(allFriendIds);
+
+    if (allFriendIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('user')
+      .select('username, name')
+      .in('user_id', allFriendIds);
+
     if (error) {
       throw error;
     }
     res.status(200).json(data);
 
   } catch (error) {
+    console.log("Supabase error:", error);
     res.status(500).json({ error: 'Failed to fetch friends' });
   }
 };
