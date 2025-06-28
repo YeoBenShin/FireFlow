@@ -85,6 +85,7 @@ export const getFilterTransactions = async (req: Request, res: Response) => {
   const { description, type, amount, amountDirection, dateTime, dateDirection, category}: FilteredTransaction = req.body;
 
   try {
+    // building up a query object in memory. Nothing happens until you await.
     let query = supabase.from('transaction').select('*').eq('user_id', userId);
 
     if (description) {
