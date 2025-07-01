@@ -138,7 +138,9 @@ export default function CashflowsPage() {
     },
   };
 
-  const categoryIconMap: Record<string, string> = {
+  type IconName = "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils";
+
+  const categoryIconMap: Record<string, IconName> = {
     food: "Utensils",
     transport: "Bus",
     medicine: "DollarSign",
@@ -153,7 +155,7 @@ export default function CashflowsPage() {
     other: "DollarSign",
   };
 
-  const iconMap = {
+  const iconMap: Record<IconName, JSX.Element> = {
     DollarSign: <DollarSign className="w-5 h-5" />,
     ShoppingBag: <ShoppingBag className="w-5 h-5" />,
     Home: <Home className="w-5 h-5" />,
@@ -169,6 +171,17 @@ export default function CashflowsPage() {
         credentials: "include",
       });
       const data = await res.json();
+
+
+      console.log("🧾 Transactions fetched:", data);
+      // If your API returns { transactions: [...] }
+      const txArray = Array.isArray(data) ? data : data.transactions;
+
+      if (!Array.isArray(txArray)) {
+        console.error("Expected an array of transactions but got:", txArray);
+        setTransactions([]);
+        return;
+    }
 
       // Replace icon string with JSX component
       const withIcons = data.map((tx) => ({

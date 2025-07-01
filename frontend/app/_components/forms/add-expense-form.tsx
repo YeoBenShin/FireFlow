@@ -49,6 +49,13 @@ const categoryIconMap: Record<string, string> = {
   other: "DollarSign",
 }
 
+const iconMap = {
+  DollarSign: <DollarSign className="w-5 h-5" />,
+  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
+  Home: <Home className="w-5 h-5" />,
+  Bus: <Bus className="w-5 h-5" />,
+  Utensils: <Utensils className="w-5 h-5" />,
+};
 
 const formSchema = z.object({
   category: z.string().min(1, "Please select a category"),
@@ -57,14 +64,6 @@ const formSchema = z.object({
   description: z.string().min(1, "Title is required"),
   //notes: z.string().optional(),
 })
-
-  const iconMap = {
-  DollarSign: <DollarSign className="w-5 h-5" />,
-  ShoppingBag: <ShoppingBag className="w-5 h-5" />,
-  Home: <Home className="w-5 h-5" />,
-  Bus: <Bus className="w-5 h-5" />,
-  Utensils: <Utensils className="w-5 h-5" />,
-};
 
 export function AddExpenseForm({
   onClose,
@@ -81,13 +80,13 @@ export function AddExpenseForm({
     defaultValues: {
       category: "",
       dateTime: "",
-      amount: "25.00",
-      description: "",
+      amount: "0.00",
+      description: "",  
       //notes: "",
     },
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) { 
     setIsSubmitting(true)
 
     console.log("Form data ready to send:", values) //check in console if the object is really created
@@ -95,7 +94,7 @@ export function AddExpenseForm({
      try {
       const payload = {
         ...values,
-        trans_id: Math.floor(Math.random() * 10000), // Simulate unique ID
+        // trans_id: Math.floor(Math.random() * 10000), // Simulate unique ID
         dateTime: new Date(values.dateTime).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "expense",
@@ -104,6 +103,7 @@ export function AddExpenseForm({
       // Send POST request to backend
       const response = await fetch("http://localhost:5100/api/transactions/create", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
