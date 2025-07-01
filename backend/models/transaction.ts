@@ -17,4 +17,5 @@ export interface FilteredTransaction {
     dateDirection: 'before' | 'after' | 'on';
     category: Array<string>;
     userId: string;  
+    numOfTrx: number;
 }

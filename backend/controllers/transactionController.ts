@@ -82,7 +82,7 @@ export const updateTransaction = async (req: Request, res: Response) => {
 
 export const getFilterTransactions = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
-  const { description, type, amount, amountDirection, dateTime, dateDirection, category}: FilteredTransaction = req.body;
+  const { description, type, amount, amountDirection, dateTime, dateDirection, category, numOfTrx}: FilteredTransaction = req.body;
 
   try {
     // building up a query object in memory. Nothing happens until you await.
@@ -113,6 +113,10 @@ export const getFilterTransactions = async (req: Request, res: Response) => {
       query = query.lt('dateTime', dateTime);
     } else if (dateDirection === 'after' && dateTime) {
       query = query.gt('dateTime', dateTime);
+    }
+
+    if (numOfTrx) {
+      query = query.limit(numOfTrx);
     }
 
     const { data, error } = await query;
