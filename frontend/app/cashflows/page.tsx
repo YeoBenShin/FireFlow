@@ -30,11 +30,12 @@ import { AddExpenseForm } from "../_components/forms/add-expense-form";
 import { AddIncomeForm } from "../_components/forms/add-income-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { useIsMobile } from "../_hooks/use-mobile";
+import { Transaction } from "@/../backend/models/transaction";
 
 export default function CashflowsPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("monthly");
+  const [timeFilter, setTimeFilter] = useState("Monthly");
   const [activeForm, setActiveForm] = useState<"expense" | "income" | null>(
     null
   );
@@ -52,7 +53,7 @@ export default function CashflowsPage() {
 
   // Chart data for different time periods
   const chartData = {
-    yearly: {
+    Yearly: {
       labels: ["2020", "2021", "2022", "2023", "2024"],
       datasets: [
         {
@@ -73,7 +74,7 @@ export default function CashflowsPage() {
         },
       ],
     },
-    monthly: {
+    Monthly: {
       labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
       datasets: [
         {
@@ -94,7 +95,7 @@ export default function CashflowsPage() {
         },
       ],
     },
-    daily: {
+    Daily: {
       labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
       datasets: [
         {
@@ -115,7 +116,7 @@ export default function CashflowsPage() {
         },
       ],
     },
-    recent: {
+    Recent: {
       labels: ["March 22", "April 08", "April 15", "April 24", "April 30"],
       datasets: [
         {
@@ -163,7 +164,7 @@ export default function CashflowsPage() {
     Utensils: <Utensils className="w-5 h-5" />,
   };
 
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,7 +174,7 @@ export default function CashflowsPage() {
       const data = await res.json();
 
 
-      console.log("🧾 Transactions fetched:", data);
+      // console.log("🧾 Transactions fetched:", data);
       // If your API returns { transactions: [...] }
       const txArray = Array.isArray(data) ? data : data.transactions;
 
@@ -181,7 +182,7 @@ export default function CashflowsPage() {
         console.error("Expected an array of transactions but got:", txArray);
         setTransactions([]);
         return;
-    }
+      }
 
       // Replace icon string with JSX component
       const withIcons = data.map((tx) => ({
@@ -350,23 +351,23 @@ export default function CashflowsPage() {
             ) : (
               <Card className="mb-6">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl">Monthly Chart</CardTitle>
+                  <CardTitle className="text-xl">{timeFilter} Chart</CardTitle>
                   <div className="flex items-center gap-2">
                     <Tabs value={timeFilter} onValueChange={setTimeFilter}>
                       <TabsList>
-                        <TabsTrigger value="yearly">
+                        <TabsTrigger value="Yearly">
                           <CalendarRange className="w-4 h-4 mr-2" />
                           Yearly
                         </TabsTrigger>
-                        <TabsTrigger value="monthly">
+                        <TabsTrigger value="Monthly">
                           <CalendarDays className="w-4 h-4 mr-2" />
                           Monthly
                         </TabsTrigger>
-                        <TabsTrigger value="daily">
+                        <TabsTrigger value="Daily">
                           <Calendar className="w-4 h-4 mr-2" />
                           Daily
                         </TabsTrigger>
-                        <TabsTrigger value="recent">
+                        <TabsTrigger value="Recent">
                           <Filter className="w-4 h-4 mr-2" />
                           Recent
                         </TabsTrigger>
@@ -383,7 +384,7 @@ export default function CashflowsPage() {
                   </div>
 
                   {/* Legend */}
-                  <div className="flex justify-center gap-8 mb-6">
+                  {/* <div className="flex justify-center gap-8 mb-6">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-blue-500 rounded"></div>
                       <span className="text-sm font-medium">Income</span>
@@ -392,7 +393,7 @@ export default function CashflowsPage() {
                       <div className="w-4 h-4 bg-amber-900 rounded"></div>
                       <span className="text-sm font-medium">Expenses</span>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Summary Cards */}
                   <div className="grid grid-cols-3 gap-4">
@@ -404,7 +405,7 @@ export default function CashflowsPage() {
                         </span>
                       </div>
                       <div className="text-2xl font-bold text-gray-800">
-                        ${totalIncome}
+                        ${totalIncome.toFixed(2)}
                       </div>
                     </Card>
 
@@ -416,7 +417,7 @@ export default function CashflowsPage() {
                         </span>
                       </div>
                       <div className="text-2xl font-bold text-gray-800">
-                        -${totalExpenses}
+                        -${totalExpenses.toFixed(2)}
                       </div>
                     </Card>
 
@@ -428,7 +429,7 @@ export default function CashflowsPage() {
                         </span>
                       </div>
                       <div className="text-2xl font-bold text-gray-800">
-                        ${totalBalance}
+                        ${totalBalance.toFixed(2)}
                       </div>
                     </Card>
                   </div>
@@ -482,7 +483,7 @@ export default function CashflowsPage() {
                                       : "text-red-600"
                                   }`}
                                 >
-                                  {transaction.type === "income" ? "+" : ""}$
+                                  {transaction.type === "income" ? "+" : "-"}$
                                   {Math.abs(transaction.amount).toFixed(2)}
                                 </div>
                               </div>

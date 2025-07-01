@@ -35,7 +35,7 @@ export function LineChart({ data, title }: LineChartProps) {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "top" as const,
+        position: "bottom" as const,
       },
       title: {
         display: !!title,
