@@ -18,6 +18,7 @@ import {
   Bus,
   Utensils,
 } from "lucide-react"
+import { Icon } from "next/dist/lib/metadata/types/metadata-types"
 
 const expenseCategories = [
   { id: "food", name: "Food & Dining" },
@@ -34,7 +35,9 @@ const expenseCategories = [
   { id: "other", name: "Other" },
 ]
 
-const categoryIconMap: Record<string, string> = {
+type IconName = "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils";
+
+const categoryIconMap: Record<string, IconName> = {
   food: "Utensils",
   transport: "Bus",
   medicine: "DollarSign", 
@@ -49,7 +52,7 @@ const categoryIconMap: Record<string, string> = {
   other: "DollarSign",
 }
 
-const iconMap = {
+const iconMap: Record<IconName, JSX.Element> = {
   DollarSign: <DollarSign className="w-5 h-5" />,
   ShoppingBag: <ShoppingBag className="w-5 h-5" />,
   Home: <Home className="w-5 h-5" />,
