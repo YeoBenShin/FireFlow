@@ -38,7 +38,7 @@ export const getAllFriends = async (req: Request, res: Response) => {
 
     const { data, error } = await supabase
       .from('user')
-      .select('username, name')
+      .select('username, name, friend(status, relationship)')
       .in('user_id', allFriendIds);
 
     if (error) {
