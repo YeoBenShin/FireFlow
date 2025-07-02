@@ -15,11 +15,6 @@ import { LineChart } from "../_components/charts/line-chart";
 import {
   Download,
   Info,
-  DollarSign,
-  ShoppingBag,
-  Home,
-  Bus,
-  Utensils,
   Filter,
   Calendar,
   CalendarDays,
@@ -31,17 +26,110 @@ import { AddIncomeForm } from "../_components/forms/add-income-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { useIsMobile } from "../_hooks/use-mobile";
 import { Transaction } from "@/../backend/models/transaction";
+import { LineChartProps } from "../_components/charts/line-chart";
+import { RecentTransactions } from "../_components/recent-transactions";
+import type { LineChartProps as ChartProps } from "../_components/charts/line-chart";
+import { addDays, startOfMonth, endOfMonth, format } from 'date-fns';
 
 interface TransactionWithExtras extends Transaction {
   icon: JSX.Element;
   month: string;
 }
 
+function TransactionFilterForm({ onFilter, startDate, endDate, setStartDate, setEndDate }: { onFilter: (filters: any) => void, startDate: string, endDate: string, setStartDate: (d: string) => void, setEndDate: (d: string) => void }) {
+  const [type, setType] = useState("");
+  const [category, setCategory] = useState("");
+
+  // All categories from categoryIconMap, separated by type
+  const expenseCategories = [
+    "food",
+    "transport",
+    "medicine",
+    "groceries",
+    "rent",
+    "gifts",
+    "savings",
+    "entertainment",
+    "utilities",
+    "shopping",
+    "education",
+    "other",
+  ];
+  const incomeCategories = [
+    "salary",
+    "freelance",
+    "tutoring",
+    "investment",
+    "bonus",
+    "rental",
+    "business",
+    "commission",
+    "dividend",
+    "gift",
+  ];
+
+  // Helper to build backend filter payload
+  function buildFilterPayload() {
+    const payload: any = {};
+    if (type) payload.type = type;
+    if (category) payload.category = [category];
+    // Date range logic
+    if (startDate && endDate) {
+      payload.startDate = startDate;
+      payload.endDate = endDate;
+    } else if (startDate) {
+      payload.dateDirection = "on";
+      payload.dateTime = startDate;
+    } else if (endDate) {
+      payload.dateDirection = "on";
+      payload.dateTime = endDate;
+    }
+    return payload;
+  }
+
+  return (
+    <form
+      className="flex flex-wrap gap-4 mb-4 items-end"
+      onSubmit={e => {
+        e.preventDefault();
+        onFilter(buildFilterPayload());
+      }}
+    >
+      <select value={type} onChange={e => setType(e.target.value)} className="border rounded p-2">
+        <option value="">All Types</option>
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+      <select value={category} onChange={e => setCategory(e.target.value)} className="border rounded p-2">
+        <option value="">All Categories</option>
+        <optgroup label="Expense Categories">
+          {expenseCategories.map(cat => (
+            <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+          ))}
+        </optgroup>
+        <optgroup label="Income Categories">
+          {incomeCategories.map(cat => (
+            <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+          ))}
+        </optgroup>
+      </select>
+      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border rounded p-2" placeholder="Start date" />
+      <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-2" placeholder="End date" />
+      <button type="submit" className="bg-orange-500 text-white px-4 py-2 rounded">Filter</button>
+      {(startDate || endDate) && (
+        <button type="button" className="ml-2 text-orange-500 underline" onClick={() => { setStartDate(""); setEndDate(""); onFilter({}); }}>
+          Clear Dates
+        </button>
+      )}
+    </form>
+  );
+}
+
 export default function CashflowsPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [chartData, setChartData] = useState({} as ChartGroup);
+  const [timeFilter, setTimeFilter] = useState<"Yearly" | "Monthly" | "Daily" | "Recent">("Monthly");
+  const [chartData, setChartData] = useState<Record<string, ChartProps>>({});
   const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -50,6 +138,9 @@ export default function CashflowsPage() {
     null
   );
   const isMobile = useIsMobile();
+  const [filteredTransactions, setFilteredTransactions] = useState<TransactionWithExtras[] | null>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Check URL parameters on component mount
   useEffect(() => {
@@ -61,92 +152,42 @@ export default function CashflowsPage() {
     }
   }, [searchParams]);
 
-  type IconName = "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils";
-
-  const categoryIconMap: Record<string, IconName> = {
-    food: "Utensils",
-    transport: "Bus",
-    medicine: "DollarSign",
-    groceries: "ShoppingBag",
-    rent: "Home",
-    gifts: "ShoppingBag",
-    savings: "DollarSign",
-    entertainment: "ShoppingBag",
-    utilities: "DollarSign",
-    shopping: "ShoppingBag",
-    education: "DollarSign",
-    other: "DollarSign",
-  };
-
-  const iconMap: Record<IconName, JSX.Element> = {
-    DollarSign: <DollarSign className="w-5 h-5" />,
-    ShoppingBag: <ShoppingBag className="w-5 h-5" />,
-    Home: <Home className="w-5 h-5" />,
-    Bus: <Bus className="w-5 h-5" />,
-    Utensils: <Utensils className="w-5 h-5" />,
-  };
-
   function getAllMonthsOfCurrentYear(): string[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const months: string[] = [];
+    const now = new Date();
+    const year = now.getFullYear();
+    const months: string[] = [];
 
-  for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-    const date = new Date(year, monthIndex);
-    const monthStr = date.toLocaleString("en-GB", { month: "short" }); // Jan, Feb, etc.
-    months.push(`${monthStr} ${year}`);
+    for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+      const date = new Date(year, monthIndex);
+      const monthStr = date.toLocaleString("en-GB", { month: "short" }); // Jan, Feb, etc.
+      months.push(`${monthStr} ${year}`);
+    }
+
+    return months;
   }
 
-  return months;
-}
+  function getAllDaysOfCurrentMonth(): string[] {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
 
-function getAllDaysOfCurrentMonth(): string[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+    // Get last day of this month
+    const lastDay = new Date(year, month + 1, 0).getDate();
 
-  // Get last day of this month
-  const lastDay = new Date(year, month + 1, 0).getDate();
+    const days: string[] = [];
 
-  const days: string[] = [];
+    for (let day = 1; day <= lastDay; day++) {
+      const date = new Date(year, month, day);
+      const dayStr = date.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+      days.push(dayStr);
+    }
 
-  for (let day = 1; day <= lastDay; day++) {
-    const date = new Date(year, month, day);
-    const dayStr = date.toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    days.push(dayStr);
+    return days;
   }
-
-  return days;
-}
-
-interface ChartGroup {
-  [key: string]: {
-    labels: string[];
-    datasets: {
-      label: string;
-      data: number[];
-      borderColor: string;
-      backgroundColor: string;
-      fill?: boolean;
-      tension?: number;
-    }[];
-  }
-}
-
-function setSummaryData() {
-  // for initial load
-  const incomeData = chartData[timeFilter].datasets[0].data;
-  const expenseData = chartData[timeFilter].datasets[1].data;
-  const tIncome = incomeData.reduce((sum, value) => sum + value, 0);
-  const tExpense = expenseData.reduce((sum, value) => sum + value, 0);
-  setTotalIncome(tIncome);
-  setTotalExpenses(tExpense);
-  setTotalBalance(tIncome - tExpense);
-}
 
   useEffect(() => {
     // Fetch recent transactions from the backend
@@ -154,19 +195,16 @@ function setSummaryData() {
       const res = await fetch("http://localhost:5100/api/transactions", {
         credentials: "include",
       });
-      const data = await res.json();
+      const data: TransactionWithExtras[] = await res.json();
 
       // Replace icon string with JSX component
-      const withIcons = data.map((tx) => ({
+      const withIcons = data.map((tx: TransactionWithExtras) => ({
         ...tx,
         dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "long",
           year: "numeric",
         }),
-        icon: iconMap[categoryIconMap[tx.category]] || (
-          <DollarSign className="w-5 h-5" />
-        ),
         month: new Date(tx.dateTime).toLocaleString("default", {
           month: "long",
         }),
@@ -176,137 +214,139 @@ function setSummaryData() {
     };
 
     // fetching data for the charts
-
-  const fetchChartData = async () => {
-    // monthly expenses
-    let res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=expense", {
+    const fetchChartData = async () => {
+      // monthly expenses
+      let res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=expense", {
         credentials: "include",
       });
-    const monthlyExpenses = await res.json();
+      const monthlyExpenses = await res.json();
 
-    // monthly income
-    res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=income", {
+      // monthly income
+      res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=income", {
         credentials: "include",
       });
-    const monthlyIncome = await res.json();
-    const monthLabels = getAllMonthsOfCurrentYear(); //[...new Set([...Object.keys(monthlyExpenses || {}), ...Object.keys(monthlyIncome || {})])];
+      const monthlyIncome = await res.json();
+      const monthLabels = getAllMonthsOfCurrentYear(); //[...new Set([...Object.keys(monthlyExpenses || {}), ...Object.keys(monthlyIncome || {})])];
 
-    // yearly expenses
-    res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=expense", {
+      // yearly expenses
+      res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=expense", {
         credentials: "include",
       });
-    const yearlyExpenses = await res.json();
+      const yearlyExpenses = await res.json();
 
-    // yearly income
-    res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=income", {
+      // yearly income
+      res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=income", {
         credentials: "include",
       });
-    const yearlyIncome = await res.json();
-    const yearLabels = [...new Set([...Object.keys(yearlyExpenses || {}), ...Object.keys(yearlyIncome || {})])].sort();
+      const yearlyIncome = await res.json();
+      const yearLabels = [...new Set([...Object.keys(yearlyExpenses || {}), ...Object.keys(yearlyIncome || {})])].sort();
 
-    // month expenses
-    res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=expense", {
+      // month expenses
+      res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=expense", {
         credentials: "include",
       });
-    const monthExpenses = await res.json();
+      const monthExpenses = await res.json();
 
-    // month income
-    res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=income", {
+      // month income
+      res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=income", {
         credentials: "include",
       });
-    const monthIncome = await res.json();
-    const dailyLabels = getAllDaysOfCurrentMonth(); //[...new Set([...Object.keys(monthExpenses || {}), ...Object.keys(monthIncome || {})])];
+      const monthIncome = await res.json();
+      const dailyLabels = getAllDaysOfCurrentMonth(); //[...new Set([...Object.keys(monthExpenses || {}), ...Object.keys(monthIncome || {})])];
 
-    // console.log("Month Expenses:", monthExpenses);
-    // console.log("Test:", dailyLabels.map(label => monthExpenses?.[label] ?? 0));
+      // console.log("Month Expenses:", monthExpenses);
+      // console.log("Test:", dailyLabels.map(label => monthExpenses?.[label] ?? 0));
 
-    const chartData = {
-      Yearly: {
-        labels: yearLabels,
-        datasets: [
-          {
-            label: "Income",
-            data: yearLabels.map(label => yearlyIncome?.[label] ?? 0),
-            borderColor: "#3B82F6", // blue
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-          {
-            label: "Expenses",
-            data: yearLabels.map(label => yearlyExpenses?.[label] ?? 0),
-            borderColor: "#7C2D12", // dark brown/red
-            backgroundColor: "rgba(124, 45, 18, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-        ],
-      },
-      Monthly: {
-        labels: monthLabels,
-        datasets: [
-          {
-            label: "Income",
-            data: monthLabels.map(label => monthlyIncome?.[label] ?? 0),
-            borderColor: "#3B82F6", // blue
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-          {
-            label: "Expenses",
-            data: monthLabels.map(label => monthlyExpenses?.[label] ?? 0),
-            borderColor: "#7C2D12", // dark brown/red
-            backgroundColor: "rgba(124, 45, 18, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-        ],
-      },
-      Daily: {
-        labels: dailyLabels,
-        datasets: [
-          {
-            label: "Income",
-            data: dailyLabels.map(label => monthIncome?.[label] ?? 0),
-            borderColor: "#3B82F6", // blue
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-          {
-            label: "Expenses",
-            data: dailyLabels.map(label => monthExpenses?.[label] ?? 0),
-            borderColor: "#7C2D12", // dark brown/red
-            backgroundColor: "rgba(124, 45, 18, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-        ],
-      },
-      Recent: {
-        labels: ["March 22", "April 08", "April 15", "April 24", "April 30"],
-        datasets: [
-          {
-            label: "Income",
-            data: [0, 0, 0, 0, 4000],
-            borderColor: "#3B82F6", // blue
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-          {
-            label: "Expenses",
-            data: [70, 48, 1574, 100, 0],
-            borderColor: "#7C2D12", // dark brown/red
-            backgroundColor: "rgba(124, 45, 18, 0.1)",
-            fill: false,
-            tension: 0.1,
-          },
-        ],
-      },
-    };
-    setChartData(chartData);
+      const chartData: Record<string, ChartProps> = {
+        Yearly: {
+          labels: yearLabels,
+          datasets: [
+            {
+              label: "Income",
+              data: yearLabels.map((label: string) => yearlyIncome?.[label] ?? 0),
+              borderColor: "#3B82F6", // blue
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+            {
+              label: "Expenses",
+              data: yearLabels.map((label: string) => yearlyExpenses?.[label] ?? 0),
+              borderColor: "#7C2D12", // dark brown/red
+              backgroundColor: "rgba(124, 45, 18, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+          ],
+        },
+        Monthly: {
+          labels: monthLabels,
+          datasets: [
+            {
+              label: "Income",
+              data: monthLabels.map((label: string) => monthlyIncome?.[label] ?? 0),
+              borderColor: "#3B82F6", // blue
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+            {
+              label: "Expenses",
+              data: monthLabels.map((label: string) => monthlyExpenses?.[label] ?? 0),
+              borderColor: "#7C2D12", // dark brown/red
+              backgroundColor: "rgba(124, 45, 18, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+          ],
+        },
+        Daily: {
+          labels: dailyLabels,
+          datasets: [
+            {
+              label: "Income",
+              data: dailyLabels.map((label: string) => monthIncome?.[label] ?? 0),
+              borderColor: "#3B82F6", // blue
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+            {
+              label: "Expenses",
+              data: dailyLabels.map((label: string) => monthExpenses?.[label] ?? 0),
+              borderColor: "#7C2D12", // dark brown/red
+              backgroundColor: "rgba(124, 45, 18, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+          ],
+        },
+        Recent: {
+          labels: ["March 22", "April 08", "April 15", "April 24", "April 30"],
+          datasets: [
+            {
+              label: "Income",
+              data: [0, 0, 0, 0, 4000],
+              borderColor: "#3B82F6", // blue
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+            {
+              label: "Expenses",
+              data: [70, 48, 1574, 100, 0],
+              borderColor: "#7C2D12", // dark brown/red
+              backgroundColor: "rgba(124, 45, 18, 0.1)",
+              fill: false,
+              tension: 0.1,
+            },
+          ],
+        },
+      };
+
+      setChartData(chartData);
+      // console.log("Chart data fetched:", chartData);
+      // console.log(chartData[timeFilter as keyof typeof chartData]);
     };
 
     fetchData();
@@ -327,7 +367,7 @@ function setSummaryData() {
     setTransactions((prev) => {
       const updated = [newTx, ...prev];
       // Sort by dateTime descending (most recent first)
-      return updated.sort((a, b) => {
+      return updated.sort((a: TransactionWithExtras, b: TransactionWithExtras) => {
         const dateA = new Date(a.dateTime);
         const dateB = new Date(b.dateTime);
         return dateB.getTime() - dateA.getTime();
@@ -335,54 +375,7 @@ function setSummaryData() {
     });
   };
  
-  // Filter transactions based on the selected timeFilter
-  function getFilteredTransactions() {
-    // if (timeFilter === "Yearly") {
-    //   const currentYear = new Date().getFullYear();
-    //   return transactions.filter(tx => {
-    //     const txYear = new Date(tx.dateTime).getFullYear();
-    //     return txYear === currentYear;
-    //   });
-    // }
-    if (timeFilter === "Monthly") {
-      const now = new Date();
-      return transactions.filter(tx => {
-        const txDate = new Date(tx.dateTime);
-        return (
-          txDate.getFullYear() === now.getFullYear()
-        );
-      });
-    }
-    if (timeFilter === "Daily") {
-      const now = new Date();
-      return transactions.filter(tx => {
-        const txDate = new Date(tx.dateTime);
-        return (
-          txDate.getFullYear() === now.getFullYear() &&
-          txDate.getMonth() === now.getMonth()
-        );
-      });
-    }
-    if (timeFilter === "Recent") {
-      return transactions.slice(0, 5);
-    }
-    return transactions;
-  }
-
-  // Group filtered transactions by month
-  const groupedTransactions = getFilteredTransactions().reduce((acc, transaction) => {
-    if (!acc[transaction.month]) {
-      acc[transaction.month] = [];
-    }
-    acc[transaction.month].push(transaction);
-    return acc;
-  }, {} as Record<string, typeof transactions>);
-
-  // const filteredTransactions =
-  //   activeTab === "all"
-  //     ? transactions
-  //     : transactions.filter((t) => t.type === activeTab);
-
+  
   // Calculate totals
   // const totalIncome = transactions
   //   .filter((t) => t.type === "income")
@@ -399,6 +392,52 @@ function setSummaryData() {
     // Clear URL parameters
     window.history.replaceState({}, "", "/cashflows");
   };
+
+  const handleFilter = async (filters: any) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setFilteredTransactions([]);
+      return;
+    }
+    try {
+      const res = await fetch("http://localhost:5100/api/transactions/filter", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(filters),
+      });
+      if (!res.ok) throw new Error("Failed to fetch filtered transactions");
+      const data = await res.json();
+      setFilteredTransactions(data);
+    } catch (err) {
+      setFilteredTransactions([]);
+    }
+  };
+
+  // Add this function to calculate and set summary data
+  function setSummaryData() {
+    const chart = chartData[timeFilter];
+    if (!chart || !chart.data || !chart.data.datasets) {
+      setTotalIncome(0);
+      setTotalExpenses(0);
+      setTotalBalance(0);
+      return;
+    }
+    let income = 0;
+    let expenses = 0;
+    chart.data.datasets.forEach((ds: { label: string; data: number[] }) => {
+      if (ds.label === 'Income') {
+        income = ds.data.reduce((sum: number, v: number) => sum + v, 0);
+      } else if (ds.label === 'Expenses') {
+        expenses = ds.data.reduce((sum: number, v: number) => sum + v, 0);
+      }
+    });
+    setTotalIncome(income);
+    setTotalExpenses(Math.abs(expenses));
+    setTotalBalance(income - Math.abs(expenses));
+  }
 
   return (
     <MainLayout>
@@ -475,207 +514,197 @@ function setSummaryData() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Monthly Chart or Form */}
-          <div className="lg:col-span-2">
-            {!isMobile && activeForm ? (
-              <Card className="mb-6">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl">
-                    {activeForm === "expense" ? "Add Expense" : "Add Income"}
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCloseForm}
-                    className="rounded-full h-8 w-8"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {activeForm === "expense" ? (
-                    <AddExpenseForm
-                      onClose={handleCloseForm}
-                      onAddTransaction={handleAddTransaction}
-                    />
-                  ) : (
-                    <AddIncomeForm
-                      onClose={handleCloseForm}
-                      onAddTransaction={handleAddTransaction}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="mb-6">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl">{timeFilter} Chart</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Tabs value={timeFilter} onValueChange={setTimeFilter}>
-                      <TabsList>
-                        <TabsTrigger value="Yearly">
-                          <CalendarRange className="w-4 h-4 mr-2" />
-                          Yearly
-                        </TabsTrigger>
-                        <TabsTrigger value="Monthly">
-                          <CalendarDays className="w-4 h-4 mr-2" />
-                          Monthly
-                        </TabsTrigger>
-                        <TabsTrigger value="Daily">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          This Month
-                        </TabsTrigger>
-                        <TabsTrigger value="Recent">
-                          <Filter className="w-4 h-4 mr-2" />
-                          Recent
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                    <Info className="w-5 h-5 text-gray-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80 mb-6">
-                    {chartData[timeFilter as keyof typeof chartData] ?
-                    <LineChart
-                      data={chartData[timeFilter as keyof typeof chartData]}
-                    />
-                    : <p>Loading chart...</p>}
-                  </div>
-
-                  {/* Legend */}
-                  {/* <div className="flex justify-center gap-8 mb-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                      <span className="text-sm font-medium">Income</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-amber-900 rounded"></div>
-                      <span className="text-sm font-medium">Expenses</span>
-                    </div>
-                  </div> */}
-
-                  <div className="flex justify-center gap-8 mb-6">
-                      <span className="text-xl font-medium">
-                        {
-                          timeFilter === "Yearly"
-                            ? "Life Time Cashflow"
-                            : timeFilter === "Monthly"
-                            ? "Cashflow This Year"
-                            : timeFilter === "Daily"
-                            ? "Cashflow This Month"
-                            : "Filtered Cashflow"
-                        }
-                        </span>
-                  </div>
-
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <Card className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">
-                          Total Income
-                        </span>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-800">
-                        ${totalIncome.toFixed(2)}
-                      </div>
-                    </Card>
-
-                    <Card className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">
-                          Total Expenses
-                        </span>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-800">
-                        ${totalExpenses.toFixed(2)}
-                      </div>
-                    </Card>
-
-                    <Card className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">
-                          Total Balance
-                        </span>
-                      </div>
-                      <div className={`text-2xl font-bold ${
-                                    totalBalance > 0
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}>
-                        ${totalBalance.toFixed(2)}
-                      </div>
-                    </Card>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Recent Transactions */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl">Transactions</CardTitle>
+        {/* Chart or Form Section - full width */}
+        <div className="w-full">
+          {!isMobile && activeForm ? (
+            <Card className="mb-6">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl">
+                  {activeForm === "expense" ? "Add Expense" : "Add Income"}
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCloseForm}
+                  className="rounded-full h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {Object.entries(groupedTransactions).map(
-                    ([month, monthTransactions]) => (
-                      <div key={month}>
-                        <h3 className="font-semibold text-lg mb-4">{month}</h3>
-                        <div className="space-y-4">
-                          {monthTransactions
-                            .filter(
-                              (transaction) =>
-                                activeTab === "all" ||
-                                transaction.type === activeTab
-                            )
-                            .map((transaction: TransactionWithExtras) => (
-                              <div
-                                key={transaction.transId}
-                                className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
-                              >
-                                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
-                                  {transaction.icon}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold text-gray-800">
-                                    {transaction.description}
-                                  </div>
-                                  <div className="text-sm text-gray-600">
-                                    {transaction.category}
-                                  </div>
-                                  <div className="text-xs text-orange-500">
-                                    {transaction.dateTime}
-                                  </div>
-                                </div>
-                                <div
-                                  className={`font-bold ${
-                                    transaction.type === "income"
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}
-                                >
-                                  {transaction.type === "income" ? "+" : "-"}$
-                                  {Math.abs(transaction.amount).toFixed(2)}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )
-                  )}
+                {activeForm === "expense" ? (
+                  <AddExpenseForm
+                    onClose={handleCloseForm}
+                    onAddTransaction={handleAddTransaction}
+                  />
+                ) : (
+                  <AddIncomeForm
+                    onClose={handleCloseForm}
+                    onAddTransaction={handleAddTransaction}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="mb-6 w-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl">{timeFilter} Chart</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Tabs value={timeFilter} onValueChange={setTimeFilter}>
+                    <TabsList>
+                      <TabsTrigger value="Yearly">
+                        <CalendarRange className="w-4 h-4 mr-2" />
+                        Yearly
+                      </TabsTrigger>
+                      <TabsTrigger value="Monthly">
+                        <CalendarDays className="w-4 h-4 mr-2" />
+                        Monthly
+                      </TabsTrigger>
+                      <TabsTrigger value="Daily">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        This Month
+                      </TabsTrigger>
+                      <TabsTrigger value="Recent">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Recent
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <Info className="w-5 h-5 text-gray-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80 mb-6">
+                  {chartData[timeFilter] ?
+                  <LineChart
+                    data={chartData[timeFilter]}
+                  />
+                  : <p>Loading chart...</p>}
+                </div>
+                {/* Summary Cards */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  <Card className="p-4 flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
+                      <span className="text-sm text-gray-600">
+                        Total Income
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      ${totalIncome.toFixed(2)}
+                    </div>
+                  </Card>
+                  <Card className="p-4 flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
+                      <span className="text-sm text-gray-600">
+                        Total Expenses
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      ${totalExpenses.toFixed(2)}
+                    </div>
+                  </Card>
+                  <Card className="p-4 flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
+                      <span className="text-sm text-gray-600">
+                        Total Balance
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      ${totalBalance.toFixed(2)}
+                    </div>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
         </div>
+        {/* Transactions - full width below charts */}
+        <Card className="mb-6 w-full">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-xl">Transactions</CardTitle>
+              <button type="button" className="bg-gray-100 text-gray-800 px-3 py-2 rounded" onClick={() => {
+                const today = format(new Date(), 'yyyy-MM-dd');
+                setStartDate(today);
+                setEndDate(today);
+                handleFilter({ startDate: today, endDate: today });
+              }}>
+                Today
+              </button>
+              <button type="button" className="bg-gray-100 text-gray-800 px-3 py-2 rounded" onClick={() => {
+                const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+                const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+                setStartDate(start);
+                setEndDate(end);
+                handleFilter({ startDate: start, endDate: end });
+              }}>
+                This Month
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <TransactionFilterForm onFilter={handleFilter} startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+            {filteredTransactions === null ? (
+              <RecentTransactions timeFilter={timeFilter} />
+            ) : (
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                {filteredTransactions.length === 0 ? (
+                  <div className="text-gray-500">No transactions found.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredTransactions.map((transaction) => {
+                      const dateObj = new Date(transaction.dateTime)
+                      const date = dateObj.toLocaleDateString(undefined, {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                      const time = dateObj.toLocaleTimeString(undefined, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                      // Use the same icon logic as RecentTransactions
+                      const iconKey = transaction.category in {
+                        food: 1, transport: 1, medicine: 1, groceries: 1, rent: 1, gifts: 1, savings: 1, entertainment: 1, utilities: 1, shopping: 1, education: 1, other: 1, salary: 1, freelance: 1, tutoring: 1, investment: 1, bonus: 1, rental: 1, business: 1, commission: 1, dividend: 1, gift: 1
+                      } ? transaction.category : "other";
+                      const iconMap = {
+                        DollarSign: <span className="inline-block w-5 h-5 bg-gray-300 rounded-full" />,
+                        ShoppingBag: <span className="inline-block w-5 h-5 bg-gray-300 rounded-full" />,
+                        Home: <span className="inline-block w-5 h-5 bg-gray-300 rounded-full" />,
+                        Bus: <span className="inline-block w-5 h-5 bg-gray-300 rounded-full" />,
+                        Utensils: <span className="inline-block w-5 h-5 bg-gray-300 rounded-full" />,
+                      };
+                      // For now, use DollarSign for all
+                      const icon = iconMap.DollarSign;
+                      return (
+                        <div key={transaction.transId}>
+                          <div className="text-sm text-gray-600 mb-2">{date}</div>
+                          <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+                              {icon}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-800">{transaction.description}</div>
+                              <div className="text-sm text-gray-600">{transaction.category}</div>
+                              <div className="text-xs text-orange-500">{time}</div>
+                            </div>
+                            <div className={`font-bold ${transaction.type === "income" ? "text-green-600" : "text-red-600"}`}>
+                              {transaction.type === "income" ? "+" : "-"}${Math.abs(transaction.amount).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

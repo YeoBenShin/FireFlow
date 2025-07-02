@@ -25,7 +25,8 @@ export default function HomePage() {
           {/* Right Column */}
           <div className="lg:col-span-2 space-y-6">
             <GoalsSection />
-            <RecentTransactions />
+            <h2 className="text-lg font-bold text-gray-800">Recent Transactions</h2>
+            <RecentTransactions timeFilter="Recent" />
           </div>
         </div>
       </div>

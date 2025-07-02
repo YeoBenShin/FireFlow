@@ -96,13 +96,11 @@ export const updateTransaction = async (req: Request, res: Response) => {
 
 export const getFilterTransactions = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
-  let { description, type, amount, amountDirection, dateTime, dateDirection, category, numOfTrx }: FilteredTransaction = req.body;
+  let { description, type, amount, amountDirection, dateTime, dateDirection, category, numOfTrx, timeFilter }: FilteredTransaction & { timeFilter?: string } = req.body;
 
   try {
-    // Default to 5 transactions if numOfTrx is not provided
-    numOfTrx = numOfTrx || 5;
-    // building up a query object in memory. Nothing happens until you await.
-    let query = supabase.from('transaction').select('*').eq('user_id', userId);
+    // Only limit to 20 
+    let query = supabase.from('transaction').select('*').eq('user_id', userId).limit(20);
 
     if (description) {
       query = query.ilike('description', `%${description}%`);
@@ -122,7 +120,12 @@ export const getFilterTransactions = async (req: Request, res: Response) => {
       query = query.lt('amount', amount);
     }
 
-    if (dateDirection === 'on' && dateTime) {
+    // Date filtering
+    if (req.body.startDate && req.body.endDate) {
+      // Filter between two dates (inclusive)
+      query = query.gte('dateTime', req.body.startDate);
+      query = query.lte('dateTime', req.body.endDate + 'T23:59:59');
+    } else if (dateDirection === 'on' && dateTime) {
       query = query.gte('dateTime', dateTime);
       query = query.lt('dateTime', dateTime + 'T23:59:59');
     } else if (dateDirection === 'before' && dateTime) {
@@ -131,7 +134,10 @@ export const getFilterTransactions = async (req: Request, res: Response) => {
       query = query.gt('dateTime', dateTime);
     }
 
-    query = query.order('dateTime', { ascending: false }).limit(numOfTrx);
+    query = query.order('dateTime', { ascending: false });
+    if (timeFilter === 'Recent') {
+      query = query.limit(5);
+    }
 
     const { data, error } = await query;
 
