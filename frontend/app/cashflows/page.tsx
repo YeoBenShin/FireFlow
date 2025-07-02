@@ -31,6 +31,7 @@ import { AddIncomeForm } from "../_components/forms/add-income-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { useIsMobile } from "../_hooks/use-mobile";
 import { Transaction } from "@/../backend/models/transaction";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 
 interface TransactionWithExtras extends Transaction {
   icon: JSX.Element;
@@ -43,12 +44,15 @@ export default function CashflowsPage() {
   const [timeFilter, setTimeFilter] = useState("Monthly");
   const [chartData, setChartData] = useState({} as ChartGroup);
   const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<TransactionWithExtras[] | null>(null);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalBalance, setTotalBalance] = useState(0);
   const [activeForm, setActiveForm] = useState<"expense" | "income" | null>(
     null
   );
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const isMobile = useIsMobile();
 
   // Check URL parameters on component mount
@@ -400,6 +404,143 @@ function setSummaryData() {
     window.history.replaceState({}, "", "/cashflows");
   };
 
+  // Add TransactionFilterForm component for filtering transactions
+  function TransactionFilterForm({ onFilter, startDate, endDate, setStartDate, setEndDate }: { onFilter: (filters: any) => void, startDate: string, endDate: string, setStartDate: (d: string) => void, setEndDate: (d: string) => void }) {
+    const [type, setType] = useState("");
+    const [category, setCategory] = useState("");
+
+    // All categories from categoryIconMap, separated by type
+    const expenseCategories = [
+      "food",
+      "transport",
+      "medicine",
+      "groceries",
+      "rent",
+      "gifts",
+      "savings",
+      "entertainment",
+      "utilities",
+      "shopping",
+      "education",
+      "other",
+    ];
+    const incomeCategories = [
+      "salary",
+      "freelance",
+      "tutoring",
+      "investment",
+      "bonus",
+      "rental",
+      "business",
+      "commission",
+      "dividend",
+      "gift",
+    ];
+
+    // Helper to build backend filter payload
+    function buildFilterPayload() {
+      const payload: any = {};
+      if (type) payload.type = type;
+      if (category) payload.category = [category];
+      // Date range logic
+      if (startDate && endDate) {
+        payload.startDate = startDate;
+        payload.endDate = endDate;
+      } else if (startDate) {
+        payload.dateDirection = "on";
+        payload.dateTime = startDate;
+      } else if (endDate) {
+        payload.dateDirection = "on";
+        payload.dateTime = endDate;
+      }
+      return payload;
+    }
+
+    return (
+      <form
+        className="flex flex-wrap gap-4 mb-4 items-end"
+        onSubmit={e => {
+          e.preventDefault();
+          onFilter(buildFilterPayload());
+        }}
+      >
+        <select value={type} onChange={e => setType(e.target.value)} className="border rounded p-2">
+          <option value="">All Types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+        <select value={category} onChange={e => setCategory(e.target.value)} className="border rounded p-2">
+          <option value="">All Categories</option>
+          <optgroup label="Expense Categories">
+            {expenseCategories.map(cat => (
+              <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Income Categories">
+            {incomeCategories.map(cat => (
+              <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+            ))}
+          </optgroup>
+        </select>
+        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border rounded p-2" placeholder="Start date" />
+        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-2" placeholder="End date" />
+        <button type="submit" className="bg-orange-500 text-white px-4 py-2 rounded">Filter</button>
+        {(startDate || endDate) && (
+          <button type="button" className="ml-2 text-orange-500 underline" onClick={() => { setStartDate(""); setEndDate(""); onFilter({}); }}>
+            Clear Dates
+          </button>
+        )}
+      </form>
+    );
+  }
+
+  // Fetch all transactions once on mount, then filter in memory
+  useEffect(() => {
+    const fetchAll = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
+      const res = await fetch("http://localhost:5100/api/transactions", {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTransactions(data);
+        setFilteredTransactions(null);
+      }
+    };
+    fetchAll();
+  }, []);
+
+  // Filter handler: filter in memory
+  const handleFilter = (filters: any) => {
+    let filtered = [...transactions];
+    if (filters.type) {
+      filtered = filtered.filter((tx: Transaction) => tx.type === filters.type);
+    }
+    if (filters.category && filters.category.length > 0) {
+      filtered = filtered.filter((tx: Transaction) => filters.category.includes(tx.category));
+    }
+    if (filters.startDate && filters.endDate) {
+      filtered = filtered.filter((tx: Transaction) => {
+        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        return txDate >= filters.startDate && txDate <= filters.endDate;
+      });
+    } else if (filters.startDate) {
+      filtered = filtered.filter((tx: Transaction) => {
+        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        return txDate >= filters.startDate;
+      });
+    } else if (filters.endDate) {
+      filtered = filtered.filter((tx: Transaction) => {
+        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        return txDate <= filters.endDate;
+      });
+    }
+    setFilteredTransactions(filtered);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-8">
@@ -475,206 +616,220 @@ function setSummaryData() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Monthly Chart or Form */}
-          <div className="lg:col-span-2">
-            {!isMobile && activeForm ? (
-              <Card className="mb-6">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl">
-                    {activeForm === "expense" ? "Add Expense" : "Add Income"}
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCloseForm}
-                    className="rounded-full h-8 w-8"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {activeForm === "expense" ? (
-                    <AddExpenseForm
-                      onClose={handleCloseForm}
-                      onAddTransaction={handleAddTransaction}
-                    />
-                  ) : (
-                    <AddIncomeForm
-                      onClose={handleCloseForm}
-                      onAddTransaction={handleAddTransaction}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="mb-6">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl">{timeFilter} Chart</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Tabs value={timeFilter} onValueChange={setTimeFilter}>
-                      <TabsList>
-                        <TabsTrigger value="Yearly">
-                          <CalendarRange className="w-4 h-4 mr-2" />
-                          Yearly
-                        </TabsTrigger>
-                        <TabsTrigger value="Monthly">
-                          <CalendarDays className="w-4 h-4 mr-2" />
-                          Monthly
-                        </TabsTrigger>
-                        <TabsTrigger value="Daily">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          This Month
-                        </TabsTrigger>
-                        <TabsTrigger value="Recent">
-                          <Filter className="w-4 h-4 mr-2" />
-                          Recent
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                    <Info className="w-5 h-5 text-gray-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80 mb-6">
-                    {chartData[timeFilter as keyof typeof chartData] ?
-                    <LineChart
-                      data={chartData[timeFilter as keyof typeof chartData]}
-                    />
-                    : <p>Loading chart...</p>}
-                  </div>
-
-                  {/* Legend */}
-                  {/* <div className="flex justify-center gap-8 mb-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                      <span className="text-sm font-medium">Income</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-amber-900 rounded"></div>
-                      <span className="text-sm font-medium">Expenses</span>
-                    </div>
-                  </div> */}
-
-                  <div className="flex justify-center gap-8 mb-6">
-                      <span className="text-xl font-medium">
-                        {
-                          timeFilter === "Yearly"
-                            ? "Life Time Cashflow"
-                            : timeFilter === "Monthly"
-                            ? "Cashflow This Year"
-                            : timeFilter === "Daily"
-                            ? "Cashflow This Month"
-                            : "Filtered Cashflow"
-                        }
-                        </span>
-                  </div>
-
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <Card className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">
-                          Total Income
-                        </span>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-800">
-                        ${totalIncome.toFixed(2)}
-                      </div>
-                    </Card>
-
-                    <Card className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">
-                          Total Expenses
-                        </span>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-800">
-                        ${totalExpenses.toFixed(2)}
-                      </div>
-                    </Card>
-
-                    <Card className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
-                        <span className="text-sm text-gray-600">
-                          Total Balance
-                        </span>
-                      </div>
-                      <div className={`text-2xl font-bold ${
-                                    totalBalance > 0
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}>
-                        ${totalBalance.toFixed(2)}
-                      </div>
-                    </Card>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Recent Transactions */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl">Transactions</CardTitle>
+        {/* Chart or Form Section - full width */}
+        <div className="w-full">
+          {!isMobile && activeForm ? (
+            <Card className="mb-6 w-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl">
+                  {activeForm === "expense" ? "Add Expense" : "Add Income"}
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCloseForm}
+                  className="rounded-full h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {Object.entries(groupedTransactions).map(
-                    ([month, monthTransactions]) => (
-                      <div key={month}>
-                        <h3 className="font-semibold text-lg mb-4">{month}</h3>
-                        <div className="space-y-4">
-                          {monthTransactions
-                            .filter(
-                              (transaction) =>
-                                activeTab === "all" ||
-                                transaction.type === activeTab
-                            )
-                            .map((transaction: TransactionWithExtras) => (
-                              <div
-                                key={transaction.transId}
-                                className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
-                              >
-                                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
-                                  {transaction.icon}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold text-gray-800">
-                                    {transaction.description}
-                                  </div>
-                                  <div className="text-sm text-gray-600">
-                                    {transaction.category}
-                                  </div>
-                                  <div className="text-xs text-orange-500">
-                                    {transaction.dateTime}
-                                  </div>
-                                </div>
-                                <div
-                                  className={`font-bold ${
-                                    transaction.type === "income"
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}
-                                >
-                                  {transaction.type === "income" ? "+" : "-"}$
-                                  {Math.abs(transaction.amount).toFixed(2)}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )
-                  )}
+                {activeForm === "expense" ? (
+                  <AddExpenseForm
+                    onClose={handleCloseForm}
+                    onAddTransaction={handleAddTransaction}
+                  />
+                ) : (
+                  <AddIncomeForm
+                    onClose={handleCloseForm}
+                    onAddTransaction={handleAddTransaction}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="mb-6 w-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl">{timeFilter} Chart</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Tabs value={timeFilter} onValueChange={setTimeFilter}>
+                    <TabsList>
+                      <TabsTrigger value="Yearly">
+                        <CalendarRange className="w-4 h-4 mr-2" />
+                        Yearly
+                      </TabsTrigger>
+                      <TabsTrigger value="Monthly">
+                        <CalendarDays className="w-4 h-4 mr-2" />
+                        Monthly
+                      </TabsTrigger>
+                      <TabsTrigger value="Daily">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        This Month
+                      </TabsTrigger>
+                      <TabsTrigger value="Recent">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Recent
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <Info className="w-5 h-5 text-gray-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80 mb-6">
+                  {chartData[timeFilter as keyof typeof chartData] ?
+                  <LineChart
+                    data={chartData[timeFilter as keyof typeof chartData]}
+                  />
+                  : <p>Loading chart...</p>}
+                </div>
+                {/* Legend and summary cards ... */}
+                <div className="flex justify-center gap-8 mb-6">
+                  <span className="text-xl font-medium">
+                    {
+                      timeFilter === "Yearly"
+                        ? "Life Time Cashflow"
+                        : timeFilter === "Monthly"
+                        ? "Cashflow This Year"
+                        : timeFilter === "Daily"
+                        ? "Cashflow This Month"
+                        : "Filtered Cashflow"
+                    }
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
+                      <span className="text-sm text-gray-600">
+                        Total Income
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      ${totalIncome.toFixed(2)}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
+                      <span className="text-sm text-gray-600">
+                        Total Expenses
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      ${totalExpenses.toFixed(2)}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
+                      <span className="text-sm text-gray-600">
+                        Total Balance
+                      </span>
+                    </div>
+                    <div className={`text-2xl font-bold ${
+                      totalBalance > 0 ? "text-green-600" : "text-red-600"
+                    }`}>
+                      ${totalBalance.toFixed(2)}
+                    </div>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
+        </div>
+        {/* Transactions Section - full width below the chart */}
+        <div className="w-full">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-4">
+                <CardTitle className="text-xl">Transactions</CardTitle>
+                <button
+                  type="button"
+                  className="bg-gray-100 text-gray-800 px-3 py-2 rounded"
+                  onClick={() => {
+                    const today = format(new Date(), 'yyyy-MM-dd');
+                    setStartDate(today);
+                    setEndDate(today);
+                    // Optionally trigger filter here if you want instant effect:
+                    // handleFilter({ startDate: today, endDate: today });
+                  }}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-100 text-gray-800 px-3 py-2 rounded"
+                  onClick={() => {
+                    const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+                    const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+                    setStartDate(start);
+                    setEndDate(end);
+                    // Optionally trigger filter here if you want instant effect:
+                    // handleFilter({ startDate: start, endDate: end });
+                  }}
+                >
+                  This Month
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <TransactionFilterForm onFilter={handleFilter} startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+                <div className="space-y-4">
+                  {((filteredTransactions || transactions).length === 0) ? (
+                    <div className="text-gray-500 text-center py-8">
+                      No transactions found for the selected filters.
+                    </div>
+                  ) : (
+                    (filteredTransactions || transactions).map((transaction) => {
+                      const dateObj = new Date(transaction.dateTime);
+                      const day = dateObj.getDate();
+                      const month = dateObj.toLocaleString('default', { month: 'long' });
+                      const year = dateObj.getFullYear();
+                      let hour = dateObj.getHours();
+                      const minute = String(dateObj.getMinutes()).padStart(2, '0');
+                      const ampm = hour >= 12 ? 'PM' : 'AM';
+                      hour = hour % 12;
+                      hour = hour ? hour : 12; // the hour '0' should be '12'
+                      const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
+                      return (
+                        <div
+                          key={transaction.transId}
+                          className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                        >
+                          <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+                            {transaction.icon}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800">
+                              {transaction.description}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {transaction.category}
+                            </div>
+                            <div className="text-xs text-orange-500">
+                              {formattedDate}
+                            </div>
+                          </div>
+                          <div
+                            className={`font-bold ${
+                              transaction.type === "income"
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {transaction.type === "income" ? "+" : "-"}$
+                            {Math.abs(transaction.amount).toFixed(2)}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </MainLayout>
