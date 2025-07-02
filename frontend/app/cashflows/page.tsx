@@ -31,7 +31,6 @@ import { AddIncomeForm } from "../_components/forms/add-income-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { useIsMobile } from "../_hooks/use-mobile";
 import { Transaction } from "@/../backend/models/transaction";
-import { LineChartProps } from "../_components/charts/line-chart";
 
 interface TransactionWithExtras extends Transaction {
   icon: JSX.Element;
@@ -42,9 +41,11 @@ export default function CashflowsPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("all");
   const [timeFilter, setTimeFilter] = useState("Monthly");
-  // const [loadingChart, setLoadingChart] = useState(true);
-  const [chartData, setChartData] = useState({} as LineChartProps);
+  const [chartData, setChartData] = useState({} as ChartGroup);
   const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const [activeForm, setActiveForm] = useState<"expense" | "income" | null>(
     null
   );
@@ -120,6 +121,31 @@ function getAllDaysOfCurrentMonth(): string[] {
   }
 
   return days;
+}
+
+interface ChartGroup {
+  [key: string]: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      borderColor: string;
+      backgroundColor: string;
+      fill?: boolean;
+      tension?: number;
+    }[];
+  }
+}
+
+function setSummaryData() {
+  // for initial load
+  const incomeData = chartData[timeFilter].datasets[0].data;
+  const expenseData = chartData[timeFilter].datasets[1].data;
+  const tIncome = incomeData.reduce((sum, value) => sum + value, 0);
+  const tExpense = expenseData.reduce((sum, value) => sum + value, 0);
+  setTotalIncome(tIncome);
+  setTotalExpenses(tExpense);
+  setTotalBalance(tIncome - tExpense);
 }
 
   useEffect(() => {
@@ -280,15 +306,22 @@ function getAllDaysOfCurrentMonth(): string[] {
         ],
       },
     };
-
     setChartData(chartData);
-    // console.log("Chart data fetched:", chartData);
-    // console.log(chartData[timeFilter as keyof typeof chartData]);
     };
 
     fetchData();
     fetchChartData();
   }, []);
+
+  useEffect(() => {
+    if (!chartData[timeFilter]) { // if no data for selected time filter
+      setTotalIncome(-999);
+      setTotalExpenses(-999);
+      setTotalBalance(-999);
+      return;
+    }
+    setSummaryData()
+  }, [chartData, timeFilter]);
 
   const handleAddTransaction = (newTx: TransactionWithExtras) => {
     setTransactions((prev) => {
@@ -351,15 +384,15 @@ function getAllDaysOfCurrentMonth(): string[] {
   //     : transactions.filter((t) => t.type === activeTab);
 
   // Calculate totals
-  const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = Math.abs(
-    transactions
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + t.amount, 0)
-  );
-  const totalBalance = totalIncome - totalExpenses;
+  // const totalIncome = transactions
+  //   .filter((t) => t.type === "income")
+  //   .reduce((sum, t) => sum + t.amount, 0);
+  // const totalExpenses = Math.abs(
+  //   transactions
+  //     .filter((t) => t.type === "expense")
+  //     .reduce((sum, t) => sum + t.amount, 0)
+  // );
+  // const totalBalance = totalIncome - totalExpenses;
 
   const handleCloseForm = () => {
     setActiveForm(null);
@@ -523,6 +556,20 @@ function getAllDaysOfCurrentMonth(): string[] {
                     </div>
                   </div> */}
 
+                  <div className="flex justify-center gap-8 mb-6">
+                      <span className="text-xl font-medium">
+                        {
+                          timeFilter === "Yearly"
+                            ? "Life Time Cashflow"
+                            : timeFilter === "Monthly"
+                            ? "Cashflow This Year"
+                            : timeFilter === "Daily"
+                            ? "Cashflow This Month"
+                            : "Filtered Cashflow"
+                        }
+                        </span>
+                  </div>
+
                   {/* Summary Cards */}
                   <div className="grid grid-cols-3 gap-4">
                     <Card className="p-4">
@@ -556,7 +603,11 @@ function getAllDaysOfCurrentMonth(): string[] {
                           Total Balance
                         </span>
                       </div>
-                      <div className="text-2xl font-bold text-gray-800">
+                      <div className={`text-2xl font-bold ${
+                                    totalBalance > 0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}>
                         ${totalBalance.toFixed(2)}
                       </div>
                     </Card>
