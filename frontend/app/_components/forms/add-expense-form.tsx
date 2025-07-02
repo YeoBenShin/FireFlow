@@ -104,8 +104,6 @@ export function AddExpenseForm({
       }
 
       // Send POST request to backend
-      const token = localStorage.getItem("authToken");
-      console.log("Token:", token);
       const response = await fetch("http://localhost:5100/api/transactions/create", {
         method: "POST",
         credentials: "include",
@@ -125,6 +123,11 @@ export function AddExpenseForm({
 
        const newTx = {
         ...data,
+        dateTime: new Date(data.dateTime).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
         month: new Date(values.dateTime).toLocaleString("default", { month: "long" }), // e.g., "April"
         icon: iconMap[categoryIconMap[data.category] || "DollarSign"] || null,
       };

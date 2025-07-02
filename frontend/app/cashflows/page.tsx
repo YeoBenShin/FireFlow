@@ -239,12 +239,56 @@ export default function CashflowsPage() {
     fetchChartData();
   }, []);
 
-  const handleAddTransaction = (newTx) => {
-    console.log("🧾 New transaction added:", newTx);
-    setTransactions((prev) => [...prev, newTx]);
+  const handleAddTransaction = (newTx: TransactionWithExtras) => {
+    setTransactions((prev) => {
+      const updated = [newTx, ...prev];
+      // Sort by dateTime descending (most recent first)
+      return updated.sort((a, b) => {
+        const dateA = new Date(a.dateTime);
+        const dateB = new Date(b.dateTime);
+        return dateB.getTime() - dateA.getTime();
+      });
+    });
   };
  
-  const groupedTransactions = transactions.reduce((acc, transaction) => {
+  // Filter transactions based on the selected timeFilter
+  function getFilteredTransactions() {
+    if (timeFilter === "Yearly") {
+      const currentYear = new Date().getFullYear();
+      return transactions.filter(tx => {
+        const txYear = new Date(tx.dateTime).getFullYear();
+        return txYear === currentYear;
+      });
+    }
+    if (timeFilter === "Monthly") {
+      const now = new Date();
+      return transactions.filter(tx => {
+        const txDate = new Date(tx.dateTime);
+        return (
+          txDate.getFullYear() === now.getFullYear() &&
+          txDate.getMonth() === now.getMonth()
+        );
+      });
+    }
+    if (timeFilter === "Daily") {
+      const now = new Date();
+      return transactions.filter(tx => {
+        const txDate = new Date(tx.dateTime);
+        return (
+          txDate.getFullYear() === now.getFullYear() &&
+          txDate.getMonth() === now.getMonth() &&
+          txDate.getDate() === now.getDate()
+        );
+      });
+    }
+    if (timeFilter === "Recent") {
+      return transactions.slice(0, 5);
+    }
+    return transactions;
+  }
+
+  // Group filtered transactions by month
+  const groupedTransactions = getFilteredTransactions().reduce((acc, transaction) => {
     if (!acc[transaction.month]) {
       acc[transaction.month] = [];
     }
@@ -477,7 +521,7 @@ export default function CashflowsPage() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl">Recent Transactions</CardTitle>
+                <CardTitle className="text-xl">Transactions</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">

@@ -98,6 +98,7 @@ export function AddIncomeForm({
 
       const response = await fetch("http://localhost:5100/api/transactions/create", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -113,6 +114,11 @@ export function AddIncomeForm({
       const data = result.data
       const newTx = {
         ...data,
+        dateTime: new Date(data.dateTime).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
         month: new Date(values.dateTime).toLocaleString("default", { month: "long" }), // e.g., "April"
         icon: iconMap["DollarSign"] || null,
       };
