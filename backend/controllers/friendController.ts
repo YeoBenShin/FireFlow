@@ -12,7 +12,6 @@ import { Friend } from '../models/friend';
 export const getAllFriends = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
   try {
-    
     const {data: friend1, error: friend1Error}= await supabase
       .from('friend')
       .select('friend_id')
@@ -23,18 +22,23 @@ export const getAllFriends = async (req: Request, res: Response) => {
       .select('user_id')
       .eq('friend_id', userId);
 
-      //console.log(friend1);
+    if (friend1Error || friend2Error) {
+      console.error("Supabase error:", friend1Error || friend2Error);
+      res.status(500).json({ error: 'Failed to fetch friends' });
+      return;
+    }
     
-      // Extract friend_ids from friend1
-      const friend1Ids = friend1 ? friend1.map(row => row.friend_id) : [];
-      // Extract user_ids from friend2
-      const friend2Ids = friend2 ? friend2.map(row => row.user_id) : [];
-      // Combine them
-      const allFriendIds = [...friend1Ids, ...friend2Ids];
+    // Extract friend_ids from friend1
+    const friend1Ids = friend1 ? friend1.map(row => row.friend_id) : [];
+    // Extract user_ids from friend2
+    const friend2Ids = friend2 ? friend2.map(row => row.user_id) : [];
+    // Combine them
+    const allFriendIds = [...friend1Ids, ...friend2Ids];
 
-      // console.log(allFriendIds);
-
-    if (allFriendIds.length === 0) return [];
+    if (allFriendIds.length === 0) {
+      res.status(200).json([]); // No friends found
+      return;
+    }
 
     const { data, error } = await supabase
       .from('user')
@@ -52,7 +56,6 @@ export const getAllFriends = async (req: Request, res: Response) => {
   }
 };
 
-// can check if the frontend can just sent the userID immediately
 export const sendFriendRequest = async (req: Request, res: Response) => {
   const username = req.body.username;
 
@@ -96,20 +99,31 @@ export const sendFriendRequest = async (req: Request, res: Response) => {
 };
 
 export const acceptFriendRequest = async (req: Request, res: Response) => {
-    const { friendId } = req.body;
+    const { username } = req.body;
     const userId = (req.user as jwt.JwtPayload).sub;
-    // console.log("Accepting friend request for user:", userId, "from friend:", friendId);
 
     try {
-        const { data, error } = await supabase.from('friend').update({ status: 'accepted' }).eq('user_id', userId).eq('friend_id', friendId).select('*');
-        if (error) {
-            throw error;
-        } else if (data.length === 0) {
-            res.status(404).json({ error: 'Friend request not found' });
-            return;
-        }
+      const { data: friend, error: friendError } = await supabase
+      .from('user')
+      .select('user_id')
+      .eq('username', username)
+      .single();
 
-        res.status(200).json({ message: "Friend request accepted", data });
+      if (friendError) {
+          res.status(404).json({ error: 'Friend not found' });
+          return;
+      }
+      const friendId = friend?.user_id;
+
+      const { data, error } = await supabase.from('friend').update({ status: 'accepted' }).eq('user_id', userId).eq('friend_id', friendId).select('*');
+      if (error) {
+          throw error;
+      } else if (data.length === 0) {
+          res.status(404).json({ error: 'Friend request not found' });
+          return;
+      }
+
+      res.status(200).json({ message: "Friend request accepted", data });
     } catch (error) {
         console.error("Supabase update error:", error);
         res.status(500).json({ error: 'Failed to accept friend request' });
@@ -122,19 +136,30 @@ export const rejectFriendRequest = async (req: Request, res: Response) => {
 
 export const deleteFriend = async (req: Request, res: Response) => {
     const userId = (req.user as jwt.JwtPayload).sub;
-    const { friendId } = req.body;
-    // console.log("Deleting friend for user:", userId, "friendId:", friendId);
+    const { username } = req.body;
 
     try {
-        const { data, error } = await supabase.from('friend').delete().eq('user_id', userId).eq('friend_id', friendId).select('*');
-        if (error) {
-            throw error;
-        } else if (data.length === 0) {
-            res.status(404).json({ error: 'Friend not found' });
-            return;
-        }
+      const { data: friend, error: friendError } = await supabase
+      .from('user')
+      .select('user_id')
+      .eq('username', username)
+      .single();
 
-        res.status(200).json({ message: "Friend deleted successfully" });
+      if (friendError) {
+          res.status(404).json({ error: 'Friend not found' });
+          return;
+      }
+      const friendId = friend?.user_id;
+
+      const { data, error } = await supabase.from('friend').delete().eq('user_id', userId).eq('friend_id', friendId).select('*');
+      if (error) {
+          throw error;
+      } else if (data.length === 0) {
+          res.status(404).json({ error: 'Friend not found' });
+          return;
+      }
+
+      res.status(200).json({ message: "Friend deleted successfully" });
     } catch (error) {
         console.error("Supabase delete error:", error);
         res.status(500).json({ error: 'Failed to delete friend' });
