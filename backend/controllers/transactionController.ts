@@ -131,3 +131,77 @@ export const getFilterTransactions = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to filter transactions' });
   }
 }
+
+export const getMonthlyTransactions = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
+  const type = req.query.type as string; // 'expense' or 'income'
+  const currentYear = new Date().getFullYear();
+
+  try {
+    const { data, error } = await supabase
+      .from('transaction')
+      .select('dateTime, amount')
+      .eq('user_id', userId)
+      .eq('type', type)
+      .gte('dateTime', `${currentYear}-01-01T00:00:00`);
+
+    if (error) {
+      throw error;
+    }
+
+    // Process rows into a monthly sum
+    let monthlySums: Record<string, number> = {};
+
+    data.forEach(row => {
+      const month = new Date(row.dateTime).toLocaleString('en-GB', { month: 'short', year: 'numeric' }); // e.g., "Jan 2023"
+      monthlySums[month] = (monthlySums[month] || 0) + row.amount;
+    });
+
+    // Sort months
+    const entries = Object.entries(monthlySums);
+    const sortedEntries = entries.sort(([a], [b]) => { // taking out the key (month) from the entries
+      return new Date(a) > new Date(b) ? 1 : -1;
+    });
+    monthlySums = Object.fromEntries(sortedEntries);
+
+    res.status(200).json(monthlySums);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch monthly transactions' });
+  }
+}
+
+export const getYearlyTransactions = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
+  const type = req.query.type as string; // 'expense' or 'income'
+
+  try {
+    const { data, error } = await supabase
+      .from('transaction')
+      .select('dateTime, amount')
+      .eq('user_id', userId)
+      .eq('type', type);
+
+    if (error) {
+      throw error;
+    }
+
+    // Process rows into a yearly sum
+    let yearlySum: Record<string, number> = {};
+
+    data.forEach(row => {
+      const year = new Date(row.dateTime).toLocaleString('en-GB', { year: 'numeric' }); // e.g., "2023"
+      yearlySum[year] = (yearlySum[year] || 0) + row.amount;
+    });
+
+    // Sort years
+    const entries = Object.entries(yearlySum);
+    const sortedEntries = entries.sort(([a], [b]) => { // taking out the key (month) from the entries
+      return new Date(a) > new Date(b) ? 1 : -1;
+    });
+    yearlySum = Object.fromEntries(sortedEntries);
+
+    res.status(200).json(yearlySum);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch yearly transactions' });
+  }
+}

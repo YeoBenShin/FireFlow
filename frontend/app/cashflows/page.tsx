@@ -31,11 +31,14 @@ import { AddIncomeForm } from "../_components/forms/add-income-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { useIsMobile } from "../_hooks/use-mobile";
 import { Transaction } from "@/../backend/models/transaction";
+import { LineChartProps } from "../_components/charts/line-chart";
 
 export default function CashflowsPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("all");
   const [timeFilter, setTimeFilter] = useState("Monthly");
+  // const [loadingChart, setLoadingChart] = useState(true);
+  const [chartData, setChartData] = useState({} as LineChartProps);
   const [activeForm, setActiveForm] = useState<"expense" | "income" | null>(
     null
   );
@@ -50,94 +53,6 @@ export default function CashflowsPage() {
       setActiveForm("income");
     }
   }, [searchParams]);
-
-  // Chart data for different time periods
-  const chartData = {
-    Yearly: {
-      labels: ["2020", "2021", "2022", "2023", "2024"],
-      datasets: [
-        {
-          label: "Income",
-          data: [24000, 28000, 32000, 38000, 42000],
-          borderColor: "#3B82F6", // blue
-          backgroundColor: "rgba(59, 130, 246, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-        {
-          label: "Expenses",
-          data: [20000, 22000, 26000, 30000, 34000],
-          borderColor: "#7C2D12", // dark brown/red
-          backgroundColor: "rgba(124, 45, 18, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-      ],
-    },
-    Monthly: {
-      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-      datasets: [
-        {
-          label: "Income",
-          data: [3500, 3500, 3500, 4000, 4000, 4000],
-          borderColor: "#3B82F6", // blue
-          backgroundColor: "rgba(59, 130, 246, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-        {
-          label: "Expenses",
-          data: [2800, 3200, 2900, 3400, 3100, 3300],
-          borderColor: "#7C2D12", // dark brown/red
-          backgroundColor: "rgba(124, 45, 18, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-      ],
-    },
-    Daily: {
-      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      datasets: [
-        {
-          label: "Income",
-          data: [0, 0, 0, 0, 4000, 150, 0],
-          borderColor: "#3B82F6", // blue
-          backgroundColor: "rgba(59, 130, 246, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-        {
-          label: "Expenses",
-          data: [45, 120, 85, 65, 200, 350, 90],
-          borderColor: "#7C2D12", // dark brown/red
-          backgroundColor: "rgba(124, 45, 18, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-      ],
-    },
-    Recent: {
-      labels: ["March 22", "April 08", "April 15", "April 24", "April 30"],
-      datasets: [
-        {
-          label: "Income",
-          data: [0, 0, 0, 0, 4000],
-          borderColor: "#3B82F6", // blue
-          backgroundColor: "rgba(59, 130, 246, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-        {
-          label: "Expenses",
-          data: [70, 48, 1574, 100, 0],
-          borderColor: "#7C2D12", // dark brown/red
-          backgroundColor: "rgba(124, 45, 18, 0.1)",
-          fill: false,
-          tension: 0.1,
-        },
-      ],
-    },
-  };
 
   type IconName = "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils";
 
@@ -167,22 +82,12 @@ export default function CashflowsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
+    // Fetch recent transactions from the backend
     const fetchData = async () => {
       const res = await fetch("http://localhost:5100/api/transactions", {
         credentials: "include",
       });
       const data = await res.json();
-
-
-      // console.log("🧾 Transactions fetched:", data);
-      // If your API returns { transactions: [...] }
-      const txArray = Array.isArray(data) ? data : data.transactions;
-
-      if (!Array.isArray(txArray)) {
-        console.error("Expected an array of transactions but got:", txArray);
-        setTransactions([]);
-        return;
-      }
 
       // Replace icon string with JSX component
       const withIcons = data.map((tx) => ({
@@ -203,14 +108,137 @@ export default function CashflowsPage() {
       setTransactions(withIcons);
     };
 
+    // fetching data for the charts
+
+  const fetchChartData = async () => {
+    // monthly expenses
+    let res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=expense", {
+        credentials: "include",
+      });
+    const monthlyExpenses = await res.json();
+
+
+    // monthly income
+    res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=income", {
+        credentials: "include",
+      });
+    const monthlyIncome = await res.json();
+    const monthLabels = [...new Set([...Object.keys(monthlyExpenses || {}), ...Object.keys(monthlyIncome || {})])];
+
+    // yearly expenses
+    res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=expense", {
+        credentials: "include",
+      });
+    const yearlyExpenses = await res.json();
+
+    // monthly income
+    res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=income", {
+        credentials: "include",
+      });
+    const yearlyIncome = await res.json();
+    const yearLabels = [...new Set([...Object.keys(yearlyExpenses || {}), ...Object.keys(yearlyIncome || {})])].sort();
+
+    const chartData = {
+      Yearly: {
+        labels: yearLabels,
+        datasets: [
+          {
+            label: "Income",
+            data: yearLabels.map(label => yearlyIncome?.[label] ?? 0),
+            borderColor: "#3B82F6", // blue
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+          {
+            label: "Expenses",
+            data: yearLabels.map(label => yearlyExpenses?.[label] ?? 0),
+            borderColor: "#7C2D12", // dark brown/red
+            backgroundColor: "rgba(124, 45, 18, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+        ],
+      },
+      Monthly: {
+        labels: monthLabels,
+        datasets: [
+          {
+            label: "Income",
+            data: monthLabels.map(label => monthlyIncome?.[label] ?? 0),
+            borderColor: "#3B82F6", // blue
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+          {
+            label: "Expenses",
+            data: monthLabels.map(label => monthlyExpenses?.[label] ?? 0),
+            borderColor: "#7C2D12", // dark brown/red
+            backgroundColor: "rgba(124, 45, 18, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+        ],
+      },
+      Daily: {
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        datasets: [
+          {
+            label: "Income",
+            data: [0, 0, 0, 0, 4000, 150, 0],
+            borderColor: "#3B82F6", // blue
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+          {
+            label: "Expenses",
+            data: [45, 120, 85, 65, 200, 350, 90],
+            borderColor: "#7C2D12", // dark brown/red
+            backgroundColor: "rgba(124, 45, 18, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+        ],
+      },
+      Recent: {
+        labels: ["March 22", "April 08", "April 15", "April 24", "April 30"],
+        datasets: [
+          {
+            label: "Income",
+            data: [0, 0, 0, 0, 4000],
+            borderColor: "#3B82F6", // blue
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+          {
+            label: "Expenses",
+            data: [70, 48, 1574, 100, 0],
+            borderColor: "#7C2D12", // dark brown/red
+            backgroundColor: "rgba(124, 45, 18, 0.1)",
+            fill: false,
+            tension: 0.1,
+          },
+        ],
+      },
+    };
+
+    setChartData(chartData);
+    // console.log("Chart data fetched:", chartData);
+    // console.log(chartData[timeFilter as keyof typeof chartData]);
+    };
+
     fetchData();
+    fetchChartData();
   }, []);
 
   const handleAddTransaction = (newTx) => {
     console.log("🧾 New transaction added:", newTx);
     setTransactions((prev) => [...prev, newTx]);
   };
-
+ 
   const groupedTransactions = transactions.reduce((acc, transaction) => {
     if (!acc[transaction.month]) {
       acc[transaction.month] = [];
@@ -378,9 +406,11 @@ export default function CashflowsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="h-80 mb-6">
+                    {chartData[timeFilter as keyof typeof chartData] ?
                     <LineChart
                       data={chartData[timeFilter as keyof typeof chartData]}
                     />
+                    : <p>Loading chart...</p>}
                   </div>
 
                   {/* Legend */}
