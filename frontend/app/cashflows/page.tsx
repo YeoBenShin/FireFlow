@@ -33,6 +33,11 @@ import { useIsMobile } from "../_hooks/use-mobile";
 import { Transaction } from "@/../backend/models/transaction";
 import { LineChartProps } from "../_components/charts/line-chart";
 
+interface TransactionWithExtras extends Transaction {
+  icon: JSX.Element;
+  month: string;
+}
+
 export default function CashflowsPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("all");
@@ -79,7 +84,7 @@ export default function CashflowsPage() {
     Utensils: <Utensils className="w-5 h-5" />,
   };
 
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
 
   useEffect(() => {
     // Fetch recent transactions from the backend
@@ -447,7 +452,7 @@ export default function CashflowsPage() {
                         </span>
                       </div>
                       <div className="text-2xl font-bold text-gray-800">
-                        -${totalExpenses.toFixed(2)}
+                        ${totalExpenses.toFixed(2)}
                       </div>
                     </Card>
 
@@ -487,9 +492,9 @@ export default function CashflowsPage() {
                                 activeTab === "all" ||
                                 transaction.type === activeTab
                             )
-                            .map((transaction) => (
+                            .map((transaction: TransactionWithExtras) => (
                               <div
-                                key={transaction.trans_id}
+                                key={transaction.transId}
                                 className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                               >
                                 <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">

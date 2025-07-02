@@ -104,6 +104,8 @@ export function AddExpenseForm({
       }
 
       // Send POST request to backend
+      const token = localStorage.getItem("authToken");
+      console.log("Token:", token);
       const response = await fetch("http://localhost:5100/api/transactions/create", {
         method: "POST",
         credentials: "include",

@@ -6,13 +6,27 @@ import { Transaction, FilteredTransaction } from '../models/transaction';
 export const getAllTransactions = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
   try {
-    const { data, error } = await supabase.from('transaction').select('*').eq('user_id', userId).order('dateTime', { ascending: false });
+    const { data, error } = await supabase
+      .from('transaction')
+      .select('*')
+      .eq('user_id', userId)
+      .order('dateTime', { ascending: false });
     
     if (error) {
       throw error;
     }
-    res.status(200).json(data);
-
+    // Map snake_case to camelCase
+    res.status(200).json(
+      data.map(tx => ({
+        transId: tx.trans_id,
+        description: tx.description,
+        type: tx.type,
+        amount: tx.amount,
+        dateTime: tx.dateTime,
+        category: tx.category,
+        userId: tx.user_id,
+      }))
+    );
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch transactions' });
   }
@@ -35,7 +49,7 @@ export const createTransaction = async (req: Request, res: Response) => {
     if (error) {  
       throw error;
     }
-    res.status(201).json({ message: "Transaction created", data: newTransaction });
+    res.status(201).json({ message: "Transaction created", data: data[0] });
   } catch (error) {
     console.error("Supabase insert error:", error);
     res.status(500).json({ error: 'Failed to create transaction' });
@@ -82,9 +96,11 @@ export const updateTransaction = async (req: Request, res: Response) => {
 
 export const getFilterTransactions = async (req: Request, res: Response) => {
   const userId = (req.user as jwt.JwtPayload).sub;
-  const { description, type, amount, amountDirection, dateTime, dateDirection, category, numOfTrx}: FilteredTransaction = req.body;
+  let { description, type, amount, amountDirection, dateTime, dateDirection, category, numOfTrx }: FilteredTransaction = req.body;
 
   try {
+    // Default to 5 transactions if numOfTrx is not provided
+    numOfTrx = numOfTrx || 5;
     // building up a query object in memory. Nothing happens until you await.
     let query = supabase.from('transaction').select('*').eq('user_id', userId);
 
@@ -115,19 +131,27 @@ export const getFilterTransactions = async (req: Request, res: Response) => {
       query = query.gt('dateTime', dateTime);
     }
 
-    if (numOfTrx) {
-      query = query.limit(numOfTrx);
-    }
+    query = query.order('dateTime', { ascending: false }).limit(numOfTrx);
 
     const { data, error } = await query;
 
     if (error) {
       throw error;
     }
-    res.status(200).json(data);
+    // Map snake_case to camelCase
+    res.status(200).json(
+      data.map(tx => ({
+        transId: tx.trans_id,
+        description: tx.description,
+        type: tx.type,
+        amount: tx.amount,
+        dateTime: tx.dateTime,
+        category: tx.category,
+        userId: tx.user_id,
+      }))
+    );
   } catch (error) {
     console.error("Supabase fetch error:", error);
-    // maybe can add more specific error handling based on the error type to differentiate between user errors and server errors
     res.status(500).json({ error: 'Failed to filter transactions' });
   }
 }

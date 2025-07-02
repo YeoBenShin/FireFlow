@@ -49,7 +49,7 @@ export const loginUser = async (req: Request, res: Response) => {
     res.cookie('token', access_token, {
       httpOnly: true, // set to true in production
       secure: false, // true == requires HTTPS | set to true in production
-      sameSite: 'none', // allow cross-site cookies
+      sameSite: 'lax', // allow cross-site cookies
       maxAge: 1000 * 60 * 60, // 1 hour
     });
     res.status(200).json({ message: 'Login successful', token: access_token  });
