@@ -15,11 +15,13 @@ export const getAllFriends = async (req: Request, res: Response) => {
     const {data: friend1, error: friend1Error}= await supabase
       .from('friend')
       .select('friend_id')
+      .eq('status', 'accepted')
       .eq('user_id', userId);
     
     const {data: friend2, error: friend2Error} = await supabase
       .from('friend')
       .select('user_id')
+      .eq('status', 'accepted')
       .eq('friend_id', userId);
 
     if (friend1Error || friend2Error) {
@@ -55,6 +57,44 @@ export const getAllFriends = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch friends' });
   }
 };
+
+export const getAllFriendsRequests = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
+  const toAccept = req.query.toAccept === 'true';
+  try {
+
+    if (toAccept) {
+      // Fetch all friend requests sent to the user
+      const { data, error } = await supabase
+        .from('friend')
+        .select('relationship, user(username, name)')
+        .eq('friend_id', userId)
+        .eq('status', 'pending');
+
+      if (error) {
+        throw error;
+      }
+      res.status(200).json(data);
+
+    } else {
+      // Fetch all friend requests sent by the user
+      const { data, error } = await supabase
+        .from('friend')
+        .select('relationship, user(username, name)')
+        .eq('user_id', userId)
+        .eq('status', 'pending');
+
+      if (error) {
+        throw error;
+      }
+      res.status(200).json(data);
+    }
+
+  } catch (error) {
+    console.error("Supabase error:", error);
+    res.status(500).json({ error: 'Failed to fetch friend requests' });
+  }
+}
 
 export const sendFriendRequest = async (req: Request, res: Response) => {
   const username = req.body.username;
