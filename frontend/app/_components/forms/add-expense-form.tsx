@@ -62,7 +62,8 @@ const iconMap: Record<IconName, JSX.Element> = {
 
 const formSchema = z.object({
   category: z.string().min(1, "Please select a category"),
-  dateTime: z.string().min(1, "Date is required"),
+  date: z.string().min(1, "Date is required"),
+  time: z.string().min(1, "Time is required"),
   amount: z.string().min(1, "Amount is required"),
   description: z.string().min(1, "Title is required"),
   //notes: z.string().optional(),
@@ -82,8 +83,14 @@ export function AddExpenseForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       category: "",
-      dateTime: "",
-      amount: "0.00",
+      date: new Date().toISOString().split("T")[0],
+      time: (() => {
+        const date = new Date();
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        return `${hours}:${minutes}`;
+      })(),
+      amount: "",
       description: "",  
       //notes: "",
     },
@@ -92,13 +99,15 @@ export function AddExpenseForm({
   async function onSubmit(values: z.infer<typeof formSchema>) { 
     setIsSubmitting(true)
 
-    console.log("Form data ready to send:", values) //check in console if the object is really created
+    // console.log("Form data ready to send:", values) //check in console if the object is really created
+    
     // Simulate adding the expense
      try {
+      const combinedDateTime = new Date(`${values.date}T${values.time}`);
       const payload = {
-        ...values,
-        // trans_id: Math.floor(Math.random() * 10000), // Simulate unique ID
-        dateTime: new Date(values.dateTime).toLocaleDateString("en-GB", {day: "2-digit", month: "long", year: "numeric",}),
+        category: values.category,
+        description: values.description,
+        dateTime: combinedDateTime.toISOString(), // Convert to ISO string
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "expense",
       }
@@ -123,12 +132,12 @@ export function AddExpenseForm({
 
        const newTx = {
         ...data,
-        dateTime: new Date(data.dateTime).toLocaleDateString("en-GB", {
+        dateTime: new Date(data.dateTime).toLocaleDateString("en-SG", {
           day: "2-digit",
           month: "long",
           year: "numeric",
         }),
-        month: new Date(values.dateTime).toLocaleString("default", { month: "long" }), // e.g., "April"
+        month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
         icon: iconMap[categoryIconMap[data.category] || "DollarSign"] || null,
       };
 
@@ -174,15 +183,29 @@ export function AddExpenseForm({
 
         <FormField
           control={form.control}
-          name="dateTime"
+          name="date"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input {...field} type = "date" className="bg-orange-50" />
-                  {/* <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" /> */}
+                  {/* <Calendar className="absolute left-28 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" /> */}
                 </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="time"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Time</FormLabel>
+              <FormControl>
+                <Input {...field} type="time" className="bg-orange-50" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -217,7 +240,7 @@ export function AddExpenseForm({
             <FormItem>
               <FormLabel>Expense Title</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Enter expense title" className="bg-teal-50" />
+                <Input {...field} placeholder="Enter Expense Title" className="bg-teal-50" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -243,7 +266,7 @@ export function AddExpenseForm({
           className="w-full bg-orange-500 hover:bg-orange-600 mt-6"
           disabled={!form.formState.isValid || isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? "Adding..." : "Add"}
         </Button>
       </form>
     </Form>
