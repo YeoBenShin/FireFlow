@@ -229,3 +229,42 @@ export const getYearlyTransactions = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch yearly transactions' });
   }
 }
+
+export const getMonthTransactions = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
+  const type = req.query.type as string; // 'expense' or 'income'
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  try {
+    const { data, error } = await supabase
+      .from('transaction')
+      .select('dateTime, amount')
+      .eq('user_id', userId)
+      .eq('type', type)
+      .gte('dateTime', `${currentYear}-${currentMonth}-01T00:00:00`);
+
+    if (error) {
+      throw error;
+    }
+
+    // Process rows into a yearly sum
+    let monthSum: Record<string, number> = {};
+
+    data.forEach(row => {
+      const day = new Date(row.dateTime).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); // e.g., "01 Jan 2023"
+      monthSum[day] = (monthSum[day] || 0) + row.amount;
+    });
+
+    // Sort years
+    const entries = Object.entries(monthSum);
+    const sortedEntries = entries.sort(([a], [b]) => { // taking out the key (month) from the entries
+      return new Date(a) > new Date(b) ? 1 : -1;
+    });
+    monthSum = Object.fromEntries(sortedEntries);
+
+    res.status(200).json(monthSum);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch month transactions' });
+  }
+}

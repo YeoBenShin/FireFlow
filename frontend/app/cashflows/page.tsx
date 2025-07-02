@@ -44,6 +44,7 @@ export default function CashflowsPage() {
   const [timeFilter, setTimeFilter] = useState("Monthly");
   // const [loadingChart, setLoadingChart] = useState(true);
   const [chartData, setChartData] = useState({} as LineChartProps);
+  const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
   const [activeForm, setActiveForm] = useState<"expense" | "income" | null>(
     null
   );
@@ -84,7 +85,42 @@ export default function CashflowsPage() {
     Utensils: <Utensils className="w-5 h-5" />,
   };
 
-  const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
+  function getAllMonthsOfCurrentYear(): string[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const months: string[] = [];
+
+  for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+    const date = new Date(year, monthIndex);
+    const monthStr = date.toLocaleString("en-GB", { month: "short" }); // Jan, Feb, etc.
+    months.push(`${monthStr} ${year}`);
+  }
+
+  return months;
+}
+
+function getAllDaysOfCurrentMonth(): string[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  // Get last day of this month
+  const lastDay = new Date(year, month + 1, 0).getDate();
+
+  const days: string[] = [];
+
+  for (let day = 1; day <= lastDay; day++) {
+    const date = new Date(year, month, day);
+    const dayStr = date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    days.push(dayStr);
+  }
+
+  return days;
+}
 
   useEffect(() => {
     // Fetch recent transactions from the backend
@@ -122,13 +158,12 @@ export default function CashflowsPage() {
       });
     const monthlyExpenses = await res.json();
 
-
     // monthly income
     res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=income", {
         credentials: "include",
       });
     const monthlyIncome = await res.json();
-    const monthLabels = [...new Set([...Object.keys(monthlyExpenses || {}), ...Object.keys(monthlyIncome || {})])];
+    const monthLabels = getAllMonthsOfCurrentYear(); //[...new Set([...Object.keys(monthlyExpenses || {}), ...Object.keys(monthlyIncome || {})])];
 
     // yearly expenses
     res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=expense", {
@@ -136,12 +171,28 @@ export default function CashflowsPage() {
       });
     const yearlyExpenses = await res.json();
 
-    // monthly income
+    // yearly income
     res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=income", {
         credentials: "include",
       });
     const yearlyIncome = await res.json();
     const yearLabels = [...new Set([...Object.keys(yearlyExpenses || {}), ...Object.keys(yearlyIncome || {})])].sort();
+
+    // month expenses
+    res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=expense", {
+        credentials: "include",
+      });
+    const monthExpenses = await res.json();
+
+    // month income
+    res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=income", {
+        credentials: "include",
+      });
+    const monthIncome = await res.json();
+    const dailyLabels = getAllDaysOfCurrentMonth(); //[...new Set([...Object.keys(monthExpenses || {}), ...Object.keys(monthIncome || {})])];
+
+    // console.log("Month Expenses:", monthExpenses);
+    // console.log("Test:", dailyLabels.map(label => monthExpenses?.[label] ?? 0));
 
     const chartData = {
       Yearly: {
@@ -187,11 +238,11 @@ export default function CashflowsPage() {
         ],
       },
       Daily: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        labels: dailyLabels,
         datasets: [
           {
             label: "Income",
-            data: [0, 0, 0, 0, 4000, 150, 0],
+            data: dailyLabels.map(label => monthIncome?.[label] ?? 0),
             borderColor: "#3B82F6", // blue
             backgroundColor: "rgba(59, 130, 246, 0.1)",
             fill: false,
@@ -199,7 +250,7 @@ export default function CashflowsPage() {
           },
           {
             label: "Expenses",
-            data: [45, 120, 85, 65, 200, 350, 90],
+            data: dailyLabels.map(label => monthExpenses?.[label] ?? 0),
             borderColor: "#7C2D12", // dark brown/red
             backgroundColor: "rgba(124, 45, 18, 0.1)",
             fill: false,
@@ -253,20 +304,19 @@ export default function CashflowsPage() {
  
   // Filter transactions based on the selected timeFilter
   function getFilteredTransactions() {
-    if (timeFilter === "Yearly") {
-      const currentYear = new Date().getFullYear();
-      return transactions.filter(tx => {
-        const txYear = new Date(tx.dateTime).getFullYear();
-        return txYear === currentYear;
-      });
-    }
+    // if (timeFilter === "Yearly") {
+    //   const currentYear = new Date().getFullYear();
+    //   return transactions.filter(tx => {
+    //     const txYear = new Date(tx.dateTime).getFullYear();
+    //     return txYear === currentYear;
+    //   });
+    // }
     if (timeFilter === "Monthly") {
       const now = new Date();
       return transactions.filter(tx => {
         const txDate = new Date(tx.dateTime);
         return (
-          txDate.getFullYear() === now.getFullYear() &&
-          txDate.getMonth() === now.getMonth()
+          txDate.getFullYear() === now.getFullYear()
         );
       });
     }
@@ -276,8 +326,7 @@ export default function CashflowsPage() {
         const txDate = new Date(tx.dateTime);
         return (
           txDate.getFullYear() === now.getFullYear() &&
-          txDate.getMonth() === now.getMonth() &&
-          txDate.getDate() === now.getDate()
+          txDate.getMonth() === now.getMonth()
         );
       });
     }
@@ -296,10 +345,10 @@ export default function CashflowsPage() {
     return acc;
   }, {} as Record<string, typeof transactions>);
 
-  const filteredTransactions =
-    activeTab === "all"
-      ? transactions
-      : transactions.filter((t) => t.type === activeTab);
+  // const filteredTransactions =
+  //   activeTab === "all"
+  //     ? transactions
+  //     : transactions.filter((t) => t.type === activeTab);
 
   // Calculate totals
   const totalIncome = transactions
@@ -442,7 +491,7 @@ export default function CashflowsPage() {
                         </TabsTrigger>
                         <TabsTrigger value="Daily">
                           <Calendar className="w-4 h-4 mr-2" />
-                          Daily
+                          This Month
                         </TabsTrigger>
                         <TabsTrigger value="Recent">
                           <Filter className="w-4 h-4 mr-2" />
