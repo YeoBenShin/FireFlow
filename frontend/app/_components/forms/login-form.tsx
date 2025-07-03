@@ -59,10 +59,10 @@ export function LoginForm({ onClose, onLoginSuccess }: LoginFormProps) {
 
       const result = await response.json();
 
-      // localStorage.setItem("authToken", result.token);
+      localStorage.setItem("authToken", result.token);
 
       onLoginSuccess?.();
-      router.push("/dashboard"); // Redirect to dashboard after login
+      router.push("/"); // Redirect to dashboard after login
       if (onClose) onClose();
     } catch (error) {
       console.error("Error logging in:", error);
