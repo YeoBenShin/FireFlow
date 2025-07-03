@@ -16,381 +16,578 @@ import {
   AvatarImage,
 } from "@/app/_components/ui/avatar";
 import { Badge } from "@/app/_components/ui/badge";
-import { Progress } from "@/app/_components/ui/progress";
-import { Check, X, Search, Car, Heart } from "lucide-react";
-import { ToastProvider, Toast, ToastViewport } from "@radix-ui/react-toast";
+import { Check, X, Search } from "lucide-react";
+import {
+  ToastProvider,
+  Toast,
+  ToastViewport,
+  ToastTitle,
+} from "@radix-ui/react-toast";
 
 export default function FriendsPage() {
+  // Data states
   const [friends, setFriends] = useState([]);
+  const [receivedRequests, setReceivedRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [users, setUsers] = useState([]);
+
+  // UI states
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
-  const [message, setMessage] = useState("");
 
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  // Toasts
+  const [toasts, setToasts] = useState([]);
 
-  // Fetch friends with token
+  // Toast helpers
+  const addToast = (message, type = "info") => {
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: Date.now() + Math.random(),
+        message,
+        type,
+        open: true,
+      },
+    ]);
+  };
+  const handleOpenChange = (id, open) => {
+    if (!open) {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }
+  };
+
+  // Fetch helpers
+  const fetchFriends = async () => {
+    try {
+      const res = await fetch("http://localhost:5100/api/friends", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch friends");
+      const data = await res.json();
+      setFriends(data);
+    } catch (err) {
+      setError(err.message || "Failed to load friends");
+    }
+  };
+  const fetchSentRequests = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5100/api/friends/requests?toAccept=false",
+        { credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Failed to fetch sent requests");
+      const data = await res.json();
+      setSentRequests(data);
+    } catch (err) {
+      setError(err.message || "Failed to load sent requests");
+    }
+  };
+  const fetchReceivedRequests = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5100/api/friends/requests?toAccept=true",
+        { credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Failed to fetch received requests");
+      const data = await res.json();
+      setReceivedRequests(data);
+    } catch (err) {
+      setError(err.message || "Failed to load received requests");
+    }
+  };
+
+  // Fetch all on mount
+  const refreshAll = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchFriends(),
+      fetchSentRequests(),
+      fetchReceivedRequests(),
+    ]);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    refreshAll();
+    // eslint-disable-next-line
+  }, []);
+
+  // Debounced user search
+  useEffect(() => {
+    if (!searchTerm) {
+      setUsers([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setUsersLoading(true);
       try {
-        const res = await fetch("http://localhost:5100/api/friends", {
+        const res = await fetch("http://localhost:5100/api/users/filter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
+          body: JSON.stringify({ username: searchTerm }),
         });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Server response:", errorText);
-          throw new Error("Server returned an error");
-        }
-
-        // Only parse as JSON if the content-type is application/json
-        const contentType = res.headers.get("content-type");
-        if (!contentType?.includes("application/json")) {
-          const errorText = await res.text();
-          console.error("Expected JSON, got:", errorText);
-          throw new Error("Server did not return JSON");
-        }
-
-        // if (!res.ok) throw new Error("Failed to fetch friends");
-
+        if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
-        console.log(data);
-
-        setFriends(data);
+        setUsers(data);
       } catch (err) {
-        setError(err.message || "Error loading friends");
-        console.error(err);
+        setError(err.message || "Failed to load users");
+        setUsers([]);
       } finally {
-        setLoading(false);
+        setUsersLoading(false);
       }
-    };
+    }, 400);
 
-    fetchData();
-  }, [authToken]); // Re-run when token changes
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
 
-  // Filter friends by search term
-  const filteredFriends = friends.filter(
-    (friend) =>
-      friend.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      friend.username?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter users not already friends or selected
+  const friendIds = new Set(friends.map((f) => f.username));
+  const selectedIds = new Set(selectedFriends.map((f) => f.username));
+  const filteredUsers = users.filter(
+    (user) => !friendIds.has(user.username) && !selectedIds.has(user.username)
   );
 
   // Add friend to selection
   const handleAddSelectedFriend = (friend) => {
-    if (!selectedFriends.some((f) => f.user_id === friend.user_id)) {
+    if (!selectedFriends.some((f) => f.username === friend.username)) {
       setSelectedFriends([...selectedFriends, friend]);
     }
   };
 
   // Remove friend from selection
-  const handleRemoveFriend = (user_id) => {
-    setSelectedFriends(selectedFriends.filter((f) => f.user_id !== user_id));
+  const handleRemoveFriend = (username) => {
+    setSelectedFriends(selectedFriends.filter((f) => f.username !== username));
   };
 
-  // Submit selected friends to backend
-  const handleAddFriend = async () => {
+  // API call for actions
+  const callAPI = async (path, username, method, successMsg = "", errorMsg = "") => {
     try {
-      const response = await fetch("http://localhost:5100/api/friends", {
-        method: "POST",
+      const response = await fetch(path, {
+        method,
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // Add this
-        body: JSON.stringify(selectedFriends.map((f) => f.user_id)),
+        credentials: "include",
+        body: JSON.stringify({ username }),
       });
-
-      if (!response.ok) throw new Error("Failed to add friends");
-
-      setMessage("Friends added successfully!");
-      setSelectedFriends([]);
-
-      // Refresh friends list
-      const res = await fetch("http://localhost:5100/api/friends");
-      setFriends(await res.json());
+      if (!response.ok) {
+        addToast(errorMsg || "Failed", "error");
+        return false;
+      }
+      if (successMsg) addToast(successMsg, "success");
+      return true;
     } catch (err) {
-      setMessage(err.message || "Error adding friends");
+      addToast(errorMsg || "Failed", "error");
+      return false;
     }
   };
 
-  // Loading state
-  // if (loading) return <div>Loading friends...</div>;
+  // Handlers for friend actions
+  const handleAccept = async (username) => {
+    const ok = await callAPI(
+      "http://localhost:5100/api/friends/accept",
+      username,
+      "POST",
+      "Friend request accepted!",
+      "Failed to accept friend request"
+    );
+    if (ok) await refreshAll();
+  };
 
-  // Error state
-  if (error) return <div>Error: {error}</div>;
+  const handleIgnore = async (username) => {
+    const ok = await callAPI(
+      "http://localhost:5100/api/friends/reject",
+      username,
+      "POST",
+      "Friend request ignored.",
+      "Failed to ignore friend request"
+    );
+    if (ok) await refreshAll();
+  };
 
+  const handleRemoveExistingFriend = async (username) => {
+    const ok = await callAPI(
+      "http://localhost:5100/api/friends/delete",
+      username,
+      "DELETE",
+      "Friend removed successfully!",
+      "Failed to remove friend"
+    );
+    if (ok) await refreshAll();
+  };
+
+  // Cancel sent request
+  const handleCancelSentRequest = async (username) => {
+    const ok = await callAPI(
+      "http://localhost:5100/api/friends/cancel",
+      username,
+      "POST",
+      "Friend request cancelled.",
+      "Failed to cancel friend request"
+    );
+    if (ok) await refreshAll();
+  };
+
+  // Add multiple selected friends
+  const handleAddFriend = async () => {
+    if (selectedFriends.length === 0) {
+      addToast("No friends selected to add.", "info");
+      return;
+    }
+    setLoading(true);
+    let successCount = 0;
+    let errorMessages = [];
+    for (const friend of selectedFriends) {
+      try {
+        const res = await fetch("http://localhost:5100/api/friends/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username: friend.username }),
+        });
+        if (!res.ok) {
+          const errorText = await res.text();
+          errorMessages.push(
+            `Failed to add ${friend.username}: ${errorText || "Unknown error"}`
+          );
+        } else {
+          successCount++;
+        }
+      } catch (err) {
+        errorMessages.push(
+          `Failed to add ${friend.username}: ${err.message || "Unknown error"}`
+        );
+      }
+    }
+    if (successCount > 0) {
+      addToast(
+        `${successCount} friend${successCount > 1 ? "s" : ""} successfully added!`,
+        "success"
+      );
+      setSelectedFriends([]);
+      await refreshAll();
+    }
+    if (errorMessages.length > 0) {
+      addToast(`Some errors occurred:\n${errorMessages.join("\n")}`, "error");
+    }
+    setLoading(false);
+  };
+
+  // Friends with status "accepted"
   const acceptedFriends = friends.filter(
-    (friend: Friend) => friend.status === "accepted"
+    (friendObj) => friendObj.friend[0].status === "accepted"
   );
 
-  const pendingFriends = friends.filter(
-    (friend: Friend) => friend.status === "pending"
-  );
-
+  // UI
   return (
-    <MainLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Friends Section */}
-        <div className="lg:col-span-2">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-xl">Friends</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {acceptedFriends.map((friend) => (
-                <div
-                  key={friend.id}
-                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={friend.avatar || "/placeholder.svg"} />
-                      <AvatarFallback className="bg-orange-500 text-white">
-                        {friend.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-semibold">{friend.name}</h4>
-                      <p className="text-sm text-gray-600">{friend.username}</p>
+    <ToastProvider swipeDirection="right">
+      <MainLayout>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Friends Section */}
+          <div className="lg:col-span-2">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-xl">Friends ({acceptedFriends.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {acceptedFriends.length === 0 && <div className="text-gray-500">No friends yet.</div>}
+                {acceptedFriends.map((friendObj) => (
+                  <div
+                    key={friendObj.username}
+                    className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage
+                          src={friendObj.avatar || "/placeholder.svg"}
+                        />
+                        <AvatarFallback className="bg-orange-500 text-white">
+                          {(friendObj.name || friendObj.username)
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-semibold">{friendObj.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {friendObj.username}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        {friendObj.friend.map((detail, idx) => (
+                          <span key={idx} className="flex items-center gap-2">
+                            <Badge
+                              variant="secondary"
+                              className="bg-orange-200 text-orange-800"
+                            >
+                              {detail.relationship}
+                            </Badge>
+                          </span>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRemoveExistingFriend(friendObj.username)
+                        }
+                        className="p-1 rounded-full hover:bg-red-100"
+                        title="Remove existing friend"
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="secondary"
-                      className="bg-orange-200 text-orange-800"
-                    >
-                      {friend.relationship}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="text-orange-600 border-orange-600"
-                    >
-                      {friend.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+            </Card>
 
-          {/* Friend Requests */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Requests (1)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pendingFriends.map((friend) => (
-                <div
-                  key={friend.user_id}
-                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={friend.avatar || "/placeholder.svg"} />
-                      <AvatarFallback className="bg-orange-500 text-white">
-                        {friend.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-semibold">{friend.name}</h4>
-                      <p className="text-sm text-gray-600">{friend.username}</p>
+            {/* Sent Requests */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Sent Requests ({sentRequests.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {sentRequests.length === 0 && <div className="text-gray-500">No sent requests.</div>}
+                {sentRequests.map((friendObj) => (
+                  <div
+                    key={friendObj.user.username}
+                    className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage
+                          src={friendObj.avatar || "/placeholder.svg"}
+                        />
+                        <AvatarFallback className="bg-orange-500 text-white">
+                          {(friendObj.user.name || friendObj.user.username)
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-semibold">{friendObj.user.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {friendObj.user.username}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="secondary"
-                      className="bg-orange-200 text-orange-800"
+                    <button
+                      type="button"
+                      onClick={() => handleCancelSentRequest(friendObj.user.username)}
+                      className="p-1 rounded-full hover:bg-red-100"
+                      title="Cancel sent request"
                     >
-                      {friend.relationship}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="text-orange-600 border-orange-600"
-                    >
-                      {friend.status}
-                    </Badge>
+                      <X className="w-4 h-4 text-red-600" />
+                    </button>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+            </Card>
 
-          {/* Find New Friends */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Find New Friends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search By Username"
-                  className="pl-10 bg-teal-50"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="mt-4 space-y-2">
-                {searchTerm &&
-                  filteredFriends.map((friend) => (
-                    <div
-                      key={friend.user_id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+            {/* Find New Friends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Find New Friends</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search By Username"
+                    className="pl-10 bg-teal-50"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="mt-4 space-y-2">
+                  {usersLoading && <div>Loading...</div>}
+                  {!usersLoading &&
+                    searchTerm &&
+                    filteredUsers.length === 0 && <div>No users found.</div>}
+                  {!usersLoading &&
+                    filteredUsers.map((user) => (
+                      <div
+                        key={user.username}
+                        className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+                      >
+                        <span>
+                          {user.name} (@{user.username})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleAddSelectedFriend(user)}
+                          className="p-1 rounded-full hover:bg-teal-100"
+                          title="Add friend"
+                        >
+                          <Check className="w-4 h-4 text-teal-600" />
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Selected Friends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Selected Friends</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {selectedFriends.map((friend) => (
+                    <li
+                      key={friend.username}
+                      className="flex items-center justify-between"
                     >
                       <span>
                         {friend.name} (@{friend.username})
                       </span>
                       <button
-                        onClick={() => handleAddSelectedFriend(friend)}
-                        className="p-1 rounded-full hover:bg-teal-100"
-                        title="Add friend"
+                        type="button"
+                        onClick={() => handleRemoveFriend(friend.username)}
+                        className="p-1 rounded-full hover:bg-red-100"
+                        title="Remove friend"
                       >
-                        <Check className="w-4 h-4 text-teal-600" />
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {selectedFriends.length > 0 && (
+                  <Button
+                    size="sm"
+                    className="bg-green-500 hover:bg-green-600 mt-4"
+                    onClick={handleAddFriend}
+                    disabled={loading}
+                  >
+                    {loading ? "Adding..." : "Add Friend"}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right column: Invitations, Collabs, etc. */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Collabs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* ...collaborations section... */}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Invitations ({receivedRequests.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {receivedRequests.length === 0 && <div className="text-gray-500">No invitations.</div>}
+                {receivedRequests.map((friendObj) => (
+                  <div
+                    key={friendObj.user.username}
+                    className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage
+                          src={friendObj.avatar || "/placeholder.svg"}
+                        />
+                        <AvatarFallback className="bg-orange-500 text-white">
+                          {(friendObj.user.name || friendObj.user.username)
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-semibold">{friendObj.user.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {friendObj.user.username}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAccept(friendObj.user.username)}
+                        className="px-3 py-1 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleIgnore(friendObj.user.username)}
+                        className="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+                      >
+                        Ignore
                       </button>
                     </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Selected Friends */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Selected Friends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {selectedFriends.map((friend) => (
-                  <li
-                    key={friend.user_id}
-                    className="flex items-center justify-between"
-                  >
-                    <span>
-                      {friend.name} (@{friend.username})
-                    </span>
-                    <button
-                      onClick={() => handleRemoveFriend(friend.userid)}
-                      className="p-1 rounded-full hover:bg-red-100"
-                      title="Remove friend"
-                    >
-                      <X className="w-4 h-4 text-red-600" />
-                    </button>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-              {selectedFriends.length > 0 && (
-                <Button
-                  size="sm"
-                  className="bg-green-500 hover:bg-green-600 mt-4"
-                  onClick={handleAddFriend}
-                >
-                  Add Friend
-                </Button>
-              )}
-              {message && (
-                <div
-                  className={`mt-2 text-sm ${
-                    message.includes("success")
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {message}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        {/* ... rest of the code ... */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Collabs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* {collaborations.map((collab) => (
-                <div key={collab.id} className="p-4 bg-orange-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">{collab.title}</h4>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {collab.daysLeft} Days Left ({collab.date})
-                  </p>
 
-                  <div className="space-y-2 text-sm mb-3">
-                    <div>Saving To Allocate: ${collab.savingToAllocate}</div>
-                    <div>
-                      Present Saving To Allocate (5%): ${collab.presentSaving}
-                    </div>
-                    <div>
-                      Goal Amount: ${collab.goalAmount.toLocaleString()}
-                    </div>
-                  </div>
-
-                  <Progress value={collab.progress} className="mb-3" />
-                  <div className="text-right text-sm text-orange-500 mb-3">
-                    +800 (60%)
-                  </div>
-
-                  <div className="space-y-2">
-                    {collab.contributors.map((contributor, idx) => (
-                      <div key={idx} className="flex justify-between text-sm">
-                        <span className="font-medium">{contributor.name}</span>
-                        <span>
-                          {contributor.calculation ||
-                            `$${contributor.amount.toLocaleString()}`}
-                        </span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between text-sm pt-2 border-t">
-                      <span>Amount Left</span>
-                      <span>${collab.amountLeft.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-              ))} */}
-            </CardContent>
-          </Card>
-
-          {/* Invitations */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Invitations (2)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* {invitations.map((invitation) => (
-                <div key={invitation.id} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
-                      {invitation.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{invitation.title}</h4>
-                      <p className="text-sm text-gray-600">Category: {invitation.category}</p>
-                      <p className="text-sm text-gray-600">Amount: ${invitation.amount.toLocaleString()}</p>
-                      <p className="text-sm text-gray-600">Target Date: {invitation.targetDate}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="bg-green-500 hover:bg-green-600 flex-1">
-                      <Check className="w-4 h-4 mr-1" />
-                      Accept
-                    </Button>
-                    <Button size="sm" variant="destructive" className="flex-1">
-                      <X className="w-4 h-4 mr-1" />
-                      Decline
-                    </Button>
-                  </div>
-                </div>
-              ))} */}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </MainLayout>
+        {/* Toasts */}
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            open={toast.open}
+            onOpenChange={(open) => handleOpenChange(toast.id, open)}
+            duration={3500}
+            className={`
+              flex flex-col gap-1
+              px-6 py-4
+              rounded-lg shadow-lg
+              max-w-xs w-full
+              border
+              ${toast.type === "success" ? "bg-green-600 border-green-700 text-white" : ""}
+              ${toast.type === "error" ? "bg-red-600 border-red-700 text-white" : ""}
+              ${toast.type === "info" ? "bg-blue-600 border-blue-700 text-white" : ""}
+              transition-all
+            `}
+          >
+            <ToastTitle className="font-bold text-base mb-1">
+              {toast.type === "success" && "Success"}
+              {toast.type === "error" && "Failed"}
+              {toast.type === "info" && "Info"}
+            </ToastTitle>
+            <div className="whitespace-pre-line text-sm">{toast.message}</div>
+          </Toast>
+        ))}
+        <ToastViewport
+          className="
+            fixed bottom-6 right-6
+            flex flex-col items-end gap-4
+            z-[9999]
+            w-auto max-w-xs
+          "
+        />
+        {/* Error banner (non-blocking) */}
+        {error && (
+          <div className="fixed top-4 right-4 bg-red-100 text-red-800 px-4 py-2 rounded shadow z-[9999]">
+            {error}
+            <button
+              className="ml-2 text-red-800 hover:underline"
+              onClick={() => setError("")}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+      </MainLayout>
+    </ToastProvider>
   );
 }
