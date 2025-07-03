@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   CreditCard,
   RotateCcw,
@@ -10,6 +10,7 @@ import {
   Home,
   Menu,
   ChevronLeft,
+  LogOut,
 } from "lucide-react";
 import {
   Avatar,
@@ -27,8 +28,6 @@ const navigationItems = [
   { icon: RotateCcw, label: "Recurring Items", href: "/recurring" },
   { icon: Users, label: "Friends", href: "/friends" },
   { icon: Target, label: "Goals", href: "/goals" },
-  { icon: Target, label: "Login", href: "/login" },
-  { icon: Target, label: "Sign Up", href: "/sign-up" },
 ];
 
 function useLocalStorage(key, initialValue) {
@@ -48,13 +47,31 @@ function useLocalStorage(key, initialValue) {
 }
 
 export function AppSidebar() {
-   const [isCollapsed, setIsCollapsed] = useLocalStorage(
+  const [isCollapsed, setIsCollapsed] = useLocalStorage(
     "appSidebarCollapsed",
     false
   );
+  const [profile, setProfile] = useState(null);
 
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const response = await fetch("http://localhost:5100/api/users", {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!response.ok) throw new Error("Failed to fetch profile");
+        const data = await response.json();
+        setProfile(data);
+      } catch (error) {
+        setProfile(null);
+      }
+    }
+    fetchProfile();
+  }, []);
 
   const handleAddExpense = () => {
     router.push("/cashflows?openForm=expense");
@@ -63,6 +80,34 @@ export function AppSidebar() {
   const handleAddIncome = () => {
     router.push("/cashflows?openForm=income");
   };
+
+  async function handleLogout() {
+    try {
+      await fetch("http://localhost:5100/api/login/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      localStorage.removeItem("authToken");
+      router.push("/login");
+    } catch (err) {
+      alert("Failed to log out.");
+    }
+  }
+
+  // Helper: get initials from name or username
+  function getInitials(name, username) {
+    if (name && name.trim().length > 0) {
+      return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase();
+    }
+    if (username && username.trim().length > 0) {
+      return username.slice(0, 2).toUpperCase();
+    }
+    return "??";
+  }
 
   return (
     <div
@@ -101,33 +146,42 @@ export function AppSidebar() {
           </button>
         </div>
         <hr className="border-orange-300 my-2 p-1" />
-        <div className="flex items-center gap-3">
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 cursor-pointer hover:bg-orange-100 rounded-md p-2 transition"
+        >
           {isCollapsed ? (
             <Avatar className="w-7 h-7 flex-shrink-0 mx-auto">
-              <AvatarImage src="/placeholder.svg?height=48&width=48" />
+              <AvatarImage src={profile?.avatar || "/placeholder.svg?height=48&width=48"} />
               <AvatarFallback className="text-xs bg-gray-300">
-                BS
+                {getInitials(profile?.name, profile?.username)}
               </AvatarFallback>
             </Avatar>
           ) : (
             <>
               <Avatar className="w-12 h-12 border-2 border-white">
-                <AvatarImage src="/placeholder.svg?height=48&width=48" />
-                <AvatarFallback className="bg-gray-300">BS</AvatarFallback>
+                <AvatarImage src={profile?.avatar || "/placeholder.svg?height=48&width=48"} />
+                <AvatarFallback className="bg-gray-300">
+                  {getInitials(profile?.name, profile?.username)}
+                </AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-semibold text-gray-800">Ben Shin</div>
-                <div className="text-sm text-gray-600">Buff Man</div>
+                <div className="font-semibold text-gray-800">
+                  {profile?.name || ""}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {profile?.username || ""}
+                </div>
               </div>
             </>
           )}
-        </div>
+        </Link>
       </div>
 
       {/* Navigation Menu */}
       <div className="bg-orange-200 p-4 pt-2 flex-1">
         <div className="space-y-2">
-          {navigationItems.map((item) => {
+          {navigationItems.map((item, idx) => {
             const isActive = pathname === item.href;
             return (
               <div key={item.label} className="group">
@@ -146,6 +200,20 @@ export function AppSidebar() {
                     </span>
                   )}
                 </Link>
+                {/* Render Logout button right after Login */}
+                {item.label === "Goals" && (
+                  <button
+                    onClick={handleLogout}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors duration-300 w-full mt-1 ${
+                      isCollapsed
+                        ? "justify-center"
+                        : "text-red-600 hover:bg-red-50 font-medium text-sm"
+                    }`}
+                  >
+                    <LogOut className="w-5 h-5 flex-shrink-0" />
+                    {!isCollapsed && <span>Logout</span>}
+                  </button>
+                )}
               </div>
             );
           })}
