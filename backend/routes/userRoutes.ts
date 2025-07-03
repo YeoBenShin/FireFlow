@@ -7,7 +7,7 @@ import {
 
 const router = express.Router();
 router.get('/', getMyUser);
-router.post('/filter', getFilteredUsers)
+router.post('/filter', getFilteredUsers);
 router.post('/update', updateUser);
 router.delete('/delete', deleteUser);
 

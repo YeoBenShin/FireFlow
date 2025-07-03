@@ -37,7 +37,8 @@ export const getFilteredUsers = async (req: Request, res: Response) => {
     const { data, error } = await supabase
       .from('user')
       .select('username, name')
-      .ilike('username', `%${username}%`); // case-insensitive search
+      .ilike('username', `%${username}%`)
+      .neq('user_id', (req.user as jwt.JwtPayload).sub); // case-insensitive search
 
     if (error) {
       throw error;
