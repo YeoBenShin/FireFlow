@@ -59,3 +59,24 @@ export const loginUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message || 'Login failed' });
   }
 }
+
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    // 1. Sign out from Supabase Auth
+    const { error } = await supabase.auth.signOut();
+
+    if (error) throw error;
+
+    // 2. Clear the cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: false, // set to true in production
+      sameSite: 'lax',
+    });
+
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ error: error.message || 'Logout failed' });
+  }
+}
