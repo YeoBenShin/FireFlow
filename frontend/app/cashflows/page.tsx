@@ -288,7 +288,7 @@ function setSummaryData() {
           },
         ],
       },
-      Recent: {
+      Filter: {
         labels: ["March 22", "April 08", "April 15", "April 24", "April 30"],
         datasets: [
           {
@@ -367,7 +367,7 @@ function setSummaryData() {
         );
       });
     }
-    if (timeFilter === "Recent") {
+    if (timeFilter === "Filter") {
       return transactions.slice(0, 5);
     }
     return transactions;
@@ -666,9 +666,9 @@ function setSummaryData() {
                         <Calendar className="w-4 h-4 mr-2" />
                         This Month
                       </TabsTrigger>
-                      <TabsTrigger value="Recent">
+                      <TabsTrigger value="Filter">
                         <Filter className="w-4 h-4 mr-2" />
-                        Recent
+                        Filter
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
