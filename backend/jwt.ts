@@ -15,6 +15,21 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;
+    
+    // refresh the token
+    const refreshedToken = jwt.sign(
+      { sub: decoded.sub },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.cookie("token", refreshedToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
     req.user = decoded; // e.g. { sub: auth_user_id, ... }
     next();
 
