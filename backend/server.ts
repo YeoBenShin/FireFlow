@@ -1,9 +1,15 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 
-import transactionRoutes from './routes/transactionRoutes';
-import recurringTransactionRoutes from './routes/recurringTransactionRoutes';
+import { verifyJWT } from "./jwt";
+import loginRoutes from "./routes/loginRoutes";
+import userRoutes from "./routes/userRoutes";
+import transactionRoutes from "./routes/transactionRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
+import recurringTransactionRoutes from "./routes/recurringTransactionRoutes";
+import friendRoutes from "./routes/friendRoutes";
 
 dotenv.config();
 
@@ -11,15 +17,29 @@ const app = express();
 const PORT = process.env.PORT || 5100;
 
 // middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.use(cookieParser());
 app.use(express.json());
 
 // transaction routes
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/recurring-transactions', recurringTransactionRoutes);
+app.use("/login", loginRoutes);
+app.use("/api", verifyJWT);
+app.use("/api/users", userRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/recurring-transactions", recurringTransactionRoutes);
+app.use("/api/friends", friendRoutes);
 
-app.get('/', (_req, res) => {
-  res.send('API is running...');
+app.get("/", (_req, res) => {
+  res.send("API is running...");
 });
 
 app.listen(PORT, () => {
