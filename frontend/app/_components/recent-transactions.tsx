@@ -2,16 +2,8 @@
 
 import { ArrowUpRight, ArrowDownRight } from "lucide-react"
 import React, { useEffect, useState } from "react"
+import Transaction, { Transaction } from "@/types/transaction"
 
-interface Transaction {
-  transId: number
-  description: string
-  type: "income" | "expense"
-  amount: number
-  dateTime: string
-  category: string
-  userId: string
-}
 
 export function RecentTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])

@@ -3,14 +3,8 @@
 import { Info } from "lucide-react"
 import { DonutChart } from "./charts/donut-chart"
 import { useEffect, useState } from "react"
+import { Transaction } from "@/types/transaction"
 // import { isSameMonth, parseISO } from "date-fns" // Uncomment if date-fns is installed
-
-interface Transaction {
-  amount: number
-  category: string
-  type: "income" | "expense"
-  dateTime: string
-}
 
 interface ChartData {
   labels: string[]
@@ -22,16 +16,18 @@ interface ChartData {
 }
 
 const CHART_COLORS = [
-  "#FB923C", // orange-400
+  "#FDE68A", // yellow-200
+  "#FCD34D", // yellow-300
   "#FBBF24", // yellow-400
+  "#F59E42", // orange-300
+  "#FB923C", // orange-400
   "#F97316", // orange-500
   "#EA580C", // orange-600
-  "#FDE68A", // yellow-200
-  "#60A5FA", // blue-400
-  "#34D399", // green-400
-  "#A78BFA", // purple-400
-  "#F472B6", // pink-400
+  "#FF7F50", // coral
   "#F87171", // red-400
+  "#EF4444", // red-500
+  "#DC2626", // red-600
+  "#B91C1C", // red-700
 ]
 
 export function MonthlyBreakdown() {
@@ -64,17 +60,10 @@ export function MonthlyBreakdown() {
           .sort((a, b) => b[1] - a[1])
         let labels: string[] = []
         let values: number[] = []
-        if (sortedCategories.length > 10) {
-          labels = sortedCategories.slice(0, 9).map(([label]) => label)
-          values = sortedCategories.slice(0, 9).map(([, value]) => value)
-          // Group the rest as 'Other'
-          const otherSum = sortedCategories.slice(9).reduce((sum, [, value]) => sum + value, 0)
-          labels.push("Other")
-          values.push(otherSum)
-        } else {
-          labels = sortedCategories.map(([label]) => label)
-          values = sortedCategories.map(([, value]) => value)
-        }
+        
+        labels = sortedCategories.map(([label]) => label)
+        values = sortedCategories.map(([, value]) => value)
+        
         setChartData({
           labels,
           datasets: [
@@ -85,6 +74,7 @@ export function MonthlyBreakdown() {
             },
           ],
         })
+        
         setTotalExpenses(values.reduce((sum, v) => sum + v, 0))
 
         // Fetch all transactions to sum income for the month
