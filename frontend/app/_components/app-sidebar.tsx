@@ -83,8 +83,7 @@ export function AppSidebar() {
 
   async function handleLogout() {
     try {
-      await fetch("http://localhost:5100/api/login/logout", {
-        method: "POST",
+      await fetch("http://localhost:5100/login/logout", {
         credentials: "include",
       });
       localStorage.removeItem("authToken");
