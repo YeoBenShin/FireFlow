@@ -51,10 +51,9 @@ export function LoginForm({ onClose, onLoginSuccess }: LoginFormProps) {
         body: JSON.stringify(values),
       });
 
-      console.log(response)
-
       if (!response.ok) {
-        throw new Error(`Failed to login: ${response.statusText}`);
+        alert("Login failed. Please check your credentials.");
+        // throw new Error(`Failed to login: ${response.statusText}`);
       }
 
       const result = await response.json();

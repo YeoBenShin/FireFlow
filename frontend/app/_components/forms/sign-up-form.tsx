@@ -59,11 +59,11 @@ export function SignUpForm({
 
 
       if (!response.ok) {
-        throw new Error(`Failed to sign up: ${response.statusText}`);
+        alert("Signup failed. Please check your details.");
+        // throw new Error(`Failed to sign up: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log(response.json);
       console.log("Signup successful:", result);
 
       // Optional: Call onSignupSuccess or navigate

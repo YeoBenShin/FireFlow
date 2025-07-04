@@ -67,8 +67,8 @@ export function ProfilePage() {
         const data = await response.json();
         form.reset({
           ...data,
-          monthlySavings: Number(data.monthlySavings),
-          monthlyResetDate: Number(data.monthlyResetDate), // for input compatibility
+          monthlySavings: Number(data.monthly_savings),
+          monthlyResetDate: Number(data.monthly_reset_date), // for input compatibility
         });
       } catch (error) {
         console.error("Error fetching profile:", error);
