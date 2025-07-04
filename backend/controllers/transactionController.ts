@@ -268,3 +268,79 @@ export const getMonthTransactions = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch month transactions' });
   }
 }
+
+export const getCurrentMonthCategoryExpenses = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
+  const start = `${year}-${month}-01T00:00:00`;
+  // Get the first day of the next month
+  const nextMonth = new Date(year, now.getMonth() + 1, 1);
+  const end = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
+
+  try {
+    const { data, error } = await supabase
+      .from('transaction')
+      .select('category, amount')
+      .eq('user_id', userId)
+      .eq('type', 'expense')
+      .gte('dateTime', start)
+      .lt('dateTime', end);
+
+    if (error) {
+      throw error;
+    }
+
+    // Group and sum by category (case-insensitive)
+    const categorySums: Record<string, number> = {};
+    data.forEach(row => {
+      if (!row.category || row.category.trim() === "") return;
+      const key = row.category.trim().toLowerCase();
+      categorySums[key] = (categorySums[key] || 0) + row.amount;
+    });
+
+    // Return with original casing for the first occurrence
+    const result: Record<string, number> = {};
+    data.forEach(row => {
+      if (!row.category || row.category.trim() === "") return;
+      const key = row.category.trim().toLowerCase();
+      if (!(row.category.trim() in result)) {
+        result[row.category.trim()] = categorySums[key];
+      }
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch category expenses for current month' });
+  }
+};
+
+export const getTodaysExpenses = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const start = `${year}-${month}-${day}T00:00:00`;
+  const end = `${year}-${month}-${day}T23:59:59`;
+
+  try {
+    const { data, error } = await supabase
+      .from('transaction')
+      .select('amount')
+      .eq('user_id', userId)
+      .eq('type', 'expense')
+      .gte('dateTime', start)
+      .lte('dateTime', end);
+
+    if (error) {
+      throw error;
+    }
+
+    const total = data.reduce((sum, row) => sum + (row.amount || 0), 0);
+    res.status(200).json({ total });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch today\'s expenses' });
+  }
+};

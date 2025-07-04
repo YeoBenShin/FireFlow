@@ -7,7 +7,9 @@ import {
     getFilterTransactions,
     getMonthlyTransactions,
     getYearlyTransactions,
-    getMonthTransactions
+    getMonthTransactions,
+    getCurrentMonthCategoryExpenses,
+    getTodaysExpenses
 } from '../controllers/transactionController';
 
 const router = express.Router();
@@ -20,5 +22,7 @@ router.post('/filter', getFilterTransactions);
 router.get('/month-transactions', getMonthTransactions);
 router.get('/monthly-transactions', getMonthlyTransactions);
 router.get('/yearly-transactions', getYearlyTransactions);
+router.get('/category-expenses-monthly', getCurrentMonthCategoryExpenses);
+router.get('/todays-expenses', getTodaysExpenses);
 
 export default router;

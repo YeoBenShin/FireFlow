@@ -1,27 +1,126 @@
+"use client"
+
 import { Info } from "lucide-react"
 import { DonutChart } from "./charts/donut-chart"
+import { useEffect, useState } from "react"
+// import { isSameMonth, parseISO } from "date-fns" // Uncomment if date-fns is installed
+
+interface Transaction {
+  amount: number
+  category: string
+  type: "income" | "expense"
+  dateTime: string
+}
+
+interface ChartData {
+  labels: string[]
+  datasets: {
+    data: number[]
+    backgroundColor: string[]
+    borderWidth: number
+  }[]
+}
+
+const CHART_COLORS = [
+  "#FB923C", // orange-400
+  "#FBBF24", // yellow-400
+  "#F97316", // orange-500
+  "#EA580C", // orange-600
+  "#FDE68A", // yellow-200
+  "#60A5FA", // blue-400
+  "#34D399", // green-400
+  "#A78BFA", // purple-400
+  "#F472B6", // pink-400
+  "#F87171", // red-400
+]
 
 export function MonthlyBreakdown() {
-  const chartData = {
-    labels: ["Food & Dining", "Shopping", "Transportation", "Housing", "Entertainment"],
+  const [chartData, setChartData] = useState<ChartData>({
+    labels: [],
     datasets: [
       {
-        data: [600, 400, 300, 500, 200],
-        backgroundColor: [
-          "#FB923C", // orange-400
-          "#FBBF24", // yellow-400
-          "#F97316", // orange-500
-          "#EA580C", // orange-600
-          "#FDE68A", // yellow-200
-        ],
+        data: [],
+        backgroundColor: CHART_COLORS,
         borderWidth: 0,
       },
     ],
-  }
+  })
+  const [totalExpenses, setTotalExpenses] = useState<number>(0)
+  const [totalIncome, setTotalIncome] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // Fetch category expenses for the current month
+        const res = await fetch("http://localhost:5100/api/transactions/category-expenses-monthly", {
+          credentials: "include",
+        })
+        const categoryData: Record<string, number> = await res.json()
+        // Sort categories by amount descending
+        const sortedCategories = Object.entries(categoryData)
+          .filter(([label]) => label && label.trim() !== "")
+          .sort((a, b) => b[1] - a[1])
+        let labels: string[] = []
+        let values: number[] = []
+        if (sortedCategories.length > 10) {
+          labels = sortedCategories.slice(0, 9).map(([label]) => label)
+          values = sortedCategories.slice(0, 9).map(([, value]) => value)
+          // Group the rest as 'Other'
+          const otherSum = sortedCategories.slice(9).reduce((sum, [, value]) => sum + value, 0)
+          labels.push("Other")
+          values.push(otherSum)
+        } else {
+          labels = sortedCategories.map(([label]) => label)
+          values = sortedCategories.map(([, value]) => value)
+        }
+        setChartData({
+          labels,
+          datasets: [
+            {
+              data: values,
+              backgroundColor: CHART_COLORS,
+              borderWidth: 0,
+            },
+          ],
+        })
+        setTotalExpenses(values.reduce((sum, v) => sum + v, 0))
+
+        // Fetch all transactions to sum income for the month
+        const txRes = await fetch("http://localhost:5100/api/transactions", {
+          credentials: "include",
+        })
+        const transactions: Transaction[] = await txRes.json()
+        const now = new Date()
+        const thisMonthIncome = transactions.filter(tx => {
+          if (tx.type !== "income") return false
+          const txDate = new Date(tx.dateTime)
+          return txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth() && tx.amount > 0
+        })
+        setTotalIncome(thisMonthIncome.reduce((sum, tx) => sum + tx.amount, 0))
+      } catch (err) {
+        setChartData({
+          labels: [],
+          datasets: [
+            {
+              data: [],
+              backgroundColor: CHART_COLORS,
+              borderWidth: 0,
+            },
+          ],
+        })
+        setTotalExpenses(0)
+        setTotalIncome(0)
+      }
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
 
   const centerText = {
     title: "Total Expenses",
-    value: "$2,000.00",
+    value: `$${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
   }
 
   return (
@@ -31,7 +130,11 @@ export function MonthlyBreakdown() {
         <Info className="w-4 h-4 text-gray-400" />
       </div>
 
-      <DonutChart data={chartData} centerText={centerText} />
+      {loading ? (
+        <div className="text-center py-10 text-gray-400">Loading...</div>
+      ) : (
+        <DonutChart data={chartData} centerText={centerText} />
+      )}
 
       {/* Legend */}
       <div className="mt-4 space-y-2">
@@ -39,10 +142,10 @@ export function MonthlyBreakdown() {
           <div key={label} className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: chartData.datasets[0].backgroundColor[index] }}
+              style={{ backgroundColor: chartData.datasets[0].backgroundColor[index % chartData.datasets[0].backgroundColor.length] }}
             />
             <span className="text-sm text-gray-600">{label}</span>
-            <span className="text-sm font-medium ml-auto">${chartData.datasets[0].data[index].toLocaleString()}</span>
+            <span className="text-sm font-medium ml-auto">${(chartData.datasets[0].data[index] ?? 0).toLocaleString()}</span>
           </div>
         ))}
       </div>
@@ -50,11 +153,11 @@ export function MonthlyBreakdown() {
       <div className="flex justify-between mt-6 pt-4 border-t">
         <div className="text-center">
           <div className="text-sm text-gray-600 mb-1">Total Income:</div>
-          <div className="text-lg font-bold text-gray-800">$6,000.00</div>
+          <div className="text-lg font-bold text-gray-800">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div className="text-center">
           <div className="text-sm text-gray-600 mb-1">Total Savings:</div>
-          <div className="text-lg font-bold text-gray-800">$4,000.00</div>
+          <div className="text-lg font-bold text-gray-800">${(totalIncome - totalExpenses).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
       </div>
     </div>
