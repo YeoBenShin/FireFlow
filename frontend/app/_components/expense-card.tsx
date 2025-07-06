@@ -10,7 +10,7 @@ export function ExpenseCard({ amount, title }: ExpenseCardProps) {
         <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
         <span className="text-gray-600 font-medium">{title}</span>
       </div>
-      <div className="text-3xl font-bold text-gray-800">-${amount.toLocaleString()}</div>
+      <div className="text-3xl font-bold text-gray-800">${amount.toLocaleString()}</div>
     </div>
   )
 }

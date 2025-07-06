@@ -10,6 +10,7 @@ import { useEffect, useState } from "react"
 
 export default function HomePage() {
   const [todaysExpenses, setTodaysExpenses] = useState<number>(0)
+  const [monthlyBudget, setMonthlyBudget] = useState<number>(250)
 
   useEffect(() => {
     const fetchTodaysExpenses = async () => {
@@ -32,13 +33,14 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
     
         {/* Progress Bar */}
-        <ProgressBar current={todaysExpenses} total={250} max={250} />
+        <ProgressBar current={todaysExpenses} total={monthlyBudget} max={monthlyBudget} />
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
             <ExpenseCard amount={todaysExpenses} title="Day's Expenses" />
+            <ExpenseCard amount={monthlyBudget-todaysExpenses} title="Remaining Budget" />
             <MonthlyBreakdown />
           </div>
 
