@@ -9,7 +9,7 @@ import { AddRecurringForm } from "../_components/forms/add-recurring-form"
 import { Badge } from "@/app/_components/ui/badge"
 
 interface BackendRecurringTransaction {
-  recTransId: number
+  rec_trans_id: number
   description: string
   type: 'income' | 'expense'
   amount: number
@@ -61,6 +61,8 @@ export default function RecurringPage() {
 
       const backendTransactions: BackendRecurringTransaction[] = await response.json()
       
+      console.log('Backend response:', backendTransactions)
+
       if (!backendTransactions || backendTransactions.length === 0) {
       console.log('No transactions found')
       setRecurringExpenses([])
@@ -76,7 +78,7 @@ export default function RecurringPage() {
       }
 
       return {
-        id: transaction.recTransId?.toString() || 'unknown',
+        id: transaction.rec_trans_id?.toString() || 'unknown',
         title: transaction.description || 'No description',
         frequency: formatFrequency(transaction.frequency || 'monthly', transaction.repeatDay || ''),
         amount: transaction.amount || 0,
@@ -114,6 +116,7 @@ export default function RecurringPage() {
     }
     return colors[category as keyof typeof colors] || colors.other
   }
+
 
   const formatFrequency = (frequency: string, repeatDay: string): string => {
     const dayMap: { [key: string]: string } = {
@@ -196,7 +199,9 @@ export default function RecurringPage() {
                     recurringExpenses.map((item) => (
                       <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          <Badge className={getCategoryColor(item.category)}>{getCategoryLabel(item.category)}</Badge>
+                          <Badge className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(item.category)}`}>
+                            {getCategoryLabel(item.category)}
+                          </Badge>
                           <div>
                             <h4 className="font-semibold">{item.title}</h4>
                             <p className="text-sm text-gray-600">{item.frequency}</p>
@@ -219,7 +224,9 @@ export default function RecurringPage() {
                     recurringIncome.map((item) => (
                       <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          <Badge className={getCategoryColor(item.category)}>{getCategoryLabel(item.category)}</Badge>
+                          <Badge className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(item.category)}`}>
+                            {getCategoryLabel(item.category)}
+                          </Badge>
                           <div>
                             <h4 className="font-semibold">{item.title}</h4>
                             <p className="text-sm text-gray-600">{item.frequency}</p>

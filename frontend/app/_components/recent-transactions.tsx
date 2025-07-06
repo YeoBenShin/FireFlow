@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react"
 import Transaction, { Transaction } from "@/types/transaction"
 
 
+
 export function RecentTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
