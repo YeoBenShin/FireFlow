@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { MainLayout } from "../_components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
@@ -8,56 +8,97 @@ import { Plus, X } from "lucide-react"
 import { AddRecurringForm } from "../_components/forms/add-recurring-form"
 import { Badge } from "@/app/_components/ui/badge"
 
+interface BackendRecurringTransaction {
+  recTransId: number
+  description: string
+  type: 'income' | 'expense'
+  amount: number
+  category: string
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'bimonthly' | 'monthly' | 'yearly'
+  repeatDay: string
+  endDate?: string
+  isActive: boolean
+  userId: string
+}
+
+interface DisplayRecurringTransaction {
+  id: string
+  title: string
+  frequency: string
+  amount: number
+  category: string
+  type: 'income' | 'expense'
+  isActive: boolean
+}
+
 export default function RecurringPage() {
   const [showForm, setShowForm] = useState(false)
+  const [recurringExpenses, setRecurringExpenses] = useState<DisplayRecurringTransaction[]>([])
+  const [recurringIncome, setRecurringIncome] = useState<DisplayRecurringTransaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const recurringExpenses = [
-    {
-      id: "1",
-      title: "Gym Membership",
-      frequency: "Every 1st Of The Month",
-      amount: -98.9,
-      category: "health",
-    },
-    {
-      id: "2",
-      title: "MRT Concession",
-      frequency: "Every 15th Of The Month",
-      amount: -48.0,
-      category: "transport",
-    },
-    {
-      id: "3",
-      title: "Spotify",
-      frequency: "Every 12th Of The Month",
-      amount: -12.8,
-      category: "entertainment",
-    },
-  ]
+  useEffect(() => {
+    fetchRecurringTransactions()
+  }, [])
 
-  const recurringIncome = [
-    {
-      id: "4",
-      title: "Monthly Salary",
-      frequency: "Every 1st Of The Month",
-      amount: 3000.8,
-      category: "salary",
-    },
-    {
-      id: "5",
-      title: "Private Coaching",
-      frequency: "Every Week, Monday",
-      amount: 75,
-      category: "freelance",
-    },
-    {
-      id: "6",
-      title: "John's Math Tuition",
-      frequency: "Every Week, Tuesday",
-      amount: 90,
-      category: "freelance",
-    },
-  ]
+ const fetchRecurringTransactions = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch('http://localhost:5100/api/recurring-transactions', {
+        method: 'GET',
+        credentials: 'include', // Include cookies for authentication
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const backendTransactions: BackendRecurringTransaction[] = await response.json()
+      
+      if (!backendTransactions || backendTransactions.length === 0) {
+      console.log('No transactions found')
+      setRecurringExpenses([])
+      setRecurringIncome([])
+      return
+    }
+      // Transform backend data to frontend format
+      const displayTransactions: DisplayRecurringTransaction[] = backendTransactions.map(transaction => {
+      // Check if transaction has the expected properties
+      if (!transaction || typeof transaction !== 'object') {
+        console.warn('Invalid transaction object:', transaction)
+        return null
+      }
+
+      return {
+        id: transaction.recTransId?.toString() || 'unknown',
+        title: transaction.description || 'No description',
+        frequency: formatFrequency(transaction.frequency || 'monthly', transaction.repeatDay || ''),
+        amount: transaction.amount || 0,
+        category: transaction.category || 'other',
+        type: transaction.type || 'expense',
+        isActive: transaction.isActive !== undefined ? transaction.isActive : true
+      }
+    }).filter(transaction => transaction !== null) as DisplayRecurringTransaction[]
+
+      // Filter active transactions and separate by type
+      const activeTransactions = displayTransactions.filter(t => t.isActive)
+      setRecurringExpenses(activeTransactions.filter(t => t.type === 'expense'))
+      setRecurringIncome(activeTransactions.filter(t => t.type === 'income'))
+
+    } catch (error) {
+      console.error("Error fetching recurring transactions:", error)
+      setError("Failed to load recurring transactions. Please try again later.")
+    } finally {
+      setLoading(false)
+    }
+ }
+      
 
   const getCategoryColor = (category: string) => {
     const colors = {
@@ -74,10 +115,40 @@ export default function RecurringPage() {
     return colors[category as keyof typeof colors] || colors.other
   }
 
+  const formatFrequency = (frequency: string, repeatDay: string): string => {
+    const dayMap: { [key: string]: string } = {
+      'monday': 'Monday',
+      'tuesday': 'Tuesday',
+      'wednesday': 'Wednesday',
+      'thursday': 'Thursday',
+      'friday': 'Friday',
+      'saturday': 'Saturday',
+      'sunday': 'Sunday'
+    }
+
+    switch (frequency) {
+      case 'daily':
+        return 'Every Day'
+      case 'weekly':
+        return `Every Week, ${dayMap[repeatDay.toLowerCase()] || repeatDay}`
+      case 'biweekly':
+        return `Every 2 Weeks, ${dayMap[repeatDay.toLowerCase()] || repeatDay}`
+      case 'monthly':
+        return `Every ${repeatDay} Of The Month`
+      case 'bimonthly':
+        return `Every 2 Months, ${repeatDay}`
+      case 'yearly':
+        return `Every Year, ${repeatDay}`
+      default:
+        return `Every ${frequency}`
+    }
+  }
+
+  
   const getCategoryLabel = (category: string) => {
     const labels = {
       health: "Health & Fitness",
-      transport: "Transportation",
+      transport: "Transport",
       entertainment: "Entertainment",
       utilities: "Utilities",
       food: "Food & Dining",
@@ -91,6 +162,14 @@ export default function RecurringPage() {
 
   const handleCloseForm = () => {
     setShowForm(false)
+    // Refresh data after closing form
+    fetchRecurringTransactions()
+  }
+
+  const handleAddSuccess = () => {
+    setShowForm(false)
+    // Refresh data after successful add
+    fetchRecurringTransactions()
   }
 
   return (
@@ -111,18 +190,22 @@ export default function RecurringPage() {
               <div className="mb-8">
                 <h3 className="font-semibold text-lg mb-4 underline">Recurring Expenditure</h3>
                 <div className="space-y-3">
-                  {recurringExpenses.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Badge className={getCategoryColor(item.category)}>{getCategoryLabel(item.category)}</Badge>
-                        <div>
-                          <h4 className="font-semibold">{item.title}</h4>
-                          <p className="text-sm text-gray-600">{item.frequency}</p>
+                  {recurringExpenses.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">No recurring expenses found</p>
+                  ) : (
+                    recurringExpenses.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Badge className={getCategoryColor(item.category)}>{getCategoryLabel(item.category)}</Badge>
+                          <div>
+                            <h4 className="font-semibold">{item.title}</h4>
+                            <p className="text-sm text-gray-600">{item.frequency}</p>
+                          </div>
                         </div>
+                        <span className="font-bold text-red-600">${Math.abs(item.amount).toFixed(2)}</span>
                       </div>
-                      <span className="font-bold text-red-600">${Math.abs(item.amount).toFixed(2)}</span>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -130,18 +213,22 @@ export default function RecurringPage() {
               <div>
                 <h3 className="font-semibold text-lg mb-4 underline">Recurring Income</h3>
                 <div className="space-y-3">
-                  {recurringIncome.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Badge className={getCategoryColor(item.category)}>{getCategoryLabel(item.category)}</Badge>
-                        <div>
-                          <h4 className="font-semibold">{item.title}</h4>
-                          <p className="text-sm text-gray-600">{item.frequency}</p>
+                  {recurringIncome.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">No recurring income found</p>
+                  ) : (
+                    recurringIncome.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Badge className={getCategoryColor(item.category)}>{getCategoryLabel(item.category)}</Badge>
+                          <div>
+                            <h4 className="font-semibold">{item.title}</h4>
+                            <p className="text-sm text-gray-600">{item.frequency}</p>
+                          </div>
                         </div>
+                        <span className="font-bold text-green-600">+${item.amount.toFixed(2)}</span>
                       </div>
-                      <span className="font-bold text-green-600">+${item.amount.toFixed(2)}</span>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -159,7 +246,8 @@ export default function RecurringPage() {
                 </Button>
               </CardHeader>
               <CardContent>
-                <AddRecurringForm onClose={handleCloseForm} />
+                {/* Fix: Add onSuccess prop */}
+                <AddRecurringForm onClose={handleCloseForm} onSuccess={handleAddSuccess} />
               </CardContent>
             </Card>
           ) : (
@@ -202,6 +290,9 @@ export default function RecurringPage() {
                     <Button className="w-full bg-orange-500 hover:bg-orange-600" onClick={() => setShowForm(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Add Recurring Item
+                    </Button>
+                    <Button variant="outline" className="w-full" onClick={fetchRecurringTransactions}>
+                      Refresh Data
                     </Button>
                   </div>
                 </div>

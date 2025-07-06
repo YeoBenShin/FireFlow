@@ -11,18 +11,26 @@ import { Textarea } from "@/app/_components/ui/textarea"
 import { Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-export function AddRecurringForm({ onClose }: { onClose?: () => void }) {
+interface AddRecurringFormProps {
+  onClose?: () => void
+  onSuccess?: () => void
+}
+
+export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) {
   const router = useRouter()
   const [formData, setFormData] = useState({
-    date: "April 30, 2024",
-    frequency: "monthly",
-    type: "expense",
+    date: new Date().toISOString().split('T')[0], // Changed to proper date format
+    enddate:  new Date().toISOString().split('T')[0], // Changed to proper date format
+    frequency: "monthly" as "daily" | "weekly" | "biweekly" | "bimonthly" | "monthly" | "yearly",
+    type: "expense" as "income" | "expense",
     category: "",
+    
     amount: "25.00",
     title: "",
     notes: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
@@ -33,22 +41,78 @@ export function AddRecurringForm({ onClose }: { onClose?: () => void }) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Helper function to calculate repeatDay based on date and frequency
+  const calculateRepeatDay = (date: string, frequency: string): string => {
+    const selectedDate = new Date(date)
+    
+    switch (frequency) {
+      case 'daily':
+        return 'daily'
+      case 'weekly':
+      case 'biweekly':
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+        return days[selectedDate.getDay()]
+      case 'monthly':
+      case 'bimonthly':
+        return selectedDate.getDate().toString()
+      case 'yearly':
+        return selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+      default:
+        return ''
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError(null)
 
-    // Simulate adding the recurring item
-    setTimeout(() => {
-      console.log("Recurring item added:", {
-        ...formData,
-        amount: Number.parseFloat(formData.amount.replace("$", "")),
+    try {
+      // const token = localStorage.getItem("authToken")
+      
+      // if (!token) {
+      //   setError("No authentication token found. Please login.")
+      //   setIsSubmitting(false)
+      //   return
+      // }
+
+      // Calculate repeatDay based on selected date and frequency
+      const repeatDay = calculateRepeatDay(formData.date, formData.frequency)
+
+      // Prepare the request body to match your backend schema
+      const requestBody = {
+        description: formData.title,
+        type: formData.type,
+        amount: parseFloat(formData.amount.replace(/[^0-9.]/g, "")),
+        category: formData.category,
+        frequency: formData.frequency,
+        repeatDay: repeatDay,
+        endDate: formData.enddate, // Optional field
+        isActive: true,
+      }
+
+      console.log('Sending request to backend:', requestBody)
+
+      const response = await fetch('http://localhost:5100/api/recurring-transactions/create', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
       })
 
-      setIsSubmitting(false)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('Recurring transaction created successfully:', result)
 
       // Reset form data
       setFormData({
-        date: "April 30, 2024",
+        date: new Date().toISOString().split('T')[0],
         frequency: "monthly",
         type: "expense",
         category: "",
@@ -57,20 +121,59 @@ export function AddRecurringForm({ onClose }: { onClose?: () => void }) {
         notes: "",
       })
 
-      if (onClose) onClose()
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess()
+      } else if (onClose) {
+        onClose()
+      }
 
       // Refresh the page to simulate data update
       router.refresh()
-    }, 500)
+
+    } catch (err) {
+      console.error('Error creating recurring transaction:', err)
+      setError(err instanceof Error ? err.message : 'An error occurred while creating the recurring transaction')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
       <div>
         <Label htmlFor="date">Start Date</Label>
         <div className="relative">
-          <Input id="date" value={formData.date} onChange={handleChange} className="bg-orange-50" />
-          <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
+          <Input 
+            id="date" 
+            type="date"
+            value={formData.date} 
+            onChange={handleChange} 
+            className="bg-orange-50"
+            required
+          />
+          
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="date">End Date</Label>
+        <div className="relative">
+          <Input 
+            id="enddate" 
+            type="date"
+            value={formData.enddate} 
+            onChange={handleChange} 
+            className="bg-orange-50"
+            required
+          />
+          
         </div>
       </div>
 
@@ -83,6 +186,8 @@ export function AddRecurringForm({ onClose }: { onClose?: () => void }) {
           <SelectContent>
             <SelectItem value="daily">Daily</SelectItem>
             <SelectItem value="weekly">Weekly</SelectItem>
+            <SelectItem value="biweekly">Bi-weekly</SelectItem>
+            <SelectItem value="bimonthly">Bi-monthly</SelectItem>
             <SelectItem value="monthly">Monthly</SelectItem>
             <SelectItem value="yearly">Yearly</SelectItem>
           </SelectContent>
@@ -109,11 +214,17 @@ export function AddRecurringForm({ onClose }: { onClose?: () => void }) {
             <SelectValue placeholder="Select The Category..." />
           </SelectTrigger>
           <SelectContent>
+            Expenses
             <SelectItem value="food">Food & Dining</SelectItem>
             <SelectItem value="transport">Transportation</SelectItem>
             <SelectItem value="entertainment">Entertainment</SelectItem>
             <SelectItem value="utilities">Utilities</SelectItem>
-            <SelectItem value="income">Income</SelectItem>
+            <SelectItem value="health">Health & Fitness</SelectItem>
+            Income
+            <SelectItem value="salary">Salary</SelectItem>
+            <SelectItem value="freelance">Freelance</SelectItem>
+            <SelectItem value="investment">Investment</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -128,6 +239,7 @@ export function AddRecurringForm({ onClose }: { onClose?: () => void }) {
             setFormData((prev) => ({ ...prev, amount: value }))
           }}
           className="bg-teal-50"
+          required
         />
       </div>
 
@@ -139,6 +251,7 @@ export function AddRecurringForm({ onClose }: { onClose?: () => void }) {
           onChange={handleChange}
           placeholder="Subscription"
           className="bg-teal-50"
+          required
         />
       </div>
 
