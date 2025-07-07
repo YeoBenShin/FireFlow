@@ -54,6 +54,7 @@ export default function CashflowsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const isMobile = useIsMobile();
+  const [filterChartData, setFilterChartData] = useState(null); 
 
   // Check URL parameters on component mount
   useEffect(() => {
@@ -539,7 +540,97 @@ function setSummaryData() {
       });
     }
     setFilteredTransactions(filtered);
+    generateFilterChartData(filtered);
   };
+
+  const generateFilterChartData = (filteredData: Transaction[]) => {
+  if (filteredData.length === 0) {
+    // If no filtered data, show empty chart
+    const emptyFilterData = {
+      labels: ["No data"],
+      datasets: [
+        {
+          label: "Income",
+          data: [0],
+          borderColor: "#3B82F6",
+          backgroundColor: "rgba(59, 130, 246, 0.1)",
+          fill: false,
+          tension: 0.1,
+        },
+        {
+          label: "Expenses",
+          data: [0],
+          borderColor: "#7C2D12",
+          backgroundColor: "rgba(124, 45, 18, 0.1)",
+          fill: false,
+          tension: 0.1,
+        },
+      ],
+    };
+    
+    setChartData(prevData => ({
+      ...prevData,
+      Filter: emptyFilterData
+    }));
+    return;
+  }
+
+  const groupedByDate = filteredData.reduce((acc, tx) => {
+    const date = new Date(tx.dateTime).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    
+    if (!acc[date]) {
+      acc[date] = { income: 0, expenses: 0 };
+    }
+    
+    if (tx.type === 'income') {
+      acc[date].income += tx.amount;
+    } else {
+      acc[date].expenses += Math.abs(tx.amount);
+    }
+    
+    return acc;
+  }, {} as Record<string, { income: number; expenses: number }>);
+
+  // Sort dates chronologically
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+    return new Date(a).getTime() - new Date(b).getTime();
+  });
+
+  const incomeData = sortedDates.map(date => groupedByDate[date].income);
+  const expenseData = sortedDates.map(date => groupedByDate[date].expenses);
+
+  const newFilterChartData = {
+    labels: sortedDates,
+    datasets: [
+      {
+        label: "Income",
+        data: incomeData,
+        borderColor: "#3B82F6",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        fill: false,
+        tension: 0.1,
+      },
+      {
+        label: "Expenses",
+        data: expenseData,
+        borderColor: "#7C2D12",
+        backgroundColor: "rgba(124, 45, 18, 0.1)",
+        fill: false,
+        tension: 0.1,
+      },
+    ],
+  };
+
+  // Update the chart data with the new filter data
+  setChartData(prevData => ({
+    ...prevData,
+    Filter: newFilterChartData
+  }));
+};
 
   return (
     <MainLayout>
