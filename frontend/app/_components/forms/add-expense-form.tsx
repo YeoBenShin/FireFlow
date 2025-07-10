@@ -103,11 +103,11 @@ export function AddExpenseForm({
     
     // Simulate adding the expense
      try {
-      const combinedDateTime = new Date(`${values.date}T${values.time}`);
+      const dateTime = `${values.date}T${values.time}:00`; 
       const payload = {
         category: values.category,
         description: values.description,
-        dateTime: combinedDateTime.toISOString(), // Convert to ISO string
+        dateTime: dateTime, // Convert to ISO string
         amount: Number.parseFloat(values.amount.replace("$", "")),
         type: "expense",
       }
@@ -132,11 +132,11 @@ export function AddExpenseForm({
 
        const newTx = {
         ...data,
-        dateTime: new Date(data.dateTime).toLocaleDateString("en-SG", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        }),
+        // dateTime: new Date(data.dateTime).toLocaleDateString("en-SG", {
+        //   day: "2-digit",
+        //   month: "long",
+        //   year: "numeric",
+        // }),
         month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
         icon: iconMap[categoryIconMap[data.category] || "DollarSign"] || null,
       };
