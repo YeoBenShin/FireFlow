@@ -317,12 +317,12 @@ function setSummaryData() {
           },
         ],
       },
-      Filter: {
-        labels: ["March 22", "April 08", "April 15", "April 24", "April 30"],
+       Filter: {
+        labels: monthLabels,
         datasets: [
           {
             label: "Income",
-            data: [0, 0, 0, 0, 4000],
+            data: monthLabels.map(label => monthlyIncome?.[label] ?? 0),
             borderColor: "#3B82F6", // blue
             backgroundColor: "rgba(59, 130, 246, 0.1)",
             fill: false,
@@ -330,7 +330,7 @@ function setSummaryData() {
           },
           {
             label: "Expenses",
-            data: [70, 48, 1574, 100, 0],
+            data: monthLabels.map(label => monthlyExpenses?.[label] ?? 0),
             borderColor: "#7C2D12", // dark brown/red
             backgroundColor: "rgba(124, 45, 18, 0.1)",
             fill: false,
