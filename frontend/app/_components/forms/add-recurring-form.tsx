@@ -21,11 +21,10 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0], // Changed to proper date format
     enddate:  new Date().toISOString().split('T')[0], // Changed to proper date format
-    frequency: "monthly" as "daily" | "weekly" | "biweekly" | "bimonthly" | "monthly" | "yearly",
+    frequency: "monthly" as "daily" | "weekly" | "biweekly" | "monthly", // | "yearly",
     type: "expense" as "income" | "expense",
     category: "",
-    
-    amount: "25.00",
+    amount: "",
     title: "",
     notes: "",
   })
@@ -53,13 +52,38 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
         return days[selectedDate.getDay()]
       case 'monthly':
-      case 'bimonthly':
         return selectedDate.getDate().toString()
-      case 'yearly':
-        return selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+      // case 'yearly':
+      //   return selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
       default:
         return ''
     }
+  }
+
+  const calculateNextRunDate = (date: string, frequency: string): Date => {
+    // calculating the next run date based on frequency
+      const selectedDate = new Date(formData.date);
+      let nextRunDate = new Date();
+      nextRunDate.setDate(selectedDate.getDate() + 1);
+      const todayDay = new Date().getDay();
+
+      if (formData.frequency === "weekly") {
+        const daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
+        nextRunDate = new Date(todayDay + daysUntilNext);
+
+      } else if (formData.frequency === "biweekly") {
+        let daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
+        daysUntilNext += 7; // Add an additional week for biweekly
+        nextRunDate.setDate(selectedDate.getDate() + daysUntilNext);
+
+      } else if (formData.frequency === "monthly") {
+        if (selectedDate.getDate() >= selectedDate.getDate()) {
+          nextRunDate.setMonth(selectedDate.getMonth() + 1);
+        }
+        nextRunDate.setDate(selectedDate.getDate());  
+
+      }
+      return nextRunDate
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,6 +113,7 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
         repeatDay: repeatDay,
         endDate: formData.enddate, // Optional field
         isActive: true,
+        next_recurring_date: calculateNextRunDate(formData.frequency, formData.date),
       }
 
       console.log('Sending request to backend:', requestBody)
@@ -116,9 +141,10 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
         frequency: "monthly",
         type: "expense",
         category: "",
-        amount: "25.00",
+        amount: "",
         title: "",
         notes: "",
+        enddate: new Date().toISOString().split('T')[0], // Reset end date
       })
 
       // Call success callback if provided
@@ -187,9 +213,8 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
             <SelectItem value="daily">Daily</SelectItem>
             <SelectItem value="weekly">Weekly</SelectItem>
             <SelectItem value="biweekly">Bi-weekly</SelectItem>
-            <SelectItem value="bimonthly">Bi-monthly</SelectItem>
             <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="yearly">Yearly</SelectItem>
+            {/* <SelectItem value="yearly">Yearly</SelectItem> */}
           </SelectContent>
         </Select>
       </div>
