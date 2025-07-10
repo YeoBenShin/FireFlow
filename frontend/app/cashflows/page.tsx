@@ -25,6 +25,15 @@ import {
   CalendarDays,
   CalendarRange,
   X,
+  Briefcase,
+  Laptop,
+  BookOpen,
+  BarChart,
+  Sparkles,
+  Building2,
+  FileText,
+  Banknote,
+  Gift,
 } from "lucide-react";
 import { AddExpenseForm } from "../_components/forms/add-expense-form";
 import { AddIncomeForm } from "../_components/forms/add-income-form";
@@ -66,7 +75,7 @@ export default function CashflowsPage() {
     }
   }, [searchParams]);
 
-  type IconName = "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils";
+  type IconName = "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils" | "Briefcase" | "Laptop" | "BookOpen" | "BarChart" | "Sparkles" | "Building2" | "FileText" | "Banknote" | "Gift";
 
   const categoryIconMap: Record<string, IconName> = {
     food: "Utensils",
@@ -81,6 +90,16 @@ export default function CashflowsPage() {
     shopping: "ShoppingBag",
     education: "DollarSign",
     other: "DollarSign",
+    salary: "Briefcase",
+    freelance: "Laptop",
+    tutoring: "BookOpen",
+    investment: "BarChart",
+    bonus: "Sparkles",
+    rental: "Building2",
+    business: "Briefcase",
+    commission: "FileText",
+    dividend: "Banknote",
+    gift: "Gift",
   };
 
   const iconMap: Record<IconName, JSX.Element> = {
@@ -89,6 +108,15 @@ export default function CashflowsPage() {
     Home: <Home className="w-5 h-5" />,
     Bus: <Bus className="w-5 h-5" />,
     Utensils: <Utensils className="w-5 h-5" />,
+    Briefcase: <Briefcase className="w-5 h-5" />,
+    Laptop: <Laptop className="w-5 h-5" />,
+    BookOpen: <BookOpen className="w-5 h-5" />,
+    BarChart: <BarChart className="w-5 h-5" />,
+    Sparkles: <Sparkles className="w-5 h-5" />,
+    Building2: <Building2 className="w-5 h-5" />,
+    FileText: <FileText className="w-5 h-5" />,
+    Banknote: <Banknote className="w-5 h-5" />,
+    Gift: <Gift className="w-5 h-5" />,
   };
 
   function getAllMonthsOfCurrentYear(): string[] {
@@ -155,30 +183,30 @@ function setSummaryData() {
 
   useEffect(() => {
     // Fetch recent transactions from the backend
-    const fetchData = async () => {
-      const res = await fetch("http://localhost:5100/api/transactions", {
-        credentials: "include",
-      });
-      const data = await res.json();
+    // const fetchData = async () => {
+    //   const res = await fetch("http://localhost:5100/api/transactions", {
+    //     credentials: "include",
+    //   });
+    //   const data = await res.json();
 
-      // Replace icon string with JSX component
-      const withIcons = data.map((tx) => ({
-        ...tx,
-        dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        }),
-        icon: iconMap[categoryIconMap[tx.category]] || (
-          <DollarSign className="w-5 h-5" />
-        ),
-        month: new Date(tx.dateTime).toLocaleString("default", {
-          month: "long",
-        }),
-      }));
+    //   // Replace icon string with JSX component
+    //   const withIcons = data.map((tx) => ({
+    //     ...tx,
+    //     dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
+    //       day: "2-digit",
+    //       month: "long",
+    //       year: "numeric",
+    //     }),
+    //     icon: categoryIconMap[tx.category]
+    //     ? iconMap[categoryIconMap[tx.category]]
+    //     : <DollarSign className="w-5 h-5" />,
+    //     month: new Date(tx.dateTime).toLocaleString("default", {
+    //       month: "long",
+    //     }),
+    //   }));
 
-      setTransactions(withIcons);
-    };
+    //   setTransactions(withIcons);
+    // };
 
     // fetching data for the charts
 
@@ -314,7 +342,7 @@ function setSummaryData() {
     setChartData(chartData);
     };
 
-    fetchData();
+    //fetchData();
     fetchChartData();
   }, []);
 
@@ -329,8 +357,15 @@ function setSummaryData() {
   }, [chartData, timeFilter]);
 
   const handleAddTransaction = (newTx: TransactionWithExtras) => {
+    const withIcon: TransactionWithExtras = {
+    ...newTx,
+    icon: categoryIconMap[newTx.category]
+      ? iconMap[categoryIconMap[newTx.category]]
+      : <DollarSign className="w-5 h-5" />,
+    month: new Date(newTx.dateTime).toLocaleString("default", { month: "long" }),
+  };
     setTransactions((prev) => {
-      const updated = [newTx, ...prev];
+      const updated = [withIcon, ...prev];
       // Sort by dateTime descending (most recent first)
       return updated.sort((a, b) => {
         const dateA = new Date(a.dateTime);
@@ -507,7 +542,22 @@ function setSummaryData() {
       });
       if (res.ok) {
         const data = await res.json();
-        setTransactions(data);
+        const withIcons = data.map((tx) => ({
+        ...tx,
+        // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
+        //   day: "2-digit",
+        //   month: "long",
+        //   year: "numeric",
+        // }),
+        icon: categoryIconMap[tx.category]
+        ? iconMap[categoryIconMap[tx.category]]
+        : <DollarSign className="w-5 h-5" />,
+        month: new Date(tx.dateTime).toLocaleString("default", {
+          month: "long",
+        }),
+      }));
+
+      setTransactions(withIcons);
         setFilteredTransactions(null);
       }
     };
