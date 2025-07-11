@@ -16,6 +16,32 @@ interface AddRecurringFormProps {
   onSuccess?: () => void
 }
 
+function calculateNextRunDate(date: string, frequency: string): Date {
+    // calculating the next run date based on frequency
+      const selectedDate = new Date(date);
+      let nextRunDate = new Date();
+      nextRunDate.setDate(selectedDate.getDate() + 1);
+      const todayDay = new Date().getDay();
+
+      if (frequency === "weekly") {
+        const daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
+        nextRunDate = new Date(todayDay + daysUntilNext);
+
+      } else if (frequency === "biweekly") {
+        let daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
+        daysUntilNext += 7; // Add an additional week for biweekly
+        nextRunDate.setDate(selectedDate.getDate() + daysUntilNext);
+
+      } else if (frequency === "monthly") {
+        if (selectedDate.getDate() >= selectedDate.getDate()) {
+          nextRunDate.setMonth(selectedDate.getMonth() + 1);
+        }
+        nextRunDate.setDate(selectedDate.getDate());  
+
+      }
+      return nextRunDate
+  }
+
 export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) {
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -58,32 +84,6 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
       default:
         return ''
     }
-  }
-
-  const calculateNextRunDate = (date: string, frequency: string): Date => {
-    // calculating the next run date based on frequency
-      const selectedDate = new Date(formData.date);
-      let nextRunDate = new Date();
-      nextRunDate.setDate(selectedDate.getDate() + 1);
-      const todayDay = new Date().getDay();
-
-      if (formData.frequency === "weekly") {
-        const daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
-        nextRunDate = new Date(todayDay + daysUntilNext);
-
-      } else if (formData.frequency === "biweekly") {
-        let daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
-        daysUntilNext += 7; // Add an additional week for biweekly
-        nextRunDate.setDate(selectedDate.getDate() + daysUntilNext);
-
-      } else if (formData.frequency === "monthly") {
-        if (selectedDate.getDate() >= selectedDate.getDate()) {
-          nextRunDate.setMonth(selectedDate.getMonth() + 1);
-        }
-        nextRunDate.setDate(selectedDate.getDate());  
-
-      }
-      return nextRunDate
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
