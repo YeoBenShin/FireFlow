@@ -39,7 +39,7 @@ function calculateNextRunDate(date: string, frequency: string): Date {
         nextRunDate.setDate(selectedDate.getDate());  
 
       }
-      return nextRunDate
+      return nextRunDate;
   }
 
 export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) {
@@ -113,7 +113,7 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
         repeatDay: repeatDay,
         endDate: formData.enddate, // Optional field
         isActive: true,
-        next_recurring_date: calculateNextRunDate(formData.frequency, formData.date),
+        next_recurring_date: calculateNextRunDate(formData.date, formData.frequency),
       }
 
       console.log('Sending request to backend:', requestBody)
