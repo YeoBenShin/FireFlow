@@ -177,6 +177,20 @@ export function AddExpenseForm({
           )}
         />
 
+             <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Enter Expense Title" className="bg-teal-50" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="date"
@@ -229,19 +243,7 @@ export function AddExpenseForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Expense Title</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Enter Expense Title" className="bg-teal-50" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+   
 
         {/* <FormField
           control={form.control}
