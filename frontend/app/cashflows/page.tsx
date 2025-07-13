@@ -846,7 +846,6 @@ const fetchChartData = async () => {
                 <div className="grid grid-cols-3 gap-4">
                   <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
                       <span className="text-sm text-gray-600">
                         Total Income
                       </span>
@@ -857,7 +856,6 @@ const fetchChartData = async () => {
                   </Card>
                   <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
                       <span className="text-sm text-gray-600">
                         Total Expenses
                       </span>
@@ -868,7 +866,6 @@ const fetchChartData = async () => {
                   </Card>
                   <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 border-2 border-gray-300 rounded"></div>
                       <span className="text-sm text-gray-600">
                         Total Balance
                       </span>
