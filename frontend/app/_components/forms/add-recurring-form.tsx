@@ -165,6 +165,22 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
     }
   }
 
+  const expenseCategories = [
+  { id: "food", label: "Food & Dining" },
+  { id: "transport", label: "Transportation" },
+  { id: "entertainment", label: "Entertainment" },
+  { id: "utilities", label: "Utilities" },
+  { id: "health", label: "Health & Fitness" },
+];
+
+const incomeCategories = [
+  { id: "salary", label: "Salary" },
+  { id: "freelance", label: "Freelance" },
+  { id: "investment", label: "Investment" },
+  { id: "other", label: "Other" },
+];
+
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
       {error && (
@@ -176,36 +192,37 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
       <div>
         <Label htmlFor="date">Start Date</Label>
         <div className="relative">
-          <Input 
-            id="date" 
+          <Input
+            id="date"
             type="date"
-            value={formData.date} 
-            onChange={handleChange} 
+            value={formData.date}
+            onChange={handleChange}
             className="bg-orange-50"
             required
           />
-          
         </div>
       </div>
 
       <div>
         <Label htmlFor="date">End Date</Label>
         <div className="relative">
-          <Input 
-            id="enddate" 
+          <Input
+            id="enddate"
             type="date"
-            value={formData.enddate} 
-            onChange={handleChange} 
+            value={formData.enddate}
+            onChange={handleChange}
             className="bg-orange-50"
             required
           />
-          
         </div>
       </div>
 
       <div>
         <Label htmlFor="frequency">Frequency</Label>
-        <Select value={formData.frequency} onValueChange={(value) => handleSelectChange("frequency", value)}>
+        <Select
+          value={formData.frequency}
+          onValueChange={(value) => handleSelectChange("frequency", value)}
+        >
           <SelectTrigger className="bg-teal-50">
             <SelectValue />
           </SelectTrigger>
@@ -221,7 +238,10 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
 
       <div>
         <Label htmlFor="type">Type</Label>
-        <Select value={formData.type} onValueChange={(value) => handleSelectChange("type", value)}>
+        <Select
+          value={formData.type}
+          onValueChange={(value) => handleSelectChange("type", value)}
+        >
           <SelectTrigger className="bg-teal-50">
             <SelectValue />
           </SelectTrigger>
@@ -234,22 +254,24 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
 
       <div>
         <Label htmlFor="category">Category</Label>
-        <Select value={formData.category} onValueChange={(value) => handleSelectChange("category", value)}>
+        <Select
+          value={formData.category}
+          onValueChange={(value) => handleSelectChange("category", value)}
+          disabled={!formData.type} // disables until type is selected
+        >
           <SelectTrigger className="bg-teal-50">
-            <SelectValue placeholder="Select The Category..." />
+            <SelectValue placeholder={(formData.type === "expense" ? "Food & Dining" : "Salary"
+            )}/>
           </SelectTrigger>
           <SelectContent>
-            Expenses
-            <SelectItem value="food">Food & Dining</SelectItem>
-            <SelectItem value="transport">Transportation</SelectItem>
-            <SelectItem value="entertainment">Entertainment</SelectItem>
-            <SelectItem value="utilities">Utilities</SelectItem>
-            <SelectItem value="health">Health & Fitness</SelectItem>
-            Income
-            <SelectItem value="salary">Salary</SelectItem>
-            <SelectItem value="freelance">Freelance</SelectItem>
-            <SelectItem value="investment">Investment</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            {(formData.type === "expense"
+              ? expenseCategories
+              : incomeCategories
+            ).map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -260,8 +282,8 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
           id="amount"
           value={`$${formData.amount}`}
           onChange={(e) => {
-            const value = e.target.value.replace(/[^0-9.]/g, "")
-            setFormData((prev) => ({ ...prev, amount: value }))
+            const value = e.target.value.replace(/[^0-9.]/g, "");
+            setFormData((prev) => ({ ...prev, amount: value }));
           }}
           className="bg-teal-50"
           required
@@ -292,7 +314,13 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
       </div>
 
       <div className="flex gap-2 mt-6">
-        <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={isSubmitting}>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
           Cancel
         </Button>
         <Button
@@ -304,5 +332,5 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
         </Button>
       </div>
     </form>
-  )
+  );
 }
