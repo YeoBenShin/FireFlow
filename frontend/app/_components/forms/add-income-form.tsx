@@ -122,11 +122,7 @@ export function AddIncomeForm({
       const data = result.data
       const newTx = {
         ...data,
-        // dateTime: new Date(data.dateTime).toLocaleDateString("en-SG", {
-        //   day: "2-digit",
-        //   month: "long",
-        //   year: "numeric",
-        // }),
+        transId: data.trans_id,
         month: new Date(values.date).toLocaleString("default", { month: "long" }), // e.g., "April"
         icon: iconMap["DollarSign"] || null,
       };
