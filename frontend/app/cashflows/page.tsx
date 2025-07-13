@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { MainLayout } from "../_components/layout/main-layout";
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
+import { Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -181,36 +184,7 @@ function setSummaryData() {
   setTotalBalance(tIncome - tExpense);
 }
 
-  useEffect(() => {
-    // Fetch recent transactions from the backend
-    // const fetchData = async () => {
-    //   const res = await fetch("http://localhost:5100/api/transactions", {
-    //     credentials: "include",
-    //   });
-    //   const data = await res.json();
-
-    //   // Replace icon string with JSX component
-    //   const withIcons = data.map((tx) => ({
-    //     ...tx,
-    //     dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
-    //       day: "2-digit",
-    //       month: "long",
-    //       year: "numeric",
-    //     }),
-    //     icon: categoryIconMap[tx.category]
-    //     ? iconMap[categoryIconMap[tx.category]]
-    //     : <DollarSign className="w-5 h-5" />,
-    //     month: new Date(tx.dateTime).toLocaleString("default", {
-    //       month: "long",
-    //     }),
-    //   }));
-
-    //   setTransactions(withIcons);
-    // };
-
-    // fetching data for the charts
-
-  const fetchChartData = async () => {
+const fetchChartData = async () => {
     // monthly expenses
     let res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=expense", {
         credentials: "include",
@@ -342,7 +316,37 @@ function setSummaryData() {
     setChartData(chartData);
     };
 
-    //fetchData();
+     const fetchAll = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
+      const res = await fetch("http://localhost:5100/api/transactions", {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const withIcons = data.map((tx) => ({
+        ...tx,
+        // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
+        //   day: "2-digit",
+        //   month: "long",
+        //   year: "numeric",
+        // }),
+        icon: categoryIconMap[tx.category]
+        ? iconMap[categoryIconMap[tx.category]]
+        : <DollarSign className="w-5 h-5" />,
+        month: new Date(tx.dateTime).toLocaleString("default", {
+          month: "long",
+        }),
+      }));
+
+      setTransactions(withIcons);
+        setFilteredTransactions(null);
+      }
+    };
+  useEffect(() => {
+    fetchAll();
     fetchChartData();
   }, []);
 
@@ -373,8 +377,9 @@ function setSummaryData() {
         return dateB.getTime() - dateA.getTime();
       });
     });
-  };
- 
+    fetchChartData(); // Refresh chart data after adding transaction
+  }; 
+
   // Filter transactions based on the selected timeFilter
   function getFilteredTransactions() {
     // if (timeFilter === "Yearly") {
@@ -530,39 +535,37 @@ function setSummaryData() {
     );
   }
 
-  // Fetch all transactions once on mount, then filter in memory
-  useEffect(() => {
-    const fetchAll = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-      const res = await fetch("http://localhost:5100/api/transactions", {
-        method: "GET",
+
+  async function handleDeleteTransaction(transId: number){
+    const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
+    if (!confirmDelete) return;
+    try {
+      const response = await fetch(`http://localhost:5100/api/transactions/delete`, {
+        method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transId }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        const withIcons = data.map((tx) => ({
-        ...tx,
-        // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
-        //   day: "2-digit",
-        //   month: "long",
-        //   year: "numeric",
-        // }),
-        icon: categoryIconMap[tx.category]
-        ? iconMap[categoryIconMap[tx.category]]
-        : <DollarSign className="w-5 h-5" />,
-        month: new Date(tx.dateTime).toLocaleString("default", {
-          month: "long",
-        }),
-      }));
 
-      setTransactions(withIcons);
-        setFilteredTransactions(null);
+      if (!response.ok) {
+        throw new Error(`Failed to delete transaction: ${response.statusText}`);
       }
-    };
-    fetchAll();
-  }, []);
+      setTransactions((prev) => prev.filter((tx) => tx.transId !== transId));
+    setFilteredTransactions((prev) =>
+      prev ? prev.filter((tx) => tx.transId !== transId) : null
+    );
+    fetchChartData(); // Refresh chart data after deletion
+
+    console.log("Transaction deleted");
+
+      
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      alert("Failed to delete transaction.");
+      // Optionally, show user-friendly error notification here
+    }
+
+  } ;
 
   // Filter handler: filter in memory
   const handleFilter = (filters: any) => {
@@ -822,7 +825,9 @@ function setSummaryData() {
                   <LineChart
                     data={chartData[timeFilter as keyof typeof chartData]}
                   />
-                  : <p>Loading chart...</p>}
+                  : <Box sx={{ display: 'flex' }}>
+                      <CircularProgress color="inherit" />
+                    </Box>}
                 </div>
                 {/* Legend and summary cards ... */}
                 <div className="flex justify-center gap-8 mb-6">
@@ -953,15 +958,26 @@ function setSummaryData() {
                               {formattedDate}
                             </div>
                           </div>
-                          <div
-                            className={`font-bold ${
-                              transaction.type === "income"
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {transaction.type === "income" ? "+" : "-"}$
-                            {Math.abs(transaction.amount).toFixed(2)}
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`font-bold ${
+                                transaction.type === "income"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {transaction.type === "income" ? "+" : "-"}$
+                              {Math.abs(transaction.amount).toFixed(2)}
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleDeleteTransaction(transaction.transId)
+                              }
+                              className="text-red-500 hover:text-red-700"
+                              title = "Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                       );
