@@ -184,36 +184,7 @@ function setSummaryData() {
   setTotalBalance(tIncome - tExpense);
 }
 
-  useEffect(() => {
-    // Fetch recent transactions from the backend
-    // const fetchData = async () => {
-    //   const res = await fetch("http://localhost:5100/api/transactions", {
-    //     credentials: "include",
-    //   });
-    //   const data = await res.json();
-
-    //   // Replace icon string with JSX component
-    //   const withIcons = data.map((tx) => ({
-    //     ...tx,
-    //     dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
-    //       day: "2-digit",
-    //       month: "long",
-    //       year: "numeric",
-    //     }),
-    //     icon: categoryIconMap[tx.category]
-    //     ? iconMap[categoryIconMap[tx.category]]
-    //     : <DollarSign className="w-5 h-5" />,
-    //     month: new Date(tx.dateTime).toLocaleString("default", {
-    //       month: "long",
-    //     }),
-    //   }));
-
-    //   setTransactions(withIcons);
-    // };
-
-    // fetching data for the charts
-
-  const fetchChartData = async () => {
+const fetchChartData = async () => {
     // monthly expenses
     let res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=expense", {
         credentials: "include",
@@ -345,7 +316,37 @@ function setSummaryData() {
     setChartData(chartData);
     };
 
-    //fetchData();
+     const fetchAll = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
+      const res = await fetch("http://localhost:5100/api/transactions", {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const withIcons = data.map((tx) => ({
+        ...tx,
+        // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
+        //   day: "2-digit",
+        //   month: "long",
+        //   year: "numeric",
+        // }),
+        icon: categoryIconMap[tx.category]
+        ? iconMap[categoryIconMap[tx.category]]
+        : <DollarSign className="w-5 h-5" />,
+        month: new Date(tx.dateTime).toLocaleString("default", {
+          month: "long",
+        }),
+      }));
+
+      setTransactions(withIcons);
+        setFilteredTransactions(null);
+      }
+    };
+  useEffect(() => {
+    fetchAll();
     fetchChartData();
   }, []);
 
@@ -376,6 +377,7 @@ function setSummaryData() {
         return dateB.getTime() - dateA.getTime();
       });
     });
+    fetchChartData(); // Refresh chart data after adding transaction
   }; 
 
   // Filter transactions based on the selected timeFilter
@@ -533,39 +535,6 @@ function setSummaryData() {
     );
   }
 
-  // Fetch all transactions once on mount, then filter in memory
-  useEffect(() => {
-    const fetchAll = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-      const res = await fetch("http://localhost:5100/api/transactions", {
-        method: "GET",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const withIcons = data.map((tx) => ({
-        ...tx,
-        // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
-        //   day: "2-digit",
-        //   month: "long",
-        //   year: "numeric",
-        // }),
-        icon: categoryIconMap[tx.category]
-        ? iconMap[categoryIconMap[tx.category]]
-        : <DollarSign className="w-5 h-5" />,
-        month: new Date(tx.dateTime).toLocaleString("default", {
-          month: "long",
-        }),
-      }));
-
-      setTransactions(withIcons);
-        setFilteredTransactions(null);
-      }
-    };
-    fetchAll();
-  }, []);
 
   async function handleDeleteTransaction(transId: number){
     const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
@@ -585,6 +554,7 @@ function setSummaryData() {
     setFilteredTransactions((prev) =>
       prev ? prev.filter((tx) => tx.transId !== transId) : null
     );
+    fetchChartData(); // Refresh chart data after deletion
 
     console.log("Transaction deleted");
 
