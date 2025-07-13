@@ -260,7 +260,7 @@ const incomeCategories = [
           disabled={!formData.type} // disables until type is selected
         >
           <SelectTrigger className="bg-teal-50">
-            <SelectValue placeholder={(formData.type === "expense" ? "Food & Dining" : "Salary"
+            <SelectValue placeholder={(formData.type === "expense" ? "Select Expense" : "Select Income"
             )}/>
           </SelectTrigger>
           <SelectContent>
