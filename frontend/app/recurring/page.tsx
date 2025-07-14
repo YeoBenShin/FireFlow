@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { MainLayout } from "../_components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
-import { Plus, X } from "lucide-react"
+import { Plus, X, Trash2 } from "lucide-react"
 import { AddRecurringForm } from "../_components/forms/add-recurring-form"
 import { Badge } from "@/app/_components/ui/badge"
 
@@ -175,6 +175,30 @@ export default function RecurringPage() {
     fetchRecurringTransactions()
   }
 
+  async function handleDeleteRecurring(recTransId: string){
+    const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`http://localhost:5100/api/recurring-transactions/delete`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recTransId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete recurring transaction: ${response.statusText}`);
+      }
+
+      setRecurringExpenses((prev) => prev.filter((tx) => tx.id !== recTransId));
+      setRecurringIncome((prev) => prev.filter((tx) => tx.id !== recTransId));
+
+    } catch (error) {
+      console.error("Error deleting recurring transaction:", error);
+    }
+  }
+
   return (
     <MainLayout>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-screen">
@@ -183,7 +207,10 @@ export default function RecurringPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-xl">Recurring Items</CardTitle>
-              <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => setShowForm(true)}>
+              <Button
+                className="bg-orange-500 hover:bg-orange-600"
+                onClick={() => setShowForm(true)}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Recurring Item
               </Button>
@@ -191,23 +218,46 @@ export default function RecurringPage() {
             <CardContent>
               {/* Recurring Expenditure */}
               <div className="mb-8">
-                <h3 className="font-semibold text-lg mb-4 underline">Recurring Expenditure</h3>
+                <h3 className="font-semibold text-lg mb-4 underline">
+                  Recurring Expenditure
+                </h3>
                 <div className="space-y-3">
                   {recurringExpenses.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No recurring expenses found</p>
+                    <p className="text-gray-500 text-center py-4">
+                      No recurring expenses found
+                    </p>
                   ) : (
                     recurringExpenses.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(item.category)}`}>
+                      <div
+                        key={item.id}
+                        className="flex items-center p-4 bg-orange-50 rounded-lg gap-x-4"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge
+                            className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(
+                              item.category
+                            )}`}
+                          >
                             {getCategoryLabel(item.category)}
                           </Badge>
                           <div>
                             <h4 className="font-semibold">{item.title}</h4>
-                            <p className="text-sm text-gray-600">{item.frequency}</p>
+                            <p className="text-sm text-gray-600">
+                              {item.frequency}
+                            </p>
                           </div>
                         </div>
-                        <span className="font-bold text-red-600">${Math.abs(item.amount).toFixed(2)}</span>
+                        <span className="font-bold text-red-600">
+                          ${Math.abs(item.amount).toFixed(2)}
+                        </span>
+
+                        <button
+                          onClick={() => handleDeleteRecurring(item.id)}
+                          className="text-red-500 hover:text-red-700 p-2 rounded-full transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     ))
                   )}
@@ -216,23 +266,57 @@ export default function RecurringPage() {
 
               {/* Recurring Income */}
               <div>
-                <h3 className="font-semibold text-lg mb-4 underline">Recurring Income</h3>
+                <h3 className="font-semibold text-lg mb-4 underline">
+                  Recurring Income
+                </h3>
                 <div className="space-y-3">
                   {recurringIncome.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No recurring income found</p>
+                    <p className="text-gray-500 text-center py-4">
+                      No recurring income found
+                    </p>
                   ) : (
                     recurringIncome.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(item.category)}`}>
+                      <div
+                        key={item.id}
+                        className="flex items-center p-4 bg-orange-50 rounded-lg gap-x-4"
+                      >
+                        {/* Left: Category + details */}
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge
+                            className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(
+                              item.category
+                            )}`}
+                          >
                             {getCategoryLabel(item.category)}
                           </Badge>
                           <div>
                             <h4 className="font-semibold">{item.title}</h4>
-                            <p className="text-sm text-gray-600">{item.frequency}</p>
+                            <p className="text-sm text-gray-600">
+                              {item.frequency}
+                            </p>
                           </div>
                         </div>
-                        <span className="font-bold text-green-600">+${item.amount.toFixed(2)}</span>
+
+                        {/* Middle: Amount */}
+                        <span
+                          className={`font-bold ${
+                            item.type === "income"
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {item.type === "income" ? "+" : "-"}$
+                          {item.amount.toFixed(2)}
+                        </span>
+
+                        {/* Right: Delete button */}
+                        <button
+                          onClick={() => handleDeleteRecurring(item.id)}
+                          className="text-red-500 hover:text-red-700 p-2 rounded-full transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     ))
                   )}
@@ -248,13 +332,21 @@ export default function RecurringPage() {
             <Card className="sticky top-4">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-xl">Add Recurring Item</CardTitle>
-                <Button variant="ghost" size="icon" onClick={handleCloseForm} className="rounded-full h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCloseForm}
+                  className="rounded-full h-8 w-8"
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </CardHeader>
               <CardContent>
                 {/* Fix: Add onSuccess prop */}
-                <AddRecurringForm onClose={handleCloseForm} onSuccess={handleAddSuccess} />
+                <AddRecurringForm
+                  onClose={handleCloseForm}
+                  onSuccess={handleAddSuccess}
+                />
               </CardContent>
             </Card>
           ) : (
@@ -264,41 +356,72 @@ export default function RecurringPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-red-50 rounded-lg">
-                  <h4 className="font-semibold text-red-700 mb-2">Monthly Expenses</h4>
+                  <h4 className="font-semibold text-red-700 mb-2">
+                    Monthly Expenses
+                  </h4>
                   <p className="text-2xl font-bold text-red-600">
-                    -${recurringExpenses.reduce((sum, item) => sum + Math.abs(item.amount), 0).toFixed(2)}
+                    -$
+                    {recurringExpenses
+                      .reduce((sum, item) => sum + Math.abs(item.amount), 0)
+                      .toFixed(2)}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">{recurringExpenses.length} recurring expenses</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {recurringExpenses.length} recurring expenses
+                  </p>
                 </div>
 
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-semibold text-green-700 mb-2">Monthly Income</h4>
+                  <h4 className="font-semibold text-green-700 mb-2">
+                    Monthly Income
+                  </h4>
                   <p className="text-2xl font-bold text-green-600">
-                    +${recurringIncome.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+                    +$
+                    {recurringIncome
+                      .reduce((sum, item) => sum + item.amount, 0)
+                      .toFixed(2)}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">{recurringIncome.length} recurring income sources</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {recurringIncome.length} recurring income sources
+                  </p>
                 </div>
 
                 <div className="p-4 bg-orange-50 rounded-lg">
-                  <h4 className="font-semibold text-orange-700 mb-2">Net Monthly Flow</h4>
+                  <h4 className="font-semibold text-orange-700 mb-2">
+                    Net Monthly Flow
+                  </h4>
                   <p className="text-2xl font-bold text-orange-600">
                     $
                     {(
-                      recurringIncome.reduce((sum, item) => sum + item.amount, 0) -
-                      recurringExpenses.reduce((sum, item) => sum + Math.abs(item.amount), 0)
+                      recurringIncome.reduce(
+                        (sum, item) => sum + item.amount,
+                        0
+                      ) -
+                      recurringExpenses.reduce(
+                        (sum, item) => sum + Math.abs(item.amount),
+                        0
+                      )
                     ).toFixed(2)}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">Available for goals & savings</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Available for goals & savings
+                  </p>
                 </div>
 
                 <div className="pt-4 border-t">
                   <h4 className="font-semibold mb-3">Quick Actions</h4>
                   <div className="space-y-2">
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600" onClick={() => setShowForm(true)}>
+                    <Button
+                      className="w-full bg-orange-500 hover:bg-orange-600"
+                      onClick={() => setShowForm(true)}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Recurring Item
                     </Button>
-                    <Button variant="outline" className="w-full" onClick={fetchRecurringTransactions}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={fetchRecurringTransactions}
+                    >
                       Refresh Data
                     </Button>
                   </div>
@@ -309,5 +432,5 @@ export default function RecurringPage() {
         </div>
       </div>
     </MainLayout>
-  )
+  );
 }
