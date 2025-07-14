@@ -12,7 +12,7 @@ export const getAllGoals = async (req: Request, res: Response) => {
       .from('goal')
       .select('*')
       .eq('user_id', user_id)
-      .order('due_date', {ascending: false });
+      .order('target_date', {ascending: true });
       
       if (error) {
         throw error;

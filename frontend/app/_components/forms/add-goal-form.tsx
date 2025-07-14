@@ -44,12 +44,12 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
     try {
       const goalData = {
       title: formData.title.trim(),
-      description: formData.notes.trim() || null, // Backend expects 'description', not 'notes'
+      description: formData.notes.trim() || null, 
       category: formData.category,
-      target_date: formData.targetDate, // Backend expects 'due_date', not 'targetDate'
-      amount: parseFloat(formData.amount.replace(/[^0-9.]/g, '')), // Backend expects 'target_amount', not 'amount'
+      target_date: formData.targetDate, 
+      amount: parseFloat(formData.amount.replace(/[^0-9.]/g, '')), 
       status: 'pending',
-      isCollaborative: formData.isCollaborative, // Backend expects 'is_collaborative', not 'isCollaborative'
+      isCollaborative: formData.isCollaborative,
     }
 
       // Send POST request to create the goal

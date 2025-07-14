@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect} from "react"
 import { MainLayout } from "../_components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
@@ -9,70 +9,126 @@ import { AddGoalForm } from "../_components/forms/add-goal-form"
 import { Badge } from "@/app/_components/ui/badge"
 import Link from "next/link"
 
+interface Goal {
+  goal_id: number;
+  title: string;
+  category: string;
+  target_date: string;
+  amount: number;
+  status: string;
+  isCollaborative: boolean;
+  description?: string;
+  user_id: string;
+}
+
 export default function GoalsPage() {
+  
+  const CategoryBadge = ({ category }: { category: string }) => (
+  <Badge className={`${getCategoryColor(category)} text-xs px-3 py-1 min-w-[70px] text-center font-medium justify-center flex items-center`}>
+    {getCategoryLabel(category)}
+  </Badge>
+)
+
+  const StatusBadge = ({ status }: { status: string }) => (
+    <Badge variant={status === 'completed' ? 'default' : 'secondary'} 
+          className="text-xs px-3 py-1 min-w-[80px] text-center font-medium capitalize justify-center flex items-center">
+      {status}
+    </Badge>
+  )
+  
   const [showForm, setShowForm] = useState(false)
+  const [goals, setGoals] = useState<Goal[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const personalGoals = [
-    {
-      id: "1",
-      title: "Red Tesla",
-      daysLeft: 10,
-      date: "21 May 2025",
-      current: 2000,
-      target: 4000,
-      category: "car",
-      progress: 50,
-    },
-    {
-      id: "2",
-      title: "Bathroom Renovation",
-      daysLeft: 30,
-      date: "11 June 2025",
-      current: 912.09,
-      target: 3040.3,
-      category: "home",
-      progress: 30,
-    },
-  ]
+  useEffect(() => {
+    const fetchGoals = async() => {
+      try {
 
-  const collaborativeGoals = [
-    {
-      id: "3",
-      title: "Korea Trip",
-      daysLeft: 20,
-      date: "31 May 2025",
-      current: 2000,
-      target: 4000,
-      category: "travel",
-      progress: 50,
-      contributors: [
-        { name: "Ben", amount: 1000, color: "bg-yellow-400" },
-        { name: "Weichoon", amount: 1000, color: "bg-orange-400" },
-      ],
-      amountLeft: 2000,
-    },
-  ]
+        console.log('Attempting to fetch from:', 'http://localhost:5100/api/goals/') // Debug log
+        
+        const response = await fetch('http://localhost:5100/api/goals/', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      car: "bg-blue-100 text-blue-800",
-      home: "bg-green-100 text-green-800",
-      travel: "bg-purple-100 text-purple-800",
-      education: "bg-yellow-100 text-yellow-800",
-      other: "bg-gray-100 text-gray-800",
+        console.log('Response status:', response.status); // Debug log
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch goals: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        console.log('Fetched goals data:', data)
+        setGoals(Array.isArray(data) ? data : [])
+
+      } catch (error: any) {
+        console.error("Error fetching goals:", error.message || error)
+      } finally {
+        setLoading(false);
+      }
     }
-    return colors[category as keyof typeof colors] || colors.other
-  }
+      fetchGoals()
+    }, [])
 
-  const getCategoryLabel = (category: string) => {
-    const labels = {
-      car: "Car",
-      home: "Home",
-      travel: "Travel",
-      education: "Education",
-      other: "Other",
+    const personalGoals = goals.filter(goal => !goal.isCollaborative)
+    const collaborativeGoals = goals.filter(goal => goal.isCollaborative)
+
+
+    const getDaysLeft = (target_date: string) => {
+      const today = new Date()
+      const due = new Date(target_date)
+      const diffTime = due.getTime() - today.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays > 0 ? diffDays : 0
     }
-    return labels[category as keyof typeof labels] || "Other"
+
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString)
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })
+    }
+
+    const calculateProgress = (current: number, amount:number) => {
+      return Math.round((current / amount) * 100)
+    }
+  
+
+    const getCategoryColor = (category: string) => {
+      const colors = {
+        car: "bg-blue-100 text-blue-800",
+        home: "bg-green-100 text-green-800",
+        travel: "bg-purple-100 text-purple-800",
+        education: "bg-yellow-100 text-yellow-800",
+        other: "bg-gray-100 text-gray-800",
+      }
+      return colors[category as keyof typeof colors] || colors.other
+    }
+
+    const getCategoryLabel = (category: string) => {
+      const labels = {
+        car: "Car",
+        home: "Home",
+        travel: "Travel",
+        education: "Education",
+        other: "Other",
+      }
+      return labels[category as keyof typeof labels] || "Other"
+    }
+  
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center min-h-screen">
+          <p>Loading goals...</p>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (
@@ -86,12 +142,12 @@ export default function GoalsPage() {
                 <CardTitle className="text-xl">My Goals</CardTitle>
                 <div className="flex gap-8">
                   <div>
-                    <p className="text-sm text-gray-600">Available Savings</p>
-                    <p className="text-2xl font-bold text-orange-500">$7,783.00</p>
+                    <p className="text-sm text-gray-600">Available Savings</p> 
+                    <p className="text-2xl font-bold text-orange-500">$7,783.00</p> {/* TODO: replace with actual data */}
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Month's Saving</p>
-                    <p className="text-2xl font-bold text-gray-600">$1,187.40</p>
+                    <p className="text-2xl font-bold text-gray-600">$1,187.40</p> {/* TODO: replace with actual data */}
                   </div>
                 </div>
               </div>
@@ -119,33 +175,46 @@ export default function GoalsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {personalGoals.map((goal) => {
-                const calculatedProgress = Math.round((goal.current / goal.target) * 100)
-                return (
-                  <div key={goal.id} className="p-4 bg-orange-50 rounded-lg">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Badge className={getCategoryColor(goal.category)}>{getCategoryLabel(goal.category)}</Badge>
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{goal.title}</h4>
-                        <p className="text-sm text-gray-600">
-                          {goal.daysLeft} Days Left ({goal.date})
-                        </p>
+              {personalGoals.length === 0 ? ( 
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No personal goals found. Start by adding a new goal!</p>
+                </div>
+              ) : (
+                personalGoals.map((goal) => {
+                  const daysLeft = getDaysLeft(goal.target_date)
+                  const currentAmount = 0;
+                  const calculatedProgress = Math.round((currentAmount / goal.amount) * 100)
+
+                  return (
+                    <div key={goal.goal_id} className="p-4 bg-orange-50 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CategoryBadge category={goal.category} />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-base leading-tight">{goal.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {daysLeft} Days Left ({formatDate(goal.target_date)})
+                          </p>
+                          {goal.description && (
+                            <p className="text-sm text-gray-500 mt-1 leading-relaxed">{goal.description}</p>
+                          )}
+                        </div>
+                        <StatusBadge status={goal.status} />
                       </div>
+                      <div className="flex justify-between items-center mb-3 mt-4">
+                        <span className="font-semibold text-base">${currentAmount.toLocaleString()}</span>
+                        <span className="text-gray-600 text-base font-medium">${goal.amount.toLocaleString()}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                        <div
+                          className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
+                          style={{ width: `${Math.min(calculatedProgress, 100)}%` }}
+                        />
+                      </div>
+                      <div className="text-right text-sm text-orange-500 font-medium mb-3">{calculatedProgress}%</div>
                     </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">${goal.current.toLocaleString()}</span>
-                      <span className="text-gray-600">${goal.target.toLocaleString()}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-                      <div
-                        className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
-                        style={{ width: `${Math.min(calculatedProgress, 100)}%` }}
-                      />
-                    </div>
-                    <div className="text-right text-sm text-orange-500 font-medium">{calculatedProgress}%</div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )} {/* ADDED: Missing closing parenthesis and brace */}
             </CardContent>
           </Card>
 
@@ -158,22 +227,37 @@ export default function GoalsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {collaborativeGoals.map((goal) => {
-                const calculatedProgress = Math.round((goal.current / goal.target) * 100)
+              {collaborativeGoals.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No collaborative goals found. Start by creating a collaborative goal!</p>
+                </div>
+              ) : (
+              collaborativeGoals.map((goal) => {
+                const daysLeft = getDaysLeft(goal.target_date)
+                const currentAmount = 0; // TODO later
+                const calculatedProgress = Math.round((currentAmount / goal.amount) * 100)
+                
                 return (
-                  <div key={goal.id} className="p-4 bg-orange-50 rounded-lg">
+                  <div key={goal.goal_id} className="p-4 bg-orange-50 rounded-lg">
                     <div className="flex items-center gap-3 mb-3">
-                      <Badge className={getCategoryColor(goal.category)}>{getCategoryLabel(goal.category)}</Badge>
+                      <CategoryBadge category={goal.category} />
                       <div className="flex-1">
-                        <h4 className="font-semibold">{goal.title}</h4>
-                        <p className="text-sm text-gray-600">
-                          {goal.daysLeft} Days Left ({goal.date})
+
+                        <h4 className="font-semibold text-base leading-tight">{goal.title}</h4>
+                    
+                        <p className="text-sm text-gray-600 mt-1">
+                          {daysLeft} Days Left ({formatDate(goal.target_date)})
                         </p>
+
+                        {goal.description && (
+                          <p className="text-sm text-gray-500 mt-1 leading-relaxed">{goal.description}</p>
+                        )}
                       </div>
+                      <StatusBadge status={goal.status} />
                     </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">${goal.current.toLocaleString()}</span>
-                      <span className="text-gray-600">${goal.target.toLocaleString()}</span>
+                    <div className="flex justify-between items-center mb-3 mt-4">
+                      <span className="font-semibold text-base">${currentAmount.toLocaleString()}</span>
+                      <span className="text-gray-600 text-base font-medium">${goal.amount.toLocaleString()}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                       <div
@@ -182,28 +266,19 @@ export default function GoalsPage() {
                       />
                     </div>
                     <div className="text-right text-sm text-orange-500 font-medium mb-3">{calculatedProgress}%</div>
-
-                    {/* Contributors */}
-                    <div className="space-y-2">
-                      {goal.contributors.map((contributor, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-4 h-4 rounded ${contributor.color}`} />
-                            <span className="text-sm font-medium">{contributor.name}</span>
-                          </div>
-                          <span className="text-sm">${contributor.amount.toLocaleString()}</span>
-                        </div>
-                      ))}
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <span className="text-sm font-medium">Amount Left</span>
-                        <span className="text-sm">${goal.amountLeft.toLocaleString()}</span>
+                    
+                    <div className="pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500">Your contribution:</span>
+                        <span className="text-sm font-medium">${currentAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
                 )
-              })}
-            </CardContent>
-          </Card>
+              }) 
+            )}
+          </CardContent>
+        </Card>
         </div>
 
         {/* Right Side - Shows form when active, savings info when not */}
