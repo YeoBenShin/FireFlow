@@ -39,8 +39,8 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
-            <ExpenseCard amount={todaysExpenses} title="Day's Expenses" />
-            <ExpenseCard amount={monthlyBudget-todaysExpenses} title="Remaining Budget" />
+            <ExpenseCard amount={todaysExpenses} title="Today's Expenditure" />
+            <ExpenseCard amount={monthlyBudget-todaysExpenses} title="Remaining Budget for Today" />
             <MonthlyBreakdown />
           </div>
 

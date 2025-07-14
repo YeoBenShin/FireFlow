@@ -46,7 +46,7 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
   const router = useRouter()
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0], // Changed to proper date format
-    enddate:  new Date().toISOString().split('T')[0], // Changed to proper date format
+    enddate:  null, // Changed to proper date format
     frequency: "monthly" as "daily" | "weekly" | "biweekly" | "monthly", // | "yearly",
     type: "expense" as "income" | "expense",
     category: "",
@@ -114,6 +114,7 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
         endDate: formData.enddate, // Optional field
         isActive: true,
         next_recurring_date: calculateNextRunDate(formData.date, formData.frequency),
+        ...(formData.enddate ? { endDate: formData.enddate } : {}),
       }
 
       console.log('Sending request to backend:', requestBody)
@@ -204,16 +205,24 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="date">End Date</Label>
+        <Label htmlFor="date">End Date (optional)</Label>
         <div className="relative">
           <Input
             id="enddate"
             type="date"
-            value={formData.enddate}
+            value={formData.enddate || ""}
             onChange={handleChange}
             className="bg-orange-50"
-            required
           />
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-red-500"
+            onClick={() => setFormData((prev) => ({ ...prev, enddate: null }))}
+          >
+            Clear
+          </Button>
         </div>
       </div>
 
@@ -260,8 +269,11 @@ const incomeCategories = [
           disabled={!formData.type} // disables until type is selected
         >
           <SelectTrigger className="bg-teal-50">
-            <SelectValue placeholder={(formData.type === "expense" ? "Select Expense" : "Select Income"
-            )}/>
+            <SelectValue
+              placeholder={
+                formData.type === "expense" ? "Select Expense" : "Select Income"
+              }
+            />
           </SelectTrigger>
           <SelectContent>
             {(formData.type === "expense"

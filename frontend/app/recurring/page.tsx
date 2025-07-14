@@ -84,6 +84,7 @@ export default function RecurringPage() {
         amount: transaction.amount || 0,
         category: transaction.category || 'other',
         type: transaction.type || 'expense',
+        endDate: transaction.endDate,
         isActive: transaction.isActive !== undefined ? transaction.isActive : true
       }
     }).filter(transaction => transaction !== null) as DisplayRecurringTransaction[]
@@ -243,7 +244,16 @@ export default function RecurringPage() {
                           <div>
                             <h4 className="font-semibold">{item.title}</h4>
                             <p className="text-sm text-gray-600">
-                              {item.frequency}
+                               {item.endDate
+                                ? item.frequency + " until " +
+                                  new Date(item.endDate).toLocaleDateString("en-GB",
+                                    {
+                                      day: "2-digit",
+                                      month: "long",
+                                      year: "numeric",
+                                    }
+                                  )
+                                : item.frequency}
                             </p>
                           </div>
                         </div>
@@ -292,7 +302,16 @@ export default function RecurringPage() {
                           <div>
                             <h4 className="font-semibold">{item.title}</h4>
                             <p className="text-sm text-gray-600">
-                              {item.frequency}
+                              {item.endDate
+                                ? item.frequency + " until " +
+                                  new Date(item.endDate).toLocaleDateString("en-GB",
+                                    {
+                                      day: "2-digit",
+                                      month: "long",
+                                      year: "numeric",
+                                    }
+                                  )
+                                : item.frequency}
                             </p>
                           </div>
                         </div>
@@ -403,7 +422,7 @@ export default function RecurringPage() {
                     ).toFixed(2)}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    Available for goals & savings
+                    Available for other expenditure/savings for goals
                   </p>
                 </div>
 
