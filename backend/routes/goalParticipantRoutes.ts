@@ -1,10 +1,11 @@
+import express from 'express';
 
-import{
+import {
     getGoalParticipants, 
     createGoalParticipant, 
     updateGoalParticipant, 
     deleteGoalParticipant   
-}from '../controllers/goalParticipantController';
+} from '../controllers/goalParticipantController';
 
 const router = express.Router();
 

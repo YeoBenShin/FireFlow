@@ -15,6 +15,7 @@ export const getGoalParticipants = async (req: Request, res: Response) => {
           title,
           target_amount,
           status,
+          due_date
         )
       `)
       .eq('user_id', user_id)
@@ -49,7 +50,9 @@ export const createGoalParticipant = async (req: Request, res: Response) => {
 
   export const updateGoalParticipant = async (req: Request, res: Response) => {
     try {
+      const user_id = (req.user as jwt.JwtPayload).sub;
       const {goal_id, ...updateFields}: GoalParticipant = req.body;
+
       const { data, error } = await supabase.from('goal_participants').update(updateFields).eq('goal_id', goal_id).eq('user_id', user_id).select('*');
       if (error) {
         throw error;
