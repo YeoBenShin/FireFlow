@@ -37,18 +37,46 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
     setFormData((prev) => ({ ...prev, isCollaborative: checked }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate adding the goal
-    setTimeout(() => {
-      console.log("Goal added:", {
-        ...formData,
-        amount: Number.parseFloat(formData.amount.replace("$", "")),
+    try {
+      const goalData = {
+      title: formData.title.trim(),
+      description: formData.notes.trim() || null, 
+      category: formData.category,
+      target_date: formData.targetDate, 
+      amount: parseFloat(formData.amount.replace(/[^0-9.]/g, '')), 
+      status: 'pending',
+      isCollaborative: formData.isCollaborative,
+    }
+
+      // Send POST request to create the goal
+      const response = await fetch('http://localhost:5100/api/goals/create', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(goalData),
       })
 
-      setIsSubmitting(false)
+      if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        console.error("Error response:", errorData);
+      } catch (parseError) {
+        console.error("Failed to parse error response");
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    console.log("Goal created successfully:", result);
+
 
       // Reset form data
       setFormData({
@@ -64,7 +92,12 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
 
       // Refresh the page to simulate data update
       router.refresh()
-    }, 500)
+    } catch (error: any) {
+    console.error("Error creating goal:", error)
+    alert(`Failed to create goal: ${error.message}`)
+    } finally {
+    setIsSubmitting(false)
+    }
   }
 
   return (
@@ -85,13 +118,13 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
         <div className="relative">
           <Input
             id="targetDate"
+            type= "date"
             value={formData.targetDate}
             onChange={handleChange}
             placeholder="Select a date"
             className="bg-orange-50"
           />
-          <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
-        </div>
+          </div>
       </div>
 
       <div>
