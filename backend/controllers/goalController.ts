@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import { supabase } from "../db/supabaseClient";
-import { Goal } from '../models/goals'; 
+import { Goal } from '../models/goal'; 
 import jwt from 'jsonwebtoken';
 
 export const getAllGoals = async (req: Request, res: Response) => {
   const user_id = (req.user as jwt.JwtPayload).sub;
   try {
+
+    
       const { data, error } = await supabase
-      .from('Goal')
+      .from('goal')
       .select('*')
       .eq('user_id', user_id)
       .order('due_date', {ascending: false });
@@ -24,10 +26,11 @@ export const getAllGoals = async (req: Request, res: Response) => {
  
 // Controller to create a new goal
 export const createGoal = async (req: Request, res: Response) => {
+  console.log("Received request body:", req.body);
   req.body.user_id = (req.user as jwt.JwtPayload).sub;
-  const newGoal: Goal = req.body;
+  const newGoal = req.body;
     try {
-      const {data, error} = await supabase.from('Goal').insert(newGoal).select();
+      const {data, error} = await supabase.from('goal').insert(newGoal).select();
       if(error){
         throw error;
       }
