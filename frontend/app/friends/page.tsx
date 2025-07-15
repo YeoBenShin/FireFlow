@@ -62,39 +62,52 @@ export default function FriendsPage() {
   // Fetch helpers
   const fetchFriends = async () => {
     try {
-      const res = await fetch("http://localhost:5100/api/friends", {
+      const res = await fetch(`http://localhost:5100/api/friends?_t=${Date.now()}`, {
         credentials: "include",
+        cache: "no-store"
       });
       if (!res.ok) throw new Error("Failed to fetch friends");
       const data = await res.json();
+      console.log("[DEBUG] Friends data:", data);
       setFriends(data);
     } catch (err) {
+      console.error("[ERROR] fetchFriends:", err);
       setError(err.message || "Failed to load friends");
     }
   };
   const fetchSentRequests = async () => {
     try {
       const res = await fetch(
-        "http://localhost:5100/api/friends/requests?toAccept=false",
-        { credentials: "include" }
+        `http://localhost:5100/api/friends/requests?toAccept=false&_t=${Date.now()}`,
+        { 
+          credentials: "include",
+          cache: "no-store"
+        }
       );
       if (!res.ok) throw new Error("Failed to fetch sent requests");
       const data = await res.json();
+      console.log("[DEBUG] Sent requests data:", data);
       setSentRequests(data);
     } catch (err) {
+      console.error("[ERROR] fetchSentRequests:", err);
       setError(err.message || "Failed to load sent requests");
     }
   };
   const fetchReceivedRequests = async () => {
     try {
       const res = await fetch(
-        "http://localhost:5100/api/friends/requests?toAccept=true",
-        { credentials: "include" }
+        `http://localhost:5100/api/friends/requests?toAccept=true&_t=${Date.now()}`,
+        { 
+          credentials: "include",
+          cache: "no-store"
+        }
       );
       if (!res.ok) throw new Error("Failed to fetch received requests");
       const data = await res.json();
+      console.log("[DEBUG] Received requests data:", data);
       setReceivedRequests(data);
     } catch (err) {
+      console.error("[ERROR] fetchReceivedRequests:", err);
       setError(err.message || "Failed to load received requests");
     }
   };
@@ -261,13 +274,16 @@ export default function FriendsPage() {
         );
       }
     }
+    
+    // Always refresh data after attempting to send requests
+    await refreshAll();
+    setSelectedFriends([]);
+    
     if (successCount > 0) {
       addToast(
         `${successCount} friend${successCount > 1 ? "s" : ""} successfully added!`,
         "success"
       );
-      setSelectedFriends([]);
-      await refreshAll();
     }
     if (errorMessages.length > 0) {
       addToast(`Some errors occurred:\n${errorMessages.join("\n")}`, "error");

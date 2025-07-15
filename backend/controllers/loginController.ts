@@ -45,11 +45,11 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const { access_token } = data.session;
 
-    // 4. Set JWT in HTTP-only cookie
+    // Set JWT in HTTP-only cookie
     res.cookie('token', access_token, {
-      httpOnly: true, // set to true in production
-      secure: false, // true == requires HTTPS | set to true in production
-      sameSite: 'lax', // allow cross-site cookies
+      httpOnly: true,
+      secure: false, // set to true in production
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60, // 1 hour
     });
     res.status(200).json({ message: 'Login successful', token: access_token  });
@@ -62,12 +62,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const logoutUser = async (req: Request, res: Response) => {
   try {
-    // 1. Sign out from Supabase Auth
-    const { error } = await supabase.auth.signOut();
-
-    if (error) throw error;
-
-    // 2. Clear the cookie
+    // Clear the cookie
     res.clearCookie('token', {
       httpOnly: true,
       secure: false, // set to true in production

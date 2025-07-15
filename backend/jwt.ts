@@ -13,13 +13,19 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
     return;
   }
 
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    res.status(500).json({ error: 'JWT secret not configured' });
+    return;
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;
+    const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload;
     
     // refresh the token
     const refreshedToken = jwt.sign(
       { sub: decoded.sub },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: "1h" }
     );
 
@@ -34,6 +40,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
     next();
 
   } catch (err) {
+    console.log(`[DEBUG] JWT verification failed:`, err);
     res.status(403).json({ error: 'Invalid token' });
   }
 };
