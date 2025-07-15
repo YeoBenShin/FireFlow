@@ -2,17 +2,24 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/app/_components/ui/button"
 import { Input } from "@/app/_components/ui/input"
 import { Label } from "@/app/_components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/_components/ui/select"
 import { Textarea } from "@/app/_components/ui/textarea"
-import { Calendar, Users } from "lucide-react"
+import { Calendar, Users, UserPlus, X } from "lucide-react"
 import { Switch } from "@/app/_components/ui/switch"
 import { useRouter } from "next/navigation"
+import { Badge } from "@/app/_components/ui/badge"
 
-export function AddGoalForm({ onClose }: { onClose?: () => void }) {
+interface Friend {
+  user_id: string;
+  username: string;
+  name: string;
+}
+
+export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; onGoalCreated?: () => void }) {
   const router = useRouter()
   const [formData, setFormData] = useState({
     title: "",
@@ -23,6 +30,54 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
     notes: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([])
+  const [loadingFriends, setLoadingFriends] = useState(false)
+
+  // Fetch friends when collaborative is enabled
+  useEffect(() => {
+    if (formData.isCollaborative) {
+      fetchFriends()
+    }
+  }, [formData.isCollaborative])
+
+  const fetchFriends = async () => {
+    setLoadingFriends(true)
+    try {
+      const response = await fetch('http://localhost:5100/api/friends/for-goals', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setFriends(Array.isArray(data) ? data : [])
+      } else {
+        console.error('Failed to fetch friends')
+        setFriends([])
+      }
+    } catch (error) {
+      console.error('Error fetching friends:', error)
+      setFriends([])
+    } finally {
+      setLoadingFriends(false)
+    }
+  }
+
+  const toggleFriendSelection = (friendId: string) => {
+    setSelectedFriends(prev => 
+      prev.includes(friendId) 
+        ? prev.filter(id => id !== friendId)
+        : [...prev, friendId]
+    )
+  }
+
+  const removeFriend = (friendId: string) => {
+    setSelectedFriends(prev => prev.filter(id => id !== friendId))
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
@@ -35,6 +90,10 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
 
   const handleSwitchChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, isCollaborative: checked }))
+    if (!checked) {
+      // Clear selected friends when collaborative is disabled
+      setSelectedFriends([])
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +109,7 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
       amount: parseFloat(formData.amount.replace(/[^0-9.]/g, '')), 
       status: 'pending',
       isCollaborative: formData.isCollaborative,
+      selectedFriends: formData.isCollaborative ? selectedFriends : []
     }
 
       // Send POST request to create the goal
@@ -87,11 +147,12 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
         isCollaborative: false,
         notes: "",
       })
+      setSelectedFriends([])
 
       if (onClose) onClose()
+      if (onGoalCreated) onGoalCreated() // Trigger refresh
 
-      // Refresh the page to simulate data update
-      router.refresh()
+      // Don't need router.refresh() anymore since we're using callback
     } catch (error: any) {
     console.error("Error creating goal:", error)
     alert(`Failed to create goal: ${error.message}`)
@@ -103,7 +164,7 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
       <div>
-        <Label htmlFor="title">Goal Title</Label>
+        <Label>Goal Title</Label>
         <Input
           id="title"
           value={formData.title}
@@ -114,7 +175,7 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div>
-        <Label htmlFor="targetDate">Target Date</Label>
+        <Label>Target Date</Label>
         <div className="relative">
           <Input
             id="targetDate"
@@ -128,7 +189,7 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div>
-        <Label htmlFor="amount">Target Amount</Label>
+        <Label>Target Amount</Label>
         <Input
           id="amount"
           value={formData.amount ? `$${formData.amount}` : ""}
@@ -142,7 +203,7 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div>
-        <Label htmlFor="category">Category</Label>
+        <Label>Category</Label>
         <Select value={formData.category} onValueChange={(value) => handleSelectChange("category", value)}>
           <SelectTrigger className="bg-teal-50">
             <SelectValue placeholder="Select a category" />
@@ -160,13 +221,70 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4" />
-          <Label htmlFor="collaborative">Collaborative Goal</Label>
+          <Label>Collaborative Goal</Label>
         </div>
         <Switch id="collaborative" checked={formData.isCollaborative} onCheckedChange={handleSwitchChange} />
       </div>
 
+      {/* Friend Selection for Collaborative Goals */}
+      {formData.isCollaborative && (
+        <div className="space-y-3">
+          <Label>Select Friends to Collaborate</Label>
+          
+          {/* Selected Friends Display */}
+          {selectedFriends.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedFriends.map(friendId => {
+                const friend = friends.find(f => f.user_id === friendId)
+                return friend ? (
+                  <Badge key={friendId} variant="secondary" className="flex items-center gap-1">
+                    {friend.name}
+                    <X 
+                      className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                      onClick={() => removeFriend(friendId)}
+                    />
+                  </Badge>
+                ) : null
+              })}
+            </div>
+          )}
+
+          {/* Available Friends List */}
+          {loadingFriends ? (
+            <div className="text-sm text-gray-500">Loading friends...</div>
+          ) : friends.length > 0 ? (
+            <div className="max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50">
+              {friends
+                .filter(friend => !selectedFriends.includes(friend.user_id))
+                .map(friend => (
+                <div 
+                  key={friend.user_id}
+                  className="flex items-center justify-between p-2 hover:bg-gray-100 rounded cursor-pointer"
+                  onClick={() => toggleFriendSelection(friend.user_id)}
+                >
+                  <div>
+                    <div className="font-medium text-sm">{friend.name}</div>
+                    <div className="text-xs text-gray-500">@{friend.username}</div>
+                  </div>
+                  <UserPlus className="w-4 h-4 text-gray-400" />
+                </div>
+              ))}
+              {friends.filter(friend => !selectedFriends.includes(friend.user_id)).length === 0 && (
+                <div className="text-sm text-gray-500 text-center py-2">
+                  {selectedFriends.length === friends.length ? "All friends selected" : "No more friends available"}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 p-3 text-center border rounded-md bg-gray-50">
+              No friends found. Add friends first to create collaborative goals.
+            </div>
+          )}
+        </div>
+      )}
+
       <div>
-        <Label htmlFor="notes">Notes</Label>
+        <Label>Notes</Label>
         <Textarea
           id="notes"
           value={formData.notes}
@@ -183,7 +301,13 @@ export function AddGoalForm({ onClose }: { onClose?: () => void }) {
         <Button
           type="submit"
           className="flex-1 bg-orange-500 hover:bg-orange-600"
-          disabled={!formData.title || !formData.amount || !formData.category || isSubmitting}
+          disabled={
+            !formData.title || 
+            !formData.amount || 
+            !formData.category || 
+            (formData.isCollaborative && selectedFriends.length === 0) ||
+            isSubmitting
+          }
         >
           {isSubmitting ? "Creating..." : "Create Goal"}
         </Button>

@@ -4,10 +4,20 @@ import { useState, useEffect} from "react"
 import { MainLayout } from "../_components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
-import { Info, Plus, X } from "lucide-react"
+import { Info, Plus, X, Users, ChevronDown, ChevronUp } from "lucide-react"
 import { AddGoalForm } from "../_components/forms/add-goal-form"
 import { Badge } from "@/app/_components/ui/badge"
 import Link from "next/link"
+
+interface Participant {
+  goal_id: number;
+  user_id: string;
+  role: 'owner' | 'collaborator';
+  allocated_amount: number;
+  user: {
+    name: string;
+  };
+}
 
 interface Goal {
   goal_id: number;
@@ -19,6 +29,14 @@ interface Goal {
   isCollaborative: boolean;
   description?: string;
   user_id: string;
+  participantCount?: number;
+}
+
+interface GoalWithParticipant {
+  goal_id: number;
+  role: 'owner' | 'collaborator';
+  allocated_amount: number;
+  goal: Goal;
 }
 
 export default function GoalsPage() {
@@ -37,41 +55,97 @@ export default function GoalsPage() {
   )
   
   const [showForm, setShowForm] = useState(false)
-  const [goals, setGoals] = useState<Goal[]>([])
+  const [goalData, setGoalData] = useState<GoalWithParticipant[]>([])
   const [loading, setLoading] = useState(true)
+  const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
+  const [participants, setParticipants] = useState<Record<number, Participant[]>>({})
 
-  useEffect(() => {
-    const fetchGoals = async() => {
-      try {
+  const toggleGoalExpansion = async (goalId: number) => {
+    const newExpanded = new Set(expandedGoals)
+    
+    if (newExpanded.has(goalId)) {
+      newExpanded.delete(goalId)
+      setExpandedGoals(newExpanded)
+    } else {
+      newExpanded.add(goalId)
+      setExpandedGoals(newExpanded)
+      
+      // Fetch participants if not already loaded
+      if (!participants[goalId]) {
+        try {
+          console.log(`Fetching participants for goal ${goalId}...`)
+          const response = await fetch(`http://localhost:5100/api/goals/${goalId}/participants`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
 
-        console.log('Attempting to fetch from:', 'http://localhost:5100/api/goals/') // Debug log
-        
-        const response = await fetch('http://localhost:5100/api/goals/', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        console.log('Response status:', response.status); // Debug log
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch goals: ${response.statusText}`)
+          console.log(`Response status: ${response.status}`)
+          
+          if (response.ok) {
+            const participantData = await response.json()
+            console.log('Participant data received:', participantData)
+            setParticipants(prev => ({
+              ...prev,
+              [goalId]: participantData
+            }))
+          } else {
+            console.error(`Failed to fetch participants: ${response.status} ${response.statusText}`)
+          }
+        } catch (error) {
+          console.error("Error fetching participants:", error)
         }
-
-        const data = await response.json()
-        console.log('Fetched goals data:', data)
-        setGoals(Array.isArray(data) ? data : [])
-
-      } catch (error: any) {
-        console.error("Error fetching goals:", error.message || error)
-      } finally {
-        setLoading(false);
       }
     }
-      fetchGoals()
-    }, [])
+  }
+
+  const fetchGoals = async() => {
+    try {
+      setLoading(true)
+      console.log('Attempting to fetch from:', 'http://localhost:5100/api/goals/with-participants') // Debug log
+      
+      const response = await fetch('http://localhost:5100/api/goals/with-participants', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response status:', response.status); // Debug log
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch goals: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('Fetched goals data:', data)
+      setGoalData(Array.isArray(data) ? data : [])
+
+    } catch (error: any) {
+      console.error("Error fetching goals:", error.message || error)
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleGoalCreated = () => {
+    setShowForm(false) // Close the form
+    fetchGoals() // Refresh the data
+  }
+
+  useEffect(() => {
+    fetchGoals()
+  }, [])
+
+    // Extract goals from the participant data
+    const goals = goalData.map(item => ({
+      ...item.goal,
+      userRole: item.role,
+      userAllocatedAmount: item.allocated_amount
+    }))
 
     const personalGoals = goals.filter(goal => !goal.isCollaborative)
     const collaborativeGoals = goals.filter(goal => goal.isCollaborative)
@@ -208,7 +282,7 @@ export default function GoalsPage() {
                         <div
                           className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
                           style={{ width: `${Math.min(calculatedProgress, 100)}%` }}
-                        />
+                        /> 
                       </div>
                       <div className="text-right text-sm text-orange-500 font-medium mb-3">{calculatedProgress}%</div>
                     </div>
@@ -243,7 +317,20 @@ export default function GoalsPage() {
                       <CategoryBadge category={goal.category} />
                       <div className="flex-1">
 
-                        <h4 className="font-semibold text-base leading-tight">{goal.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-base leading-tight">{goal.title}</h4>
+                          {goal.participantCount && goal.participantCount > 1 && (
+                            <Badge variant="outline" className="text-xs">
+                              <Users className="w-3 h-3 mr-1" />
+                              {goal.participantCount} people
+                            </Badge>
+                          )}
+                          {goal.userRole && (
+                            <Badge variant={goal.userRole === 'owner' ? 'default' : 'secondary'} className="text-xs">
+                              {goal.userRole}
+                            </Badge>
+                          )}
+                        </div>
                     
                         <p className="text-sm text-gray-600 mt-1">
                           {daysLeft} Days Left ({formatDate(goal.target_date)})
@@ -255,6 +342,7 @@ export default function GoalsPage() {
                       </div>
                       <StatusBadge status={goal.status} />
                     </div>
+                    
                     <div className="flex justify-between items-center mb-3 mt-4">
                       <span className="font-semibold text-base">${currentAmount.toLocaleString()}</span>
                       <span className="text-gray-600 text-base font-medium">${goal.amount.toLocaleString()}</span>
@@ -270,8 +358,61 @@ export default function GoalsPage() {
                     <div className="pt-2 border-t">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-500">Your contribution:</span>
-                        <span className="text-sm font-medium">${currentAmount.toLocaleString()}</span>
+                        <span className="text-sm font-medium">${(goal.userAllocatedAmount || 0).toLocaleString()}</span>
                       </div>
+                      
+                      {/* Expandable Participants Section */}
+                      {goal.participantCount && goal.participantCount > 1 && (
+                        <div className="mt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleGoalExpansion(goal.goal_id)}
+                            className="w-full text-sm text-gray-600 hover:text-gray-800 h-8"
+                          >
+                            <span>View all participants</span>
+                            {expandedGoals.has(goal.goal_id) ? 
+                              <ChevronUp className="w-4 h-4 ml-1" /> : 
+                              <ChevronDown className="w-4 h-4 ml-1" />
+                            }
+                          </Button>
+                          
+                          {expandedGoals.has(goal.goal_id) && participants[goal.goal_id] && (
+                            <div className="mt-4 space-y-4">
+                              {participants[goal.goal_id].map((participant) => (
+                                <div key={participant.user_id} className="flex items-center justify-between p-4 bg-orange-25 rounded-lg border border-orange-100">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                      <span className="text-orange-600 font-semibold text-lg">
+                                        {participant.user.name.charAt(0).toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <span className="text-base font-semibold text-gray-800">
+                                        {participant.user.name}
+                                      </span>
+                                      <Badge 
+                                        variant="secondary"
+                                        className="text-xs w-fit mt-1"
+                                      >
+                                        {participant.role === 'owner' ? '👑 Owner' : '🤝 Collaborator'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-lg font-bold text-gray-800">
+                                      ${participant.allocated_amount.toLocaleString()}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      contributed
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
@@ -292,7 +433,7 @@ export default function GoalsPage() {
                 </Button>
               </CardHeader>
               <CardContent>
-                <AddGoalForm onClose={() => setShowForm(false)} />
+                <AddGoalForm onClose={() => setShowForm(false)} onGoalCreated={handleGoalCreated} />
               </CardContent>
             </Card>
           ) : (
