@@ -211,6 +211,7 @@ const incomeCategories = [
             id="enddate"
             type="date"
             value={formData.enddate || ""}
+            min={formData.date}
             onChange={handleChange}
             className="bg-orange-50"
           />
