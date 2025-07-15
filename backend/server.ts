@@ -11,7 +11,7 @@ import dashboardRoutes from "./routes/dashboardRoutes";
 import recurringTransactionRoutes from "./routes/recurringTransactionRoutes";
 import friendRoutes from "./routes/friendRoutes";
 import goalRoutes from "./routes/goalRoutes";
-
+import goalParticipantRoutes from "./routes/goalParticipantRoutes";
 dotenv.config();
 
 const app = express();
@@ -39,6 +39,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/recurring-transactions", recurringTransactionRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/goals", goalRoutes); 
+app.use("/api/goal-participants", goalParticipantRoutes);
 
 app.get("/", (_req, res) => {
   res.send("API is running...");
