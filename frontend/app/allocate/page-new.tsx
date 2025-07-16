@@ -17,10 +17,8 @@ interface Goal {
   category: string
   description?: string
   status: 'pending' | 'in-progress' | 'completed'
-  amount: number // This is the remaining amount needed
-  original_amount?: number // Original target amount
-  progress?: number // Progress percentage
-  allocated_amount?: number // Amount already allocated
+  amount: number
+  current_amount: number
   target_date: string
   isCollaborative: boolean
   user_id: string
@@ -29,6 +27,7 @@ interface Goal {
 interface SavingsData {
   totalIncome: number
   totalExpenses: number
+  totalAllocatedToGoals: number
   availableSavings: number
 }
 
@@ -88,10 +87,9 @@ export default function AllocatePage() {
   const handleMaxAllocation = (goalId: string) => {
     const goal = goals.find((g) => g.goal_id.toString() === goalId)
     if (goal && savingsData) {
-      // Max allocation is the minimum of remaining savings or remaining goal amount
       const maxPossible = Math.min(
         remainingSavings + (allocations[goalId] || 0), 
-        goal.amount // amount field is the remaining amount needed
+        goal.amount - (goal.current_amount || 0)
       )
       setAllocations((prev) => ({
         ...prev,
@@ -138,6 +136,12 @@ export default function AllocatePage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const getNewProgress = (goal: Goal) => {
+    const allocation = allocations[goal.goal_id.toString()] || 0
+    const newCurrent = (goal.current_amount || 0) + allocation
+    return (newCurrent / goal.amount) * 100
   }
 
   const getCategoryIcon = (category: string) => {
@@ -263,9 +267,11 @@ export default function AllocatePage() {
                 {personalGoals.map((goal) => {
                   const goalId = goal.goal_id.toString()
                   const allocation = allocations[goalId] || 0
+                  const newProgress = getNewProgress(goal)
+                  const currentProgress = ((goal.current_amount || 0) / goal.amount) * 100
                   const maxPossible = Math.min(
                     remainingSavings + allocation, 
-                    goal.amount // amount is remaining amount needed
+                    goal.amount - (goal.current_amount || 0)
                   )
                   const daysLeft = calculateDaysLeft(goal.target_date)
 
@@ -285,28 +291,11 @@ export default function AllocatePage() {
 
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span>Remaining Needed: ${goal.amount.toLocaleString()}</span>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            goal.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            goal.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}
-                          </span>
+                          <span>Current: ${(goal.current_amount || 0).toLocaleString()}</span>
+                          <span>Target: ${goal.amount.toLocaleString()}</span>
                         </div>
 
-                        {/* Progress Bar */}
-                        {goal.original_amount && (
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-xs text-gray-600">
-                              <span>Progress: {goal.progress || 0}%</span>
-                              <span>
-                                ${(goal.allocated_amount || 0).toLocaleString()} / ${goal.original_amount.toLocaleString()}
-                              </span>
-                            </div>
-                            <Progress value={goal.progress || 0} className="h-2" />
-                          </div>
-                        )}
+                        <Progress value={currentProgress} className="mb-2" />
 
                         <div className="space-y-2">
                           <Label>Allocate Amount</Label>
@@ -338,15 +327,16 @@ export default function AllocatePage() {
                             <p className="text-sm font-medium mb-2">After Allocation:</p>
                             <div className="flex justify-between text-sm mb-2">
                               <span>
-                                Will Remain: ${(goal.amount - allocation).toLocaleString()}
+                                New Amount: ${((goal.current_amount || 0) + allocation).toLocaleString()}
                               </span>
-                              <span className="text-green-600">
-                                Progress: +${allocation.toLocaleString()}
+                              <span>
+                                Remaining: ${(goal.amount - (goal.current_amount || 0) - allocation).toLocaleString()}
                               </span>
                             </div>
-                            {goal.amount - allocation <= 0 && (
-                              <p className="text-green-600 text-sm font-medium">🎉 Goal will be completed!</p>
-                            )}
+                            <Progress value={newProgress} className="mb-1" />
+                            <p className="text-xs text-right text-orange-500">
+                              {Math.round(newProgress)}%
+                            </p>
                           </div>
                         )}
                       </div>
@@ -370,9 +360,11 @@ export default function AllocatePage() {
                 {collaborativeGoals.map((goal) => {
                   const goalId = goal.goal_id.toString()
                   const allocation = allocations[goalId] || 0
+                  const newProgress = getNewProgress(goal)
+                  const currentProgress = ((goal.current_amount || 0) / goal.amount) * 100
                   const maxPossible = Math.min(
                     remainingSavings + allocation, 
-                    goal.amount
+                    goal.amount - (goal.current_amount || 0)
                   )
                   const daysLeft = calculateDaysLeft(goal.target_date)
 
@@ -392,28 +384,11 @@ export default function AllocatePage() {
 
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span>Remaining Needed: ${goal.amount.toLocaleString()}</span>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            goal.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            goal.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}
-                          </span>
+                          <span>Current: ${(goal.current_amount || 0).toLocaleString()}</span>
+                          <span>Target: ${goal.amount.toLocaleString()}</span>
                         </div>
 
-                        {/* Progress Bar */}
-                        {goal.original_amount && (
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-xs text-gray-600">
-                              <span>Progress: {goal.progress || 0}%</span>
-                              <span>
-                                ${(goal.allocated_amount || 0).toLocaleString()} / ${goal.original_amount.toLocaleString()}
-                              </span>
-                            </div>
-                            <Progress value={goal.progress || 0} className="h-2" />
-                          </div>
-                        )}
+                        <Progress value={currentProgress} className="mb-2" />
 
                         <div className="space-y-2">
                           <Label>Your Allocation</Label>
@@ -445,15 +420,16 @@ export default function AllocatePage() {
                             <p className="text-sm font-medium mb-2">After Your Allocation:</p>
                             <div className="flex justify-between text-sm mb-2">
                               <span>
-                                Will Remain: ${(goal.amount - allocation).toLocaleString()}
+                                Goal Progress: ${((goal.current_amount || 0) + allocation).toLocaleString()}
                               </span>
-                              <span className="text-green-600">
-                                Your Contribution: +${allocation.toLocaleString()}
+                              <span>
+                                Remaining: ${(goal.amount - (goal.current_amount || 0) - allocation).toLocaleString()}
                               </span>
                             </div>
-                            {goal.amount - allocation <= 0 && (
-                              <p className="text-green-600 text-sm font-medium">🎉 Goal will be completed!</p>
-                            )}
+                            <Progress value={newProgress} className="mb-1" />
+                            <p className="text-xs text-right text-orange-500">
+                              {Math.round(newProgress)}%
+                            </p>
                           </div>
                         )}
                       </div>

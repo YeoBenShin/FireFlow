@@ -4,13 +4,15 @@ import{
     getAllGoals, 
     createGoal, 
     updateGoal, 
-    deleteGoal
+    deleteGoal,
+    allocateToGoals
 }from '../controllers/goalController';
 
 const router = express.Router();
 
 router.get('/', getAllGoals);
 router.post('/create', createGoal);
+router.post('/allocate', allocateToGoals);
 router.delete('/delete/:id', deleteGoal);
 router.put('/update/:id', updateGoal);
 
