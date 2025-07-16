@@ -12,7 +12,7 @@ import Link from "next/link"
 interface Participant {
   goal_id: number;
   user_id: string;
-  role: 'owner' | 'collaborator';
+  role: 'owner' | 'collaborator' | 'pending';
   allocated_amount: number;
   user: {
     name: string;
@@ -34,7 +34,7 @@ interface Goal {
 
 interface GoalWithParticipant {
   goal_id: number;
-  role: 'owner' | 'collaborator';
+  role: 'owner' | 'collaborator' | 'pending';
   allocated_amount: number;
   goal: Goal;
 }
@@ -148,7 +148,8 @@ export default function GoalsPage() {
     }))
 
     const personalGoals = goals.filter(goal => !goal.isCollaborative)
-    const collaborativeGoals = goals.filter(goal => goal.isCollaborative)
+    // Only show collaborative goals where user is not pending (either owner or accepted collaborator)
+    const collaborativeGoals = goals.filter(goal => goal.isCollaborative && goal.userRole !== 'pending')
 
 
     const getDaysLeft = (target_date: string) => {
@@ -275,8 +276,8 @@ export default function GoalsPage() {
                         <StatusBadge status={goal.status} />
                       </div>
                       <div className="flex justify-between items-center mb-3 mt-4">
-                        <span className="font-semibold text-base">${currentAmount.toLocaleString()}</span>
-                        <span className="text-gray-600 text-base font-medium">${goal.amount.toLocaleString()}</span>
+                        <span className="font-semibold text-base">${(currentAmount || 0).toLocaleString()}</span>
+                        <span className="text-gray-600 text-base font-medium">${(goal.amount || 0).toLocaleString()}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                         <div
@@ -344,8 +345,8 @@ export default function GoalsPage() {
                     </div>
                     
                     <div className="flex justify-between items-center mb-3 mt-4">
-                      <span className="font-semibold text-base">${currentAmount.toLocaleString()}</span>
-                      <span className="text-gray-600 text-base font-medium">${goal.amount.toLocaleString()}</span>
+                      <span className="font-semibold text-base">${(currentAmount || 0).toLocaleString()}</span>
+                      <span className="text-gray-600 text-base font-medium">${(goal.amount || 0).toLocaleString()}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                       <div
@@ -358,7 +359,7 @@ export default function GoalsPage() {
                     <div className="pt-2 border-t">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-500">Your contribution:</span>
-                        <span className="text-sm font-medium">${(goal.userAllocatedAmount || 0).toLocaleString()}</span>
+                        <span className="text-sm font-medium">${((goal.userAllocatedAmount || 0)).toLocaleString()}</span>
                       </div>
                       
                       {/* Expandable Participants Section */}
@@ -395,13 +396,15 @@ export default function GoalsPage() {
                                         variant="secondary"
                                         className="text-xs w-fit mt-1"
                                       >
-                                        {participant.role === 'owner' ? '👑 Owner' : '🤝 Collaborator'}
+                                        {participant.role === 'owner' ? '👑 Owner' : 
+                                         participant.role === 'collaborator' ? '🤝 Collaborator' : 
+                                         '⏳ Pending'}
                                       </Badge>
                                     </div>
                                   </div>
                                   <div className="text-right">
                                     <div className="text-lg font-bold text-gray-800">
-                                      ${participant.allocated_amount.toLocaleString()}
+                                      ${(participant.allocated_amount || 0).toLocaleString()}
                                     </div>
                                     <div className="text-sm text-gray-600">
                                       contributed

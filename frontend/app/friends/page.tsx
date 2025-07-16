@@ -24,12 +24,33 @@ import {
   ToastTitle,
 } from "@radix-ui/react-toast";
 
+interface GoalInvitation {
+  goal_id: number;
+  role: string;
+  allocated_amount: number;
+  goal: {
+    goal_id: number;
+    title: string;
+    category: string;
+    description?: string;
+    status: string;
+    amount: number;
+    target_date: string;
+    isCollaborative: boolean;
+    user_id: string;
+    user: {
+      name: string;
+    };
+  };
+}
+
 export default function FriendsPage() {
   // Data states
   const [friends, setFriends] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [users, setUsers] = useState([]);
+  const [goalInvitations, setGoalInvitations] = useState<GoalInvitation[]>([]);
 
   // UI states
   const [error, setError] = useState("");
@@ -111,6 +132,24 @@ export default function FriendsPage() {
       setError(err.message || "Failed to load received requests");
     }
   };
+  const fetchGoalInvitations = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:5100/api/goals/pending-invitations?_t=${Date.now()}`,
+        { 
+          credentials: "include",
+          cache: "no-store"
+        }
+      );
+      if (!res.ok) throw new Error("Failed to fetch goal invitations");
+      const data = await res.json();
+      console.log("[DEBUG] Goal invitations data:", data);
+      setGoalInvitations(data);
+    } catch (err) {
+      console.error("[ERROR] fetchGoalInvitations:", err);
+      setError(err.message || "Failed to load goal invitations");
+    }
+  };
 
   // Fetch all on mount
   const refreshAll = async () => {
@@ -119,6 +158,7 @@ export default function FriendsPage() {
       fetchFriends(),
       fetchSentRequests(),
       fetchReceivedRequests(),
+      fetchGoalInvitations(),
     ]);
     setLoading(false);
   };
@@ -295,6 +335,77 @@ export default function FriendsPage() {
   const acceptedFriends = friends.filter(
     (friendObj) => friendObj.friend[0].status === "accepted"
   );
+
+  // Accept goal invitation
+  // Accept goal invitation
+  const handleAcceptGoalInvitation = async (goalId: number) => {
+    try {
+      console.log("Accepting goal invitation for goal ID:", goalId);
+      
+      const res = await fetch(`http://localhost:5100/api/goals/${goalId}/accept-invitation`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("Accept invitation response status:", res.status);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Accept invitation error response:", errorData);
+        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+      }
+      
+      const result = await res.json();
+      console.log("Accept invitation success:", result);
+      
+      addToast("Goal invitation accepted successfully!", "success");
+      await refreshAll(); // Refresh all data
+      
+      // Also trigger a refresh of goals page if it's open
+      window.dispatchEvent(new CustomEvent('goalInvitationAccepted'));
+    } catch (err: any) {
+      console.error("[ERROR] handleAcceptGoalInvitation:", err);
+      addToast(err.message || "Failed to accept invitation", "error");
+    }
+  };
+
+  // Reject goal invitation
+  const handleRejectGoalInvitation = async (goalId: number) => {
+    try {
+      console.log("Rejecting goal invitation for goal ID:", goalId);
+      
+      const res = await fetch(`http://localhost:5100/api/goals/${goalId}/reject-invitation`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("Reject invitation response status:", res.status);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Reject invitation error response:", errorData);
+        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+      }
+      
+      const result = await res.json();
+      console.log("Reject invitation success:", result);
+      
+      addToast("Goal invitation rejected", "info");
+      await refreshAll(); // Refresh all data
+      
+      // Also trigger a refresh of goals page if it's open
+      window.dispatchEvent(new CustomEvent('goalInvitationRejected'));
+    } catch (err: any) {
+      console.error("[ERROR] handleRejectGoalInvitation:", err);
+      addToast(err.message || "Failed to reject invitation", "error");
+    }
+  };
 
   // UI
   return (
@@ -495,16 +606,8 @@ export default function FriendsPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Collabs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* ...collaborations section... */}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
                 <CardTitle className="text-lg">
-                  Invitations ({receivedRequests.length})
+                  Friend Invites ({receivedRequests.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -548,6 +651,78 @@ export default function FriendsPage() {
                       >
                         Ignore
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Goal Invitations */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Collab Goal Invites ({goalInvitations.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {goalInvitations.length === 0 && <div className="text-gray-500">No goal invitations.</div>}
+                {goalInvitations.map((invitation) => (
+                  <div
+                    key={invitation.goal_id}
+                    className="p-4 bg-orange-50 rounded-lg"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-12 h-12">
+                          <AvatarFallback className="bg-orange-500 text-white">
+                            {invitation.goal.title.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="font-semibold">{invitation.goal.title}</h4>
+                          <p className="text-sm text-gray-600">
+                            Invited by {invitation.goal.user.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {invitation.goal.category}
+                            </Badge>
+                            <span className="text-sm font-medium">
+                              ${invitation.goal.amount.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptGoalInvitation(invitation.goal_id)}
+                          className="px-3 py-1 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition flex items-center gap-1"
+                        >
+                          <Check className="w-4 h-4" />
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRejectGoalInvitation(invitation.goal_id)}
+                          className="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition flex items-center gap-1"
+                        >
+                          <X className="w-4 h-4" />
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                    {invitation.goal.description && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        {invitation.goal.description}
+                      </p>
+                    )}
+                    <div className="mt-2 text-sm text-gray-500">
+                      Target: {new Date(invitation.goal.target_date).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "long", 
+                        year: "numeric",
+                      })}
                     </div>
                   </div>
                 ))}
