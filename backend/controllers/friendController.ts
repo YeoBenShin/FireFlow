@@ -344,3 +344,60 @@ export const deleteFriend = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to delete friend' });
     }
 }
+
+/**
+ * Get simplified friends list for goal collaboration
+ * @param req 
+ * @param res 
+ * @returns Simple list of friends with user_id, username, name
+ */
+export const getFriendsForGoals = async (req: Request, res: Response) => {
+  const userId = (req.user as jwt.JwtPayload).sub;
+  
+  try {
+    const {data: friend1, error: friend1Error} = await supabase
+      .from('friend')
+      .select('friend_id')
+      .eq('status', 'accepted')
+      .eq('user_id', userId);
+    
+    const {data: friend2, error: friend2Error} = await supabase
+      .from('friend')
+      .select('user_id')
+      .eq('status', 'accepted')
+      .eq('friend_id', userId);
+
+    if (friend1Error || friend2Error) {
+      console.error("Supabase error:", friend1Error || friend2Error);
+      res.status(500).json({ error: 'Failed to fetch friends' });
+      return;
+    }
+    
+    // Extract friend_ids from both directions
+    const friend1Ids = friend1 ? friend1.map(row => row.friend_id) : [];
+    const friend2Ids = friend2 ? friend2.map(row => row.user_id) : [];
+    const allFriendIds = [...friend1Ids, ...friend2Ids];
+
+    if (allFriendIds.length === 0) {
+      res.status(200).json([]); 
+      return;
+    }
+
+    // Get user details for all friends
+    const { data: users, error: usersError } = await supabase
+      .from('user')
+      .select('user_id, username, name')
+      .in('user_id', allFriendIds);
+
+    if (usersError) {
+      console.error("Supabase users error:", usersError);
+      res.status(500).json({ error: 'Failed to fetch friend details' });
+      return;
+    }
+
+    res.status(200).json(users || []);
+  } catch (error: any) {
+    console.error("Error in getFriendsForGoals:", error);
+    res.status(500).json({ error: 'Failed to fetch friends' });
+  }
+};

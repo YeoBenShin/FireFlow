@@ -1,7 +1,7 @@
 
 
 export interface Goal {
-    goalId: number; // Supabase generates this UUID
+    goal_id: number; // Supabase generates this UUID
     title: string;
     category: string;
     description?: string;
@@ -10,5 +10,5 @@ export interface Goal {
     original_amount?: number; // Original target amount (for progress calculation)
     target_date: string; // ISO string format 'YYYY-MM-DD'
     isCollaborative: boolean; // Indicates if the goal is collaborative
-    userId: string; // User ID of the owner
+    user_id: string; // User ID of the owner
   }

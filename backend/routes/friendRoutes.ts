@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllFriends, getAllFriendsRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, deleteFriend, cancelFriendRequest } from '../controllers/friendController';
+import { getAllFriends, getAllFriendsRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, deleteFriend, cancelFriendRequest, getFriendsForGoals } from '../controllers/friendController';
 
 const router = express.Router();
 
@@ -14,6 +14,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', getAllFriends);
+router.get('/for-goals', getFriendsForGoals);
 router.get('/requests', getAllFriendsRequests);
 router.post('/send', sendFriendRequest);
 router.post('/accept', acceptFriendRequest);
