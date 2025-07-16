@@ -362,7 +362,7 @@ export default function GoalsPage() {
                       </div>
                       
                       {/* Expandable Participants Section */}
-                      {goal.participantCount && goal.participantCount > 1 && (
+                      {goal.isCollaborative && (
                         <div className="mt-3">
                           <Button
                             variant="ghost"
