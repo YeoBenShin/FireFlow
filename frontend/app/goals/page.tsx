@@ -25,9 +25,6 @@ interface Goal {
   category: string;
   target_date: string;
   amount: number;
-  original_amount?: number;
-  allocated_amount?: number;
-  progress?: number;
   status: string;
   isCollaborative: boolean;
   description?: string;
@@ -259,6 +256,8 @@ export default function GoalsPage() {
               ) : (
                 personalGoals.map((goal) => {
                   const daysLeft = getDaysLeft(goal.target_date)
+                  const currentAmount = 0;
+                  const calculatedProgress = Math.round((currentAmount / goal.amount) * 100)
 
                   return (
                     <div key={goal.goal_id} className="p-4 bg-orange-50 rounded-lg">
@@ -276,19 +275,16 @@ export default function GoalsPage() {
                         <StatusBadge status={goal.status} />
                       </div>
                       <div className="flex justify-between items-center mb-3 mt-4">
-                        <span className="font-semibold text-base">${(goal.allocated_amount || 0).toLocaleString()}</span>
-                        <span className="text-gray-600 text-base font-medium">${(goal.original_amount || goal.amount).toLocaleString()}</span>
+                        <span className="font-semibold text-base">${currentAmount.toLocaleString()}</span>
+                        <span className="text-gray-600 text-base font-medium">${goal.amount.toLocaleString()}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                         <div
                           className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
-                          style={{ width: `${Math.min(goal.progress || 0, 100)}%` }}
-                        />
+                          style={{ width: `${Math.min(calculatedProgress, 100)}%` }}
+                        /> 
                       </div>
-                      <div className="text-right text-sm text-orange-500 font-medium mb-3">{goal.progress || 0}%</div>
-                      <div className="text-xs text-gray-500 mb-3">
-                        Remaining: ${goal.amount.toLocaleString()}
-                      </div>
+                      <div className="text-right text-sm text-orange-500 font-medium mb-3">{calculatedProgress}%</div>
                     </div>
                   )
                 })
@@ -312,6 +308,8 @@ export default function GoalsPage() {
               ) : (
               collaborativeGoals.map((goal) => {
                 const daysLeft = getDaysLeft(goal.target_date)
+                const currentAmount = 0; // TODO later
+                const calculatedProgress = Math.round((currentAmount / goal.amount) * 100)
                 
                 return (
                   <div key={goal.goal_id} className="p-4 bg-orange-50 rounded-lg">
@@ -346,24 +344,21 @@ export default function GoalsPage() {
                     </div>
                     
                     <div className="flex justify-between items-center mb-3 mt-4">
-                      <span className="font-semibold text-base">${(goal.allocated_amount || 0).toLocaleString()}</span>
-                      <span className="text-gray-600 text-base font-medium">${(goal.original_amount || goal.amount).toLocaleString()}</span>
+                      <span className="font-semibold text-base">${currentAmount.toLocaleString()}</span>
+                      <span className="text-gray-600 text-base font-medium">${goal.amount.toLocaleString()}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                       <div
                         className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
-                        style={{ width: `${Math.min(goal.progress || 0, 100)}%` }}
+                        style={{ width: `${Math.min(calculatedProgress, 100)}%` }}
                       />
                     </div>
-                    <div className="text-right text-sm text-orange-500 font-medium mb-3">{goal.progress || 0}%</div>
-                    <div className="text-xs text-gray-500 mb-3">
-                      Remaining: ${goal.amount.toLocaleString()}
-                    </div>
+                    <div className="text-right text-sm text-orange-500 font-medium mb-3">{calculatedProgress}%</div>
                     
                     <div className="pt-2 border-t">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-500">Your contribution:</span>
-                        <span className="text-sm font-medium">${(goal.allocated_amount || 0).toLocaleString()}</span>
+                        <span className="text-sm font-medium">${(goal.userAllocatedAmount || 0).toLocaleString()}</span>
                       </div>
                       
                       {/* Expandable Participants Section */}

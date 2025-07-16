@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { MainLayout } from "../_components/layout/main-layout";
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 import { Trash2 } from "lucide-react";
 import {
   Card,
@@ -324,7 +326,7 @@ const fetchChartData = async () => {
       });
       if (res.ok) {
         const data = await res.json();
-        const withIcons = data.map((tx: Transaction) => ({
+        const withIcons = data.map((tx) => ({
         ...tx,
         // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
         //   day: "2-digit",
@@ -823,9 +825,9 @@ const fetchChartData = async () => {
                   <LineChart
                     data={chartData[timeFilter as keyof typeof chartData]}
                   />
-                  : <div className="flex justify-center items-center h-full">
-                      <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                    </div>}
+                  : <Box sx={{ display: 'flex' }}>
+                      <CircularProgress color="inherit" />
+                    </Box>}
                 </div>
                 {/* Legend and summary cards ... */}
                 <div className="flex justify-center gap-8 mb-6">
