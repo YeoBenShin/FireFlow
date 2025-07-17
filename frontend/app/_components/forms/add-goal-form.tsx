@@ -9,7 +9,6 @@ import { Label } from "@/app/_components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/_components/ui/select"
 import { Textarea } from "@/app/_components/ui/textarea"
 import { Calendar, Users, UserPlus, X } from "lucide-react"
-import { Switch } from "@/app/_components/ui/switch"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/app/_components/ui/badge"
 
@@ -26,7 +25,6 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
     targetDate: "",
     amount: "",
     category: "",
-    isCollaborative: false,
     notes: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -34,7 +32,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
   const [selectedFriends, setSelectedFriends] = useState<string[]>([])
   const [loadingFriends, setLoadingFriends] = useState(false)
 
-  // ui that automates the isCollab boolean flag
+  // Send invitations to selected friends when goal is created
   useEffect(() => {
     fetchFriends()
   }, [])
@@ -66,34 +64,15 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
   }
 
   const toggleFriendSelection = (friendId: string) => {
-    setSelectedFriends(prev => {
-      const newSelection = prev.includes(friendId) 
+    setSelectedFriends(prev => 
+      prev.includes(friendId) 
         ? prev.filter(id => id !== friendId)
         : [...prev, friendId]
-      
-      // Automatically enable collaborative mode when first friend is selected
-      // Automatically disable collaborative mode when no friends are selected
-      if (newSelection.length > 0 && !formData.isCollaborative) {
-        setFormData(prevForm => ({ ...prevForm, isCollaborative: true }))
-      } else if (newSelection.length === 0 && formData.isCollaborative) {
-        setFormData(prevForm => ({ ...prevForm, isCollaborative: false }))
-      }
-      
-      return newSelection
-    })
+    )
   }
 
   const removeFriend = (friendId: string) => {
-    setSelectedFriends(prev => {
-      const newSelection = prev.filter(id => id !== friendId)
-      
-      // Automatically disable collaborative mode when no friends are left
-      if (newSelection.length === 0 && formData.isCollaborative) {
-        setFormData(prevForm => ({ ...prevForm, isCollaborative: false }))
-      }
-      
-      return newSelection
-    })
+    setSelectedFriends(prev => prev.filter(id => id !== friendId))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -103,19 +82,6 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
 
   const handleSelectChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleSwitchChange = (checked: boolean) => {
-    // Only allow enabling collaborative mode if friends are selected
-    if (checked && selectedFriends.length === 0) {
-      return // Don't allow enabling collaborative mode without friends
-    }
-    
-    setFormData((prev) => ({ ...prev, isCollaborative: checked }))
-    if (!checked) {
-      // Clear selected friends when collaborative is disabled
-      setSelectedFriends([])
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,8 +96,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
       target_date: formData.targetDate, 
       amount: parseFloat(formData.amount.replace(/[^0-9.]/g, '')), 
       status: 'pending',
-      isCollaborative: formData.isCollaborative,
-      selectedFriends: formData.isCollaborative ? selectedFriends : []
+      selectedFriends: selectedFriends
     }
 
       // Send POST request to create the goal
@@ -166,7 +131,6 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
         targetDate: "",
         amount: "",
         category: "",
-        isCollaborative: false,
         notes: "",
       })
       setSelectedFriends([])
@@ -240,11 +204,11 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
         </Select>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4" />
           <div>
-            <Label>Collaborative Goal</Label>
+            <Label>Friends to Invite</Label>
             {selectedFriends.length === 0 && (
               <p className="text-xs text-gray-500 mt-1">Select friends below to send invitations</p>
             )}
@@ -253,19 +217,6 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
             )}
           </div>
         </div>
-        <Switch 
-          id="collaborative" 
-          checked={formData.isCollaborative} 
-          onCheckedChange={handleSwitchChange}
-          disabled={selectedFriends.length === 0}
-        />
-      </div>
-
-      {/* Friend Selection - Always show but prioritize when collaborative is off */}
-      <div className="space-y-3">
-        <Label>
-          {formData.isCollaborative ? "Friends to Invite" : "Select Friends to Invite"}
-        </Label>
           
           {/* Selected Friends Display */}
           {selectedFriends.length > 0 && (

@@ -7,23 +7,108 @@ export const getAllGoals = async (req: Request, res: Response) => {
   const user_id = (req.user as jwt.JwtPayload).sub;
 
   try {
-    const { data, error } = await supabase
+    // Get goals where user is owner
+    const { data: ownedGoals, error: ownedError } = await supabase
       .from('goal')
       .select('*')
       .eq('user_id', user_id)
       .order('target_date', {ascending: true });
       
-    console.log("Supabase query result:");
-    console.log("- Data:", data);
-    console.log("- Error:", error);
-    console.log("- Data length:", data?.length || 0);
-      
-    if (error) {
-      console.error("Supabase error details:", JSON.stringify(error, null, 2));
-      throw error;
+    if (ownedError) {
+      console.error("Error fetching owned goals:", ownedError);
+      throw ownedError;
     }
+
+    // Get goals where user is a participant (including pending)
+    const { data: participantGoals, error: participantError } = await supabase
+      .from('goal_participants')
+      .select(`
+        role,
+        goal:goal_id (
+          goal_id,
+          title,
+          category,
+          description,
+          status,
+          amount,
+          target_date,
+          user_id
+        )
+      `)
+      .eq('user_id', user_id);
+
+    if (participantError) {
+      console.error("Error fetching participant goals:", participantError);
+      throw participantError;
+    }
+
+    // Combine owned goals and participant goals
+    const allGoals = [...(ownedGoals || [])];
     
-    res.status(200).json(data);
+    // Add participant goals (flatten the structure)
+    participantGoals?.forEach(participant => {
+      if (participant.goal) {
+        const goalWithRole = {
+          ...participant.goal,
+          userRole: participant.role
+        };
+        allGoals.push(goalWithRole);
+      }
+    });
+
+    // Remove duplicates (in case user is both owner and participant)
+    const uniqueGoals = allGoals.filter((goal, index, self) => 
+      index === self.findIndex(g => g.goal_id === goal.goal_id)
+    );
+
+    console.log("Combined goals result:");
+    console.log("- Owned goals:", ownedGoals?.length || 0);
+    console.log("- Participant goals:", participantGoals?.length || 0);
+    console.log("- Unique goals:", uniqueGoals.length);
+
+    // Get participant counts for each goal (including pending)
+    const goalIds = uniqueGoals.map(goal => goal.goal_id);
+    const { data: participantCounts, error: participantCountError } = await supabase
+      .from('goal_participants')
+      .select('goal_id')
+      .in('goal_id', goalIds);
+
+    if (participantCountError) {
+      console.error("Error fetching participant counts:", participantCountError);
+    }
+
+    // Count participants per goal (including pending)
+    const participantCountMap: { [key: number]: number } = {};
+    participantCounts?.forEach(participant => {
+      participantCountMap[participant.goal_id] = (participantCountMap[participant.goal_id] || 0) + 1;
+    });
+
+    // Get current amounts for each goal
+    const { data: allocations, error: allocationError } = await supabase
+      .from('goal_participants')
+      .select('goal_id, allocated_amount')
+      .in('goal_id', goalIds);
+
+    if (allocationError) {
+      console.error("Error fetching allocations:", allocationError);
+    }
+
+    // Calculate current amounts per goal
+    const currentAmountMap: { [key: number]: number } = {};
+    allocations?.forEach(allocation => {
+      const goalId = allocation.goal_id;
+      currentAmountMap[goalId] = (currentAmountMap[goalId] || 0) + (allocation.allocated_amount || 0);
+    });
+
+    // Merge the data
+    const goalsWithExtendedInfo = uniqueGoals.map(goal => ({
+      ...goal,
+      current_amount: currentAmountMap[goal.goal_id] || 0,
+      participantCount: participantCountMap[goal.goal_id] || 1,
+      userRole: goal.userRole || 'owner' // Default to owner if not set
+    }));
+
+    res.status(200).json(goalsWithExtendedInfo);
   
   } catch (error) {
     console.error("Failed to fetch goals:", error);
@@ -73,7 +158,7 @@ export const getCurrentAmounts = async (req: Request, res: Response) => {
     console.log("Participants data:", participants);
 
     // Calculate total allocated amount per goal
-    const currentAmounts = {};
+    const currentAmounts: { [key: string]: number } = {};
     
     // Initialize all goals with 0
     goalIds.forEach(goalId => {
@@ -135,8 +220,8 @@ export const createGoal = async (req: Request, res: Response) => {
       throw ownerError;
     }
 
-    // If it's collaborative and has selected friends, send them invitations
-    if (goalData.isCollaborative && selectedFriends.length > 0) {
+    // If there are selected friends, send them invitations
+    if (selectedFriends.length > 0) {
       const invitationParticipants = selectedFriends.map((friendId: string) => ({
         goal_id: createdGoal.goal_id,
         user_id: friendId,
@@ -222,7 +307,6 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
           status,
           amount,
           target_date,
-          isCollaborative,
           user_id
         )
       `)
@@ -252,8 +336,8 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
     const { data: participantCounts, error: countError } = await supabase
       .from('goal_participants')
       .select('goal_id, user_id, role')
-      .in('goal_id', goalIds)
-      .neq('role', 'pending'); // Only count active participants (owner + collaborator)
+      .in('goal_id', goalIds);
+      // Include all participants (owner + collaborator + pending)
 
     if (countError) {
       console.error("Participant count error:", countError);
@@ -314,11 +398,8 @@ export const getGoalParticipants = async (req: Request, res: Response) => {
       return;
     }
 
-    // If user is not the owner, filter out pending participants
+    // Show all participants with their actual roles (owner, collaborator, pending)
     let filteredData = data;
-    if (userParticipant.role !== 'owner') {
-      filteredData = data.filter(participant => participant.role !== 'pending');
-    }
 
     // Get user details for all participants (use filtered data)
     const userIds = filteredData.map(p => p.user_id);
@@ -459,7 +540,6 @@ export const getPendingInvitations = async (req: Request, res: Response) => {
           status,
           amount,
           target_date,
-          isCollaborative,
           user_id,
           user:user_id (
             name
@@ -516,19 +596,6 @@ export const acceptInvitation = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Invitation not found or already processed" });
     }
 
-    // Ensure the goal is marked as collaborative since someone accepted an invitation
-    const { error: updateGoalError } = await supabase
-      .from('goal')
-      .update({ isCollaborative: true })
-      .eq('goal_id', parseInt(goalId));
-
-    if (updateGoalError) {
-      console.error("Error updating goal to collaborative:", updateGoalError);
-      // Don't throw error, invitation was still accepted successfully
-    } else {
-      console.log("Successfully ensured goal is marked as collaborative");
-    }
-
     console.log("Invitation accepted successfully:", data);
     res.status(200).json({ message: "Invitation accepted successfully", data: data[0] });
   } catch (error) {
@@ -548,54 +615,52 @@ export const rejectInvitation = async (req: Request, res: Response) => {
   console.log("Goal ID (parsed):", parseInt(goalId));
 
   try {
-    console.log("Starting goal deletion process...");
-    
-    // Step 1: Delete ALL participants for this goal (owner, collaborators, pending - everyone)
-    const { data: deletedParticipants, error: deleteParticipantsError } = await supabase
+    // Only delete the current user's participation record
+    const { data: deletedParticipant, error: deleteParticipantError } = await supabase
       .from('goal_participants')
       .delete()
       .eq('goal_id', parseInt(goalId))
+      .eq('user_id', user_id)
+      .eq('role', 'pending')
       .select();
 
-    console.log("Participants deletion result:");
-    console.log("- Data:", deletedParticipants);
-    console.log("- Error:", deleteParticipantsError);
+    console.log("Participant deletion result:");
+    console.log("- Data:", deletedParticipant);
+    console.log("- Error:", deleteParticipantError);
 
-    if (deleteParticipantsError) {
-      console.error("Error deleting goal participants:", deleteParticipantsError);
-      console.error("Full error details:", JSON.stringify(deleteParticipantsError, null, 2));
-      throw deleteParticipantsError;
+    if (deleteParticipantError) {
+      console.error("Error deleting goal participant:", deleteParticipantError);
+      throw deleteParticipantError;
     }
 
-    console.log("Successfully deleted participants:", deletedParticipants?.length || 0);
-
-    // Step 2: Delete the goal itself
-    const { data: deletedGoal, error: deleteGoalError } = await supabase
-      .from('goal')
-      .delete()
-      .eq('goal_id', parseInt(goalId))
-      .select();
-
-    console.log("Goal deletion result:");
-    console.log("- Data:", deletedGoal);
-    console.log("- Error:", deleteGoalError);
-
-    if (deleteGoalError) {
-      console.error("Error deleting goal:", deleteGoalError);
-      console.error("Full error details:", JSON.stringify(deleteGoalError, null, 2));
-      throw deleteGoalError;
+    if (!deletedParticipant || deletedParticipant.length === 0) {
+      console.log("No pending invitation found to reject");
+      return res.status(404).json({ error: "Invitation not found or already processed" });
     }
 
-    if (!deletedGoal || deletedGoal.length === 0) {
-      console.log("No goal found to delete - it may have already been deleted");
-      return res.status(404).json({ error: "Goal not found or already deleted" });
+    // Check if there are any remaining participants after rejection
+    const { data: remainingParticipants, error: remainingError } = await supabase
+      .from('goal_participants')
+      .select('user_id, role')
+      .eq('goal_id', parseInt(goalId));
+
+    if (remainingError) {
+      console.error("Error checking remaining participants:", remainingError);
+      throw remainingError;
     }
 
-    console.log("Goal completely deleted successfully");
+    console.log("Remaining participants:", remainingParticipants);
+
+    // If no participants remain, the goal automatically becomes a personal goal
+    // (participantCount will be 1 when only the owner remains)
+    const participantCount = remainingParticipants?.length || 0;
+    console.log("Participant count after rejection:", participantCount);
+
+    console.log("Invitation rejected successfully");
     res.status(200).json({ 
-      message: "Goal invitation rejected - entire goal deleted", 
-      deletedGoal: deletedGoal[0],
-      deletedParticipants: deletedParticipants || []
+      message: "Goal invitation rejected successfully", 
+      deletedParticipant: deletedParticipant[0],
+      remainingParticipants: participantCount
     });
   } catch (error) {
     console.error("Error rejecting invitation:", error);

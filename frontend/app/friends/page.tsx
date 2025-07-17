@@ -36,7 +36,6 @@ interface GoalInvitation {
     status: string;
     amount: number;
     target_date: string;
-    isCollaborative: boolean;
     user_id: string;
     user: {
       name: string;
@@ -411,10 +410,10 @@ export default function FriendsPage() {
   return (
     <ToastProvider swipeDirection="right">
       <MainLayout>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Friends Section */}
-          <div className="lg:col-span-2">
-            <Card className="mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column: Friends Section */}
+          <div className="space-y-6">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-xl">Friends ({acceptedFriends.length})</CardTitle>
               </CardHeader>
@@ -474,7 +473,7 @@ export default function FriendsPage() {
             </Card>
 
             {/* Sent Requests */}
-            <Card className="mb-6">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
                   Sent Requests ({sentRequests.length})
@@ -602,7 +601,7 @@ export default function FriendsPage() {
             </Card>
           </div>
 
-          {/* Right column: Invitations, Collabs, etc. */}
+          {/* Right Column: Invitations */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -636,21 +635,22 @@ export default function FriendsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      <Button
+                        size="sm"
                         onClick={() => handleAccept(friendObj.user.username)}
-                        className="px-3 py-1 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition"
+                        className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
                       >
                         Accept
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => handleIgnore(friendObj.user.username)}
-                        className="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+                        className="w-full sm:w-auto"
                       >
                         Ignore
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -693,23 +693,24 @@ export default function FriendsPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <Button
+                          size="sm"
                           onClick={() => handleAcceptGoalInvitation(invitation.goal_id)}
-                          className="px-3 py-1 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition flex items-center gap-1"
+                          className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto flex items-center gap-1"
                         >
                           <Check className="w-4 h-4" />
                           Accept
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleRejectGoalInvitation(invitation.goal_id)}
-                          className="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition flex items-center gap-1"
+                          className="w-full sm:w-auto flex items-center gap-1"
                         >
                           <X className="w-4 h-4" />
                           Decline
-                        </button>
+                        </Button>
                       </div>
                     </div>
                     {invitation.goal.description && (

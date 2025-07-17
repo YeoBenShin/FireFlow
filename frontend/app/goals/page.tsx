@@ -26,10 +26,11 @@ interface Goal {
   target_date: string;
   amount: number;
   status: string;
-  isCollaborative: boolean;
   description?: string;
   user_id: string;
-  participantCount?: number;
+  current_amount: number;
+  participantCount: number;
+  userRole: 'owner' | 'collaborator' | 'pending';
 }
 
 interface GoalWithParticipant {
@@ -147,9 +148,10 @@ export default function GoalsPage() {
       userAllocatedAmount: item.allocated_amount
     }))
 
-    const personalGoals = goals.filter(goal => !goal.isCollaborative)
+    // Determine collaborative status based on participant count
+    const personalGoals = goals.filter(goal => goal.participantCount <= 1)
     // Only show collaborative goals where user is not pending (either owner or accepted collaborator)
-    const collaborativeGoals = goals.filter(goal => goal.isCollaborative && goal.userRole !== 'pending')
+    const collaborativeGoals = goals.filter(goal => goal.participantCount > 1 && goal.userRole !== 'pending')
 
 
     const getDaysLeft = (target_date: string) => {
@@ -320,7 +322,7 @@ export default function GoalsPage() {
 
                         <div className="flex items-center gap-2">
                           <h4 className="font-semibold text-base leading-tight">{goal.title}</h4>
-                          {goal.participantCount && goal.participantCount > 1 && (
+                          {goal.participantCount > 1 && (
                             <Badge variant="outline" className="text-xs">
                               <Users className="w-3 h-3 mr-1" />
                               {goal.participantCount} people
@@ -363,7 +365,7 @@ export default function GoalsPage() {
                       </div>
                       
                       {/* Expandable Participants Section */}
-                      {goal.isCollaborative && (
+                      {goal.participantCount > 1 && (
                         <div className="mt-3">
                           <Button
                             variant="ghost"

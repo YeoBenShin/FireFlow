@@ -20,8 +20,9 @@ interface Goal {
   amount: number
   current_amount: number
   target_date: string
-  isCollaborative: boolean
   user_id: string
+  participantCount: number
+  userRole: 'owner' | 'collaborator' | 'pending'
 }
 
 interface SavingsData {
@@ -138,6 +139,60 @@ export default function AllocatePage() {
     }
   }
 
+  const handleAcceptInvitation = async (goalId: number) => {
+    try {
+      setError(null)
+      const response = await fetch(`http://localhost:5100/api/goals/${goalId}/accept-invitation`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to accept invitation')
+      }
+
+      // Refresh the goals data
+      const goalsResponse = await fetch('http://localhost:5100/api/goals', {
+        credentials: 'include'
+      })
+      if (goalsResponse.ok) {
+        const goalsData = await goalsResponse.json()
+        setGoals(goalsData)
+      }
+    } catch (err) {
+      console.error('Error accepting invitation:', err)
+      setError(err instanceof Error ? err.message : 'Failed to accept invitation')
+    }
+  }
+
+  const handleRejectInvitation = async (goalId: number) => {
+    try {
+      setError(null)
+      const response = await fetch(`http://localhost:5100/api/goals/${goalId}/reject-invitation`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to reject invitation')
+      }
+
+      // Refresh the goals data
+      const goalsResponse = await fetch('http://localhost:5100/api/goals', {
+        credentials: 'include'
+      })
+      if (goalsResponse.ok) {
+        const goalsData = await goalsResponse.json()
+        setGoals(goalsData)
+      }
+    } catch (err) {
+      console.error('Error rejecting invitation:', err)
+      setError(err instanceof Error ? err.message : 'Failed to reject invitation')
+    }
+  }
+
   const getNewProgress = (goal: Goal) => {
     const allocation = allocations[goal.goal_id.toString()] || 0
     const newCurrent = (goal.current_amount || 0) + allocation
@@ -201,8 +256,16 @@ export default function AllocatePage() {
     )
   }
 
-  const personalGoals = goals.filter(goal => !goal.isCollaborative)
-  const collaborativeGoals = goals.filter(goal => goal.isCollaborative)
+  // Filter goals based on participant count and user role
+  const personalGoals = goals.filter(goal => 
+    goal.participantCount <= 1 && goal.userRole !== 'pending'
+  )
+  const collaborativeGoals = goals.filter(goal => 
+    goal.participantCount > 1 && goal.userRole !== 'pending'
+  )
+  const pendingInvitations = goals.filter(goal => 
+    goal.userRole === 'pending'
+  )
 
   return (
     <MainLayout>
@@ -257,6 +320,50 @@ export default function AllocatePage() {
 
         {/* Goals Allocation */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Pending Invitations */}
+          {pendingInvitations.length > 0 && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-xl text-amber-600">Pending Goal Invitations</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {pendingInvitations.map((goal) => (
+                  <div key={goal.goal_id} className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center text-white">
+                          {getCategoryIcon(goal.category)}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{goal.title}</h4>
+                          <p className="text-sm text-gray-600">
+                            Invited to collaborative goal • Target: ${goal.amount.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="bg-green-500 hover:bg-green-600"
+                          onClick={() => handleAcceptInvitation(goal.goal_id)}
+                        >
+                          Accept
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleRejectInvitation(goal.goal_id)}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Personal Goals */}
           {personalGoals.length > 0 && (
             <Card>

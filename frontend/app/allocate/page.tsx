@@ -19,8 +19,10 @@ interface Goal {
     status: 'pending' | 'in-progress' | 'completed';
     amount: number;
     target_date: string; // ISO string format 'YYYY-MM-DD'
-    isCollaborative: boolean; // Indicates if the goal is collaborative
     user_id: string; // User ID of the owner
+    current_amount: number; // Current allocated amount (now required)
+    participantCount: number; // Number of participants (now required)
+    userRole: 'owner' | 'collaborator' | 'pending'; // User's role in this goal
   }
 
 interface SavingsData {
@@ -91,29 +93,14 @@ useEffect(() => {
       setIsLoading(true)
       setError(null)
       
-      // Fetch goals (unchanged)
+      // Fetch goals with current amounts and participant counts included
       const goalsResponse = await fetch('http://localhost:5100/api/goals', {
         credentials: 'include'
       })
       if (!goalsResponse.ok) throw new Error('Failed to fetch goals')
       const goalsData = await goalsResponse.json()
       
-      // Fetch current amounts from allocations history
-      const currentAmountsResponse = await fetch('http://localhost:5100/api/goals/current-amounts', {
-        credentials: 'include'
-      })
-      let currentAmounts = {}
-      if (currentAmountsResponse.ok) {
-        currentAmounts = await currentAmountsResponse.json()
-      }
-      
-      // Merge goals with current amounts
-      const goalsWithCurrentAmounts = goalsData.map(goal => ({
-        ...goal,
-        current_amount: currentAmounts[goal.goal_id] || 0
-      }))
-      
-      // Fetch savings data (unchanged)
+      // Fetch savings data
       let savingsData = null
       try {
         const savingsResponse = await fetch('http://localhost:5100/api/users/savings', {
@@ -129,7 +116,7 @@ useEffect(() => {
         savingsData = { availableSavings: 5000 }
       }
       
-      setGoals(goalsWithCurrentAmounts)
+      setGoals(goalsData)
       setSavingsData(savingsData)
     } catch (err) {
       console.error('Error fetching data:', err)
@@ -201,7 +188,7 @@ useEffect(() => {
   // Update getNewProgress function:
   const getNewProgress = (goal: Goal) => {
     const allocation = allocations[goal.goal_id.toString()] || 0
-    const newCurrent = (goal.current_amount || 0) + allocation
+    const newCurrent = goal.current_amount + allocation
     return (newCurrent / goal.amount) * 100
   }
 
@@ -238,8 +225,12 @@ useEffect(() => {
     })
   }
  // Filter goals
-  const personalGoals = goals.filter(goal => !goal.isCollaborative)
-  const collaborativeGoals = goals.filter(goal => goal.isCollaborative)
+  const personalGoals = goals.filter(goal => 
+    goal.participantCount <= 1 && goal.userRole !== 'pending'
+  )
+  const collaborativeGoals = goals.filter(goal => 
+    goal.participantCount > 1 && goal.userRole !== 'pending'
+  )
 
   const calculateDaysLeft = (targetDate: string) => {
     const target = new Date(targetDate)
@@ -336,7 +327,7 @@ useEffect(() => {
                 {personalGoals.map((goal) => {
                   const goalId = goal.goal_id.toString()
                   const allocation = allocations[goalId] || 0
-                  const currentAmount = goal.current_amount || 0
+                  const currentAmount = goal.current_amount
                   const newProgress = ((currentAmount + allocation) / goal.amount) * 100
                   const currentProgress = (currentAmount / goal.amount) * 100
                   const maxPossible = Math.min(
@@ -368,7 +359,7 @@ useEffect(() => {
                         <Progress value={currentProgress} className="mb-2" />
 
                         <div className="space-y-2">
-                          <Label htmlFor={`allocation-${goalId}`}>Allocate Amount</Label>
+                          <Label>Allocate Amount</Label>
                           <div className="flex gap-2">
                             <Input
                               id={`allocation-${goalId}`}
@@ -428,7 +419,7 @@ useEffect(() => {
                 {collaborativeGoals.map((goal) => {
                   const goalId = goal.goal_id.toString()
                   const allocation = allocations[goalId] || 0
-                  const currentAmount = goal.current_amount || 0
+                  const currentAmount = goal.current_amount
                   const newProgress = ((currentAmount + allocation) / goal.amount) * 100
                   const currentProgress = (currentAmount / goal.amount) * 100
                   const maxPossible = Math.min(
@@ -460,7 +451,7 @@ useEffect(() => {
                         <Progress value={currentProgress} className="mb-2" />
 
                         <div className="space-y-2">
-                          <Label htmlFor={`allocation-${goalId}`}>Your Allocation</Label>
+                          <Label>Your Allocation</Label>
                           <div className="flex gap-2">
                             <Input
                               id={`allocation-${goalId}`}
