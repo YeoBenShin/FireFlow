@@ -106,7 +106,7 @@ export function ProfilePage() {
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile.");
+      alert("Failed to update profile. Try a different username");
     } finally {
       setIsSubmitting(false);
     }
@@ -161,7 +161,7 @@ export function ProfilePage() {
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input {...field} disabled className="bg-teal-50" />
+                  <Input {...field} className="bg-teal-50" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

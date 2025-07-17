@@ -5,7 +5,7 @@ import { supabase } from "../db/supabaseClient";
 // and set a JWT in an HTTP-only cookie. 
 // After which, the user will then login and then create their own user profile (eg. name, monthly saving)
 export const registerUser = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
 
   try {
     // 1. Create Supabase Auth user
@@ -21,7 +21,9 @@ export const registerUser = async (req: Request, res: Response) => {
 
     // 2. Create user in your own `user` table (linking auth UUID)
     const { error: userError } = await supabase.from('user').insert([
-      {user_id: authUserId}
+      {user_id: authUserId,
+      username: username
+      }
     ]);
 
     if (userError) throw userError;
