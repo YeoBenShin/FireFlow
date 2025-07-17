@@ -139,6 +139,27 @@ export default function GoalsPage() {
 
   useEffect(() => {
     fetchGoals()
+
+    // Refresh data when user returns to this page (e.g., from allocation page)
+    const handleFocus = () => {
+      console.log("Page gained focus, refreshing goals data...")
+      fetchGoals()
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log("Page became visible, refreshing goals data...")
+        fetchGoals()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
     // Extract goals from the participant data
@@ -259,7 +280,7 @@ export default function GoalsPage() {
               ) : (
                 personalGoals.map((goal) => {
                   const daysLeft = getDaysLeft(goal.target_date)
-                  const currentAmount = 0;
+                  const currentAmount = goal.current_amount || 0;
                   const calculatedProgress = Math.round((currentAmount / goal.amount) * 100)
 
                   return (
@@ -311,7 +332,7 @@ export default function GoalsPage() {
               ) : (
               collaborativeGoals.map((goal) => {
                 const daysLeft = getDaysLeft(goal.target_date)
-                const currentAmount = 0; // TODO later
+                const currentAmount = goal.current_amount || 0;
                 const calculatedProgress = Math.round((currentAmount / goal.amount) * 100)
                 
                 return (

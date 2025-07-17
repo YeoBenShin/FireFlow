@@ -93,11 +93,14 @@ export const getAllGoals = async (req: Request, res: Response) => {
       console.error("Error fetching allocations:", allocationError);
     }
 
+    console.log("Raw allocation data:", allocations);
+
     // Calculate current amounts per goal
     const currentAmountMap: { [key: number]: number } = {};
     allocations?.forEach(allocation => {
       const goalId = allocation.goal_id;
-      currentAmountMap[goalId] = (currentAmountMap[goalId] || 0) + (allocation.allocated_amount || 0);
+      const amount = allocation.allocated_amount || 0;
+      currentAmountMap[goalId] = (currentAmountMap[goalId] || 0) + amount;
     });
 
     // Merge the data
@@ -352,12 +355,32 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
       return acc;
     }, {} as Record<number, number>) || {};
 
-    // Enhance the data with participant counts
+    // Get total allocated amounts for each goal
+    const allGoalIds = data?.map(item => item.goal_id) || [];
+    const { data: allAllocations, error: allocationError } = await supabase
+      .from('goal_participants')
+      .select('goal_id, allocated_amount')
+      .in('goal_id', allGoalIds);
+
+    if (allocationError) {
+      console.error("Error fetching all allocations:", allocationError);
+    }
+
+    // Calculate current amounts per goal
+    const currentAmountMap: { [key: number]: number } = {};
+    allAllocations?.forEach(allocation => {
+      const goalId = allocation.goal_id;
+      const amount = allocation.allocated_amount || 0;
+      currentAmountMap[goalId] = (currentAmountMap[goalId] || 0) + amount;
+    });
+
+    // Enhance the data with participant counts and current amounts
     const enhancedData = data?.map(item => ({
       ...item,
       goal: {
         ...item.goal,
-        participantCount: participantCountMap[item.goal_id] || 1
+        participantCount: participantCountMap[item.goal_id] || 1,
+        current_amount: currentAmountMap[item.goal_id] || 0
       }
     }));
 
@@ -456,9 +479,12 @@ export const allocateToGoals = async (req: Request, res: Response) => {
       return;
     }
 
+    const completedGoals: number[] = [];
+
     // Process each allocation
     for (const [goalId, amount] of allocationEntries) {
-      console.log(`Processing allocation: Goal ${goalId}, Amount ${amount}`);
+      console.log(`\n=== PROCESSING ALLOCATION ===`);
+      console.log(`Goal ID: ${goalId}, Amount: ${amount}, User: ${user_id}`);
       
       // Check if user is already a participant in this goal
       const { data: existingParticipant, error: checkError } = await supabase
@@ -473,9 +499,17 @@ export const allocateToGoals = async (req: Request, res: Response) => {
         throw checkError;
       }
 
+      console.log(`Existing participant found:`, existingParticipant ? 'Yes' : 'No');
+
       if (existingParticipant) {
         // Update existing participant's allocated amount
-        const newAmount = (existingParticipant.allocated_amount || 0) + Number(amount);
+        const oldAmount = existingParticipant.allocated_amount || 0;
+        const newAmount = oldAmount + Number(amount);
+        
+        console.log(`Updating existing participant for goal ${goalId}:`);
+        console.log(`  - Old amount: ${oldAmount}`);
+        console.log(`  - Additional amount: ${amount}`);
+        console.log(`  - New total amount: ${newAmount}`);
         
         const { error: updateError } = await supabase
           .from('goal_participants')
@@ -488,16 +522,34 @@ export const allocateToGoals = async (req: Request, res: Response) => {
           throw updateError;
         }
 
-        console.log(`Updated allocation for goal ${goalId}: ${existingParticipant.allocated_amount} -> ${newAmount}`);
+        console.log(`✅ Successfully updated allocation for goal ${goalId}: ${oldAmount} -> ${newAmount}`);
       } else {
-        // Create new participant entry
+        // Create new participant entry (set role to 'collaborator' if it's not the owner)
+        const { data: goalData, error: goalError } = await supabase
+          .from('goal')
+          .select('user_id')
+          .eq('goal_id', parseInt(goalId))
+          .single();
+
+        if (goalError) {
+          console.error(`Error fetching goal data for goal ${goalId}:`, goalError);
+          throw goalError;
+        }
+
+        const role = goalData.user_id === user_id ? 'owner' : 'collaborator';
+
+        console.log(`Creating new participant for goal ${goalId}:`);
+        console.log(`  - User ID: ${user_id}`);
+        console.log(`  - Role: ${role}`);
+        console.log(`  - Amount: ${amount}`);
+
         const { error: insertError } = await supabase
           .from('goal_participants')
           .insert({
             goal_id: parseInt(goalId),
             user_id: user_id,
-            allocated_amount: Number(amount),
-            joined_at: new Date().toISOString()
+            role: role,
+            allocated_amount: Number(amount)
           });
 
         if (insertError) {
@@ -505,14 +557,124 @@ export const allocateToGoals = async (req: Request, res: Response) => {
           throw insertError;
         }
 
-        console.log(`Created new participant for goal ${goalId} with amount ${amount}`);
+        console.log(`✅ Successfully created new participant for goal ${goalId} with amount ${amount} and role ${role}`);
+      }
+
+      // Check if goal is now completed
+      // Get the goal's target amount
+      const { data: goalData, error: goalError } = await supabase
+        .from('goal')
+        .select('amount, status')
+        .eq('goal_id', parseInt(goalId))
+        .single();
+
+      if (goalError) {
+        console.error(`Error fetching goal for completion check:`, goalError);
+        continue; // Don't fail the whole operation, just continue
+      }
+
+      // Calculate total allocated amount for this goal
+      const { data: allParticipants, error: participantsError } = await supabase
+        .from('goal_participants')
+        .select('allocated_amount')
+        .eq('goal_id', parseInt(goalId));
+
+      if (participantsError) {
+        console.error(`Error fetching participants for completion check:`, participantsError);
+        continue; // Don't fail the whole operation, just continue
+      }
+
+      const totalAllocated = allParticipants?.reduce((sum, participant) => 
+        sum + (participant.allocated_amount || 0), 0) || 0;
+
+      console.log(`\n=== GOAL COMPLETION CHECK ===`);
+      console.log(`Goal ${goalId}:`);
+      console.log(`  - Target amount: ${goalData.amount}`);
+      console.log(`  - Total allocated: ${totalAllocated}`);
+      console.log(`  - Current status: ${goalData.status}`);
+      console.log(`  - All participants:`, allParticipants);
+
+      // If goal is completed and status isn't already 'completed'
+      if (totalAllocated >= goalData.amount && goalData.status !== 'completed') {
+        const { error: updateStatusError } = await supabase
+          .from('goal')
+          .update({ 
+            status: 'completed'
+          })
+          .eq('goal_id', parseInt(goalId));
+
+        if (updateStatusError) {
+          console.error(`Error updating goal status to completed:`, updateStatusError);
+        } else {
+          console.log(`Goal ${goalId} marked as completed!`);
+          completedGoals.push(parseInt(goalId));
+        }
+      } else if (goalData.status === 'pending' && totalAllocated > 0) {
+        // Update status from pending to in-progress when first allocation is made
+        const { error: updateStatusError } = await supabase
+          .from('goal')
+          .update({ 
+            status: 'in-progress'
+          })
+          .eq('goal_id', parseInt(goalId));
+
+        if (updateStatusError) {
+          console.error(`Error updating goal status to in-progress:`, updateStatusError);
+        } else {
+          console.log(`Goal ${goalId} marked as in-progress!`);
+        }
       }
     }
 
     console.log("All allocations processed successfully");
+    
+    // Return updated goal information for the allocated goals
+    const updatedGoals = [];
+    console.log("Fetching updated goal data for allocated goals...");
+    
+    for (const goalId of Object.keys(allocations)) {
+      try {
+        const { data: goalData, error: goalError } = await supabase
+          .from('goal')
+          .select('*')
+          .eq('goal_id', parseInt(goalId))
+          .single();
+
+        if (!goalError && goalData) {
+          // Get total allocated amount for this goal
+          const { data: allParticipants, error: participantsError } = await supabase
+            .from('goal_participants')
+            .select('allocated_amount')
+            .eq('goal_id', parseInt(goalId));
+
+          if (!participantsError) {
+            const totalAllocated = allParticipants?.reduce((sum, participant) => 
+              sum + (participant.allocated_amount || 0), 0) || 0;
+            
+            console.log(`Goal ${goalId} updated: ${totalAllocated}/${goalData.amount}`);
+            
+            updatedGoals.push({
+              ...goalData,
+              current_amount: totalAllocated
+            });
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching updated data for goal ${goalId}:`, error);
+      }
+    }
+
+    console.log("Final allocation result:", {
+      allocations,
+      completedGoals,
+      updatedGoalsCount: updatedGoals.length
+    });
+
     res.status(200).json({ 
       message: "Allocations processed successfully",
-      allocations: allocations
+      allocations: allocations,
+      completedGoals: completedGoals,
+      updatedGoals: updatedGoals
     });
 
   } catch (error) {
@@ -665,6 +827,48 @@ export const rejectInvitation = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error rejecting invitation:", error);
     res.status(500).json({ error: "Failed to reject invitation" });
+  }
+};
+
+// Debug endpoint to check database state
+export const debugDatabase = async (req: Request, res: Response) => {
+  const user_id = (req.user as jwt.JwtPayload).sub;
+
+  try {
+    console.log("=== DATABASE DEBUG FOR USER:", user_id, "===");
+
+    // Get all goals for this user
+    const { data: goals, error: goalsError } = await supabase
+      .from('goal')
+      .select('*')
+      .eq('user_id', user_id);
+
+    // Get all goal participants for this user
+    const { data: participants, error: participantsError } = await supabase
+      .from('goal_participants')
+      .select('*')
+      .eq('user_id', user_id);
+
+    // Get all goal participants for all goals this user owns
+    const goalIds = goals?.map(g => g.goal_id) || [];
+    const { data: allParticipants, error: allParticipantsError } = await supabase
+      .from('goal_participants')
+      .select('*')
+      .in('goal_id', goalIds);
+
+    console.log("User's goals:", goals);
+    console.log("User's participations:", participants);
+    console.log("All participants in user's goals:", allParticipants);
+
+    res.status(200).json({
+      user_id,
+      goals: goals || [],
+      userParticipations: participants || [],
+      allParticipants: allParticipants || []
+    });
+  } catch (error) {
+    console.error("Debug error:", error);
+    res.status(500).json({ error: "Debug failed" });
   }
 };
 

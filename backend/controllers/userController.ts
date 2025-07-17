@@ -97,3 +97,59 @@ export const deleteUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete user' });
   }
 };
+
+// Get user's available savings (total savings minus allocated amounts)
+export const getUserSavings = async (req: Request, res: Response) => {
+  const user_id = (req.user as jwt.JwtPayload).sub;
+
+  try {
+    console.log("=== GET USER SAVINGS ===");
+    console.log("User ID:", user_id);
+
+    // Get user's basic info
+    const { data: user, error: userError } = await supabase
+      .from('user')
+      .select('*')
+      .eq('user_id', user_id)
+      .single();
+
+    if (userError) {
+      console.error("Error fetching user:", userError);
+      throw userError;
+    }
+
+    // Calculate total allocated amount by this user across all goals
+    const { data: allocations, error: allocationsError } = await supabase
+      .from('goal_participants')
+      .select('allocated_amount')
+      .eq('user_id', user_id);
+
+    if (allocationsError) {
+      console.error("Error fetching allocations:", allocationsError);
+      throw allocationsError;
+    }
+
+    const totalAllocated = allocations?.reduce((sum, allocation) => 
+      sum + (allocation.allocated_amount || 0), 0) || 0;
+
+    // For now, let's assume the user has a base savings amount
+    // This could come from user profile, transactions, or other sources
+    const baseSavings = user.monthlySavings * 12 || 10000; // Example: annual savings
+    const availableSavings = Math.max(0, baseSavings - totalAllocated);
+
+    console.log("Savings calculation:");
+    console.log("- Base savings:", baseSavings);
+    console.log("- Total allocated:", totalAllocated);
+    console.log("- Available:", availableSavings);
+
+    res.status(200).json({
+      availableSavings,
+      totalAllocated,
+      baseSavings
+    });
+
+  } catch (error) {
+    console.error("Error calculating user savings:", error);
+    res.status(500).json({ error: "Failed to calculate savings" });
+  }
+};
