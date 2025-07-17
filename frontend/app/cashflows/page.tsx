@@ -52,7 +52,7 @@ interface TransactionWithExtras extends Transaction {
 
 export default function CashflowsPage() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState("all");
+  // const [activeTab, setActiveTab] = useState("all");
   const [timeFilter, setTimeFilter] = useState("Monthly");
   const [chartData, setChartData] = useState({} as ChartGroup);
   const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
@@ -690,7 +690,7 @@ const fetchChartData = async () => {
       <div className="space-y-8">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Cashflows</h1>
-          <div className="flex gap-3">
+          {/* <div className="flex gap-3">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -702,7 +702,7 @@ const fetchChartData = async () => {
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
-          </div>
+          </div> */}
         </div>
 
         {/* Action Buttons */}
@@ -816,7 +816,7 @@ const fetchChartData = async () => {
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  <Info className="w-5 h-5 text-gray-400" />
+                  {/* <Info className="w-5 h-5 text-gray-400" /> */}
                 </div>
               </CardHeader>
               <CardContent>
