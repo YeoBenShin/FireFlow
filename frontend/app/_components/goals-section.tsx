@@ -12,8 +12,10 @@ interface Goal {
   amount: number
   status: string
   description?: string
-  isCollaborative: boolean
   user_id: string
+  current_amount: number
+  participantCount: number
+  userRole: 'owner' | 'collaborator' | 'pending'
 }
 
 interface GoalWithParticipant {
@@ -59,9 +61,9 @@ export function GoalsSection() {
             userAllocatedAmount: item.allocated_amount
           }))
           
-          // take first 3 fastest goals
+          // take first 3 fastest goals - only include goals where user has accepted (owner or collaborator)
           const imminentGoals = allGoals
-            .filter((goal: any) => goal.status === 'pending')
+            .filter((goal: any) => goal.status === 'pending' && (goal.userRole === 'owner' || goal.userRole === 'collaborator'))
             .sort((a: any, b: any) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime())
             .slice(0, 3)
           
