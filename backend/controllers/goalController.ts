@@ -30,6 +30,71 @@ export const getAllGoals = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch goals" });
   }
 };
+
+// Add this function to your existing goalController.ts
+
+export const getCurrentAmounts = async (req: Request, res: Response) => {
+  const user_id = (req.user as jwt.JwtPayload).sub;
+  console.log("=== GET CURRENT AMOUNTS DEBUG ===");
+  console.log("User ID from JWT:", user_id);
+
+  try {
+    // Get all goals where user is the owner
+    const { data: ownedGoals, error: ownedError } = await supabase
+      .from('goal')
+      .select('goal_id')
+      .eq('user_id', user_id);
+
+    if (ownedError) {
+      console.error("Error fetching owned goals:", ownedError);
+      throw ownedError;
+    }
+
+    if (!ownedGoals || ownedGoals.length === 0) {
+      console.log("No owned goals found");
+      res.status(200).json({});
+      return;
+    }
+
+    const goalIds = ownedGoals.map(goal => goal.goal_id);
+    console.log("Found goal IDs:", goalIds);
+
+    // Get total allocated amounts for each goal by summing all participants' contributions
+    const { data: participants, error: participantsError } = await supabase
+      .from('goal_participants')
+      .select('goal_id, allocated_amount')
+      .in('goal_id', goalIds);
+
+    if (participantsError) {
+      console.error("Error fetching participants:", participantsError);
+      throw participantsError;
+    }
+
+    console.log("Participants data:", participants);
+
+    // Calculate total allocated amount per goal
+    const currentAmounts = {};
+    
+    // Initialize all goals with 0
+    goalIds.forEach(goalId => {
+      currentAmounts[goalId] = 0;
+    });
+
+    // Sum up allocated amounts from all participants for each goal
+    participants?.forEach(participant => {
+      const goalId = participant.goal_id;
+      currentAmounts[goalId] = (currentAmounts[goalId] || 0) + (participant.allocated_amount || 0);
+    });
+
+    console.log("Current amounts calculated:", currentAmounts);
+    res.status(200).json(currentAmounts);
+
+  } catch (error) {
+    console.error("Error fetching current amounts:", error);
+    res.status(500).json({ error: "Failed to fetch current amounts" });
+  }
+};
+
  
 // Controller to create a new goal
 export const createGoal = async (req: Request, res: Response) => {
@@ -283,6 +348,95 @@ export const getGoalParticipants = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching goal participants:", error);
     res.status(500).json({ error: "Failed to fetch goal participants" });
+  }
+};
+
+// Add this function to handle new allocations
+
+export const allocateToGoals = async (req: Request, res: Response) => {
+  const user_id = (req.user as jwt.JwtPayload).sub;
+  const { allocations } = req.body; // { goalId: amount, goalId2: amount2, ... }
+
+  console.log("=== ALLOCATE TO GOALS DEBUG ===");
+  console.log("User ID:", user_id);
+  console.log("Allocations:", allocations);
+
+  try {
+    // Validate input
+    if (!allocations || typeof allocations !== 'object') {
+      res.status(400).json({ error: "Invalid allocations data" });
+      return;
+    }
+
+    const allocationEntries = Object.entries(allocations).filter(([_, amount]) => Number(amount) > 0);
+    
+    if (allocationEntries.length === 0) {
+      res.status(400).json({ error: "No valid allocations provided" });
+      return;
+    }
+
+    // Process each allocation
+    for (const [goalId, amount] of allocationEntries) {
+      console.log(`Processing allocation: Goal ${goalId}, Amount ${amount}`);
+      
+      // Check if user is already a participant in this goal
+      const { data: existingParticipant, error: checkError } = await supabase
+        .from('goal_participants')
+        .select('*')
+        .eq('goal_id', parseInt(goalId))
+        .eq('user_id', user_id)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error(`Error checking participant for goal ${goalId}:`, checkError);
+        throw checkError;
+      }
+
+      if (existingParticipant) {
+        // Update existing participant's allocated amount
+        const newAmount = (existingParticipant.allocated_amount || 0) + Number(amount);
+        
+        const { error: updateError } = await supabase
+          .from('goal_participants')
+          .update({ allocated_amount: newAmount })
+          .eq('goal_id', parseInt(goalId))
+          .eq('user_id', user_id);
+
+        if (updateError) {
+          console.error(`Error updating allocation for goal ${goalId}:`, updateError);
+          throw updateError;
+        }
+
+        console.log(`Updated allocation for goal ${goalId}: ${existingParticipant.allocated_amount} -> ${newAmount}`);
+      } else {
+        // Create new participant entry
+        const { error: insertError } = await supabase
+          .from('goal_participants')
+          .insert({
+            goal_id: parseInt(goalId),
+            user_id: user_id,
+            allocated_amount: Number(amount),
+            joined_at: new Date().toISOString()
+          });
+
+        if (insertError) {
+          console.error(`Error creating participant for goal ${goalId}:`, insertError);
+          throw insertError;
+        }
+
+        console.log(`Created new participant for goal ${goalId} with amount ${amount}`);
+      }
+    }
+
+    console.log("All allocations processed successfully");
+    res.status(200).json({ 
+      message: "Allocations processed successfully",
+      allocations: allocations
+    });
+
+  } catch (error) {
+    console.error("Error processing allocations:", error);
+    res.status(500).json({ error: "Failed to process allocations" });
   }
 };
 

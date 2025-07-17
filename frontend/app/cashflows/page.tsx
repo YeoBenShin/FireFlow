@@ -52,7 +52,7 @@ interface TransactionWithExtras extends Transaction {
 
 export default function CashflowsPage() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState("all");
+  // const [activeTab, setActiveTab] = useState("all");
   const [timeFilter, setTimeFilter] = useState("Monthly");
   const [chartData, setChartData] = useState({} as ChartGroup);
   const [transactions, setTransactions] = useState<TransactionWithExtras[]>([]);
@@ -523,8 +523,14 @@ const fetchChartData = async () => {
             ))}
           </optgroup>
         </select>
+        <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-orange-500">Filter by date range</span>
+        <div className="flex gap-2">
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border rounded p-2" placeholder="Start date" />
-        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-2" placeholder="End date" />
+        <span className="text-sm mt-2 text-orange-500">to</span>
+        <input type="date" value={endDate} min = {startDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-2" placeholder="End date" />
+        </div>
+        </div>
         <button type="submit" className="bg-orange-500 text-white px-4 py-2 rounded">Filter</button>
         {(startDate || endDate) && (
           <button type="button" className="ml-2 text-orange-500 underline" onClick={() => { setStartDate(""); setEndDate(""); onFilter({}); }}>
@@ -578,17 +584,17 @@ const fetchChartData = async () => {
     }
     if (filters.startDate && filters.endDate) {
       filtered = filtered.filter((tx: Transaction) => {
-        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        const txDate = new Date(tx.dateTime).toLocaleDateString("en-CA");
         return txDate >= filters.startDate && txDate <= filters.endDate;
       });
     } else if (filters.startDate) {
       filtered = filtered.filter((tx: Transaction) => {
-        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        const txDate = new Date(tx.dateTime).toLocaleDateString("en-CA");
         return txDate >= filters.startDate;
       });
     } else if (filters.endDate) {
       filtered = filtered.filter((tx: Transaction) => {
-        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        const txDate = new Date(tx.dateTime).toLocaleDateString("en-CA");
         return txDate <= filters.endDate;
       });
     }
@@ -690,7 +696,7 @@ const fetchChartData = async () => {
       <div className="space-y-8">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Cashflows</h1>
-          <div className="flex gap-3">
+          {/* <div className="flex gap-3">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -702,7 +708,7 @@ const fetchChartData = async () => {
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
-          </div>
+          </div> */}
         </div>
 
         {/* Action Buttons */}
@@ -816,7 +822,7 @@ const fetchChartData = async () => {
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  <Info className="w-5 h-5 text-gray-400" />
+                  {/* <Info className="w-5 h-5 text-gray-400" /> */}
                 </div>
               </CardHeader>
               <CardContent>

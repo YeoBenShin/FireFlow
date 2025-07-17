@@ -422,28 +422,8 @@ export default function RecurringPage() {
                     ).toFixed(2)}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    Available for other expenditure/savings for goals
+                    Available for spending/saving
                   </p>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <h4 className="font-semibold mb-3">Quick Actions</h4>
-                  <div className="space-y-2">
-                    <Button
-                      className="w-full bg-orange-500 hover:bg-orange-600"
-                      onClick={() => setShowForm(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Recurring Item
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={fetchRecurringTransactions}
-                    >
-                      Refresh Data
-                    </Button>
-                  </div>
                 </div>
               </CardContent>
             </Card>

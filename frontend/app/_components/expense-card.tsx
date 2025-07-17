@@ -1,5 +1,5 @@
 interface ExpenseCardProps {
-  amount: number
+  amount: string
   title: string
 }
 

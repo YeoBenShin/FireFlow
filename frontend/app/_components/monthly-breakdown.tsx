@@ -30,7 +30,7 @@ const CHART_COLORS = [
   "#B91C1C", // red-700
 ]
 
-export function MonthlyBreakdown() {
+export function MonthlyBreakdown({monthlySavings}) {
   const [chartData, setChartData] = useState<ChartData>({
     labels: [],
     datasets: [
@@ -135,7 +135,7 @@ export function MonthlyBreakdown() {
               style={{ backgroundColor: chartData.datasets[0].backgroundColor[index % chartData.datasets[0].backgroundColor.length] }}
             />
             <span className="text-sm text-gray-600">{label}</span>
-            <span className="text-sm font-medium ml-auto">${(chartData.datasets[0].data[index] ?? 0).toLocaleString()}</span>
+            <span className="text-sm font-medium ml-auto">${(chartData.datasets[0].data[index] ?? 0).toFixed(2).toLocaleString()}</span>
           </div>
         ))}
       </div>
@@ -146,8 +146,8 @@ export function MonthlyBreakdown() {
           <div className="text-lg font-bold text-gray-800">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div className="text-center">
-          <div className="text-sm text-gray-600 mb-1">Total Savings:</div>
-          <div className="text-lg font-bold text-gray-800">${(totalIncome - totalExpenses).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-sm text-gray-600 mb-1">Total Remaining Budget:</div>
+          <div className="text-lg font-bold text-gray-800">${(totalIncome === 0 ? 0 : totalIncome - totalExpenses - monthlySavings).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
       </div>
     </div>

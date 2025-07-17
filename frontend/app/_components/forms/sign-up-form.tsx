@@ -59,9 +59,9 @@ export function SignUpForm({
 
 
       if (!response.ok) {
-        alert("Signup failed. Please check your details.");
+        alert("Signup failed. Either the username or email is already taken.");
         // throw new Error(`Failed to sign up: ${response.statusText}`);
-      }
+      } else {
 
       const result = await response.json();
       console.log("Signup successful:", result);
@@ -69,6 +69,8 @@ export function SignUpForm({
       // Optional: Call onSignupSuccess or navigate
       onSignupSuccess?.();
       router.push("/"); // Redirect to dashboard after signup
+      }
+    
       if (onClose) onClose();
     } catch (error) {
       console.error("Error signing up:", error);
