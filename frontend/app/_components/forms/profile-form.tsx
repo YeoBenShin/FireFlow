@@ -92,7 +92,6 @@ export function ProfilePage() {
         body: JSON.stringify({
           username: values.username,
           monthly_savings: Number(values.monthlySavings),
-          monthly_reset_date: Number(values.monthlyResetDate),
           name: values.name,
         })
       });
@@ -181,27 +180,7 @@ export function ProfilePage() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="monthlyResetDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Monthly Reset Day</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min={1}
-                    max={12}
-                    step={1}
-                    className="bg-teal-50"
-                    placeholder="month (1-12)"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          
           <FormField
             control={form.control}
             name="monthlySavings"

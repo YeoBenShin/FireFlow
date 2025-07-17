@@ -54,7 +54,11 @@ export default function HomePage() {
     fetchTodaysExpenses()
   }, [])
   useEffect(() => {
-    setDailyBudget(((totalIncome - (totalExpenses + monthlySavings)+ todaysExpenses) / remainingDays) || 0);
+    if (totalIncome === 0){
+      setDailyBudget(0);
+    } else {
+      setDailyBudget(((totalIncome - (totalExpenses + monthlySavings)+ todaysExpenses) / remainingDays) || 0);
+    }
     console.log(totalIncome, totalExpenses, monthlySavings, todaysExpenses, remainingDays, dailyBudget)
   },)
    
@@ -64,15 +68,16 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
     
         {/* Progress Bar */}
-        <ProgressBar current={todaysExpenses} total={dailyBudget} max={dailyBudget} />
+        <ProgressBar current={todaysExpenses} total={dailyBudget === 0 ? todaysExpenses : dailyBudget} 
+        max={dailyBudget === 0 ? todaysExpenses : dailyBudget} />
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
             <ExpenseCard amount={todaysExpenses.toFixed(2)} title="Today's Expenditure" />
-            <ExpenseCard amount={(dailyBudget-todaysExpenses).toFixed(2)} title="Remaining Budget for Today" />
-            <MonthlyBreakdown />
+            <ExpenseCard amount={(dailyBudget === 0 ? dailyBudget : dailyBudget-todaysExpenses).toFixed(2)} title="Remaining Budget for Today" />
+            <MonthlyBreakdown monthlySavings = {monthlySavings}/>
           </div>
 
           {/* Right Column */}

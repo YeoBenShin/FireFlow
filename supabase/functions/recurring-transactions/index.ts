@@ -27,6 +27,13 @@ function calculateNextRunDate(date: string, frequency: string): Date {
       return nextRunDate
   }
 
+  function getSingaporeISOString(): string {
+  const now = new Date();
+  // Convert to Singapore time (UTC+8)
+  now.setHours(now.getHours() + 8);
+  return now.toISOString().slice(0, 19) + "+08:00";
+}
+
 serve(async () => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -56,7 +63,8 @@ serve(async () => {
         type: recurring.type,
         category: recurring.category,
         description: recurring.description,
-        dateTime: new Date().toISOString(),
+        dateTime: getSingaporeISOString(),
+,
       })
 
       // update next_run_date (e.g., add 1 month)
