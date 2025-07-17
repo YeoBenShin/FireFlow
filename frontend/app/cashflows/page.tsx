@@ -523,8 +523,14 @@ const fetchChartData = async () => {
             ))}
           </optgroup>
         </select>
+        <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-orange-500">Filter by date range</span>
+        <div className="flex gap-2">
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border rounded p-2" placeholder="Start date" />
-        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-2" placeholder="End date" />
+        <span className="text-sm mt-2 text-orange-500">to</span>
+        <input type="date" value={endDate} min = {startDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-2" placeholder="End date" />
+        </div>
+        </div>
         <button type="submit" className="bg-orange-500 text-white px-4 py-2 rounded">Filter</button>
         {(startDate || endDate) && (
           <button type="button" className="ml-2 text-orange-500 underline" onClick={() => { setStartDate(""); setEndDate(""); onFilter({}); }}>
@@ -578,17 +584,17 @@ const fetchChartData = async () => {
     }
     if (filters.startDate && filters.endDate) {
       filtered = filtered.filter((tx: Transaction) => {
-        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        const txDate = new Date(tx.dateTime).toLocaleDateString("en-CA");
         return txDate >= filters.startDate && txDate <= filters.endDate;
       });
     } else if (filters.startDate) {
       filtered = filtered.filter((tx: Transaction) => {
-        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        const txDate = new Date(tx.dateTime).toLocaleDateString("en-CA");
         return txDate >= filters.startDate;
       });
     } else if (filters.endDate) {
       filtered = filtered.filter((tx: Transaction) => {
-        const txDate = new Date(tx.dateTime).toISOString().split('T')[0];
+        const txDate = new Date(tx.dateTime).toLocaleDateString("en-CA");
         return txDate <= filters.endDate;
       });
     }

@@ -8,6 +8,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/sign-up") ||
     pathname.startsWith("/login") ||
+    pathname.startsWith('/Fireflow.svg') ||
     pathname.startsWith("/_next")  // Next.js internals
   ) {
     return NextResponse.next();
