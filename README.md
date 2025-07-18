@@ -156,7 +156,7 @@ FireFlow/
    ```
 
 3. **Access the application**
-   - Frontend: http://localhost:3000
+   - Frontend: https://fire-flow-brown.vercel.app
    - Backend API: https://fireflow-m0z1.onrender.com
 
 ## 🔧 API Endpoints
