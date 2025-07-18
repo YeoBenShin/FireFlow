@@ -729,10 +729,10 @@ export const acceptInvitation = async (req: Request, res: Response) => {
   const user_id = (req.user as jwt.JwtPayload).sub;
   const { goalId } = req.params;
 
-  console.log("=== ACCEPT INVITATION DEBUG ===");
-  console.log("User ID:", user_id);
-  console.log("Goal ID (raw):", goalId);
-  console.log("Goal ID (parsed):", parseInt(goalId));
+  // console.log("=== ACCEPT INVITATION DEBUG ===");
+  // console.log("User ID:", user_id);
+  // console.log("Goal ID (raw):", goalId);
+  // console.log("Goal ID (parsed):", parseInt(goalId));
 
   try {
     // Update the participant role from 'pending' to 'collaborator' - convert goalId to number
@@ -744,9 +744,9 @@ export const acceptInvitation = async (req: Request, res: Response) => {
       .eq('role', 'pending')
       .select();
 
-    console.log("Update query result:");
-    console.log("- Data:", data);
-    console.log("- Error:", error);
+    // console.log("Update query result:");
+    // console.log("- Data:", data);
+    // console.log("- Error:", error);
 
     if (error) {
       console.error("Error accepting invitation:", error);
@@ -755,10 +755,11 @@ export const acceptInvitation = async (req: Request, res: Response) => {
 
     if (!data || data.length === 0) {
       console.log("No invitation found to accept");
-      return res.status(404).json({ error: "Invitation not found or already processed" });
+      res.status(404).json({ error: "Invitation not found or already processed" });
+      return;
     }
 
-    console.log("Invitation accepted successfully:", data);
+    // console.log("Invitation accepted successfully:", data);
     res.status(200).json({ message: "Invitation accepted successfully", data: data[0] });
   } catch (error) {
     console.error("Error accepting invitation:", error);
@@ -771,10 +772,10 @@ export const rejectInvitation = async (req: Request, res: Response) => {
   const user_id = (req.user as jwt.JwtPayload).sub;
   const { goalId } = req.params;
 
-  console.log("=== REJECT INVITATION DEBUG ===");
-  console.log("User ID:", user_id);
-  console.log("Goal ID (raw):", goalId);
-  console.log("Goal ID (parsed):", parseInt(goalId));
+  // console.log("=== REJECT INVITATION DEBUG ===");
+  // console.log("User ID:", user_id);
+  // console.log("Goal ID (raw):", goalId);
+  // console.log("Goal ID (parsed):", parseInt(goalId));
 
   try {
     // Only delete the current user's participation record
@@ -786,9 +787,9 @@ export const rejectInvitation = async (req: Request, res: Response) => {
       .eq('role', 'pending')
       .select();
 
-    console.log("Participant deletion result:");
-    console.log("- Data:", deletedParticipant);
-    console.log("- Error:", deleteParticipantError);
+    // console.log("Participant deletion result:");
+    // console.log("- Data:", deletedParticipant);
+    // console.log("- Error:", deleteParticipantError);
 
     if (deleteParticipantError) {
       console.error("Error deleting goal participant:", deleteParticipantError);
@@ -797,7 +798,8 @@ export const rejectInvitation = async (req: Request, res: Response) => {
 
     if (!deletedParticipant || deletedParticipant.length === 0) {
       console.log("No pending invitation found to reject");
-      return res.status(404).json({ error: "Invitation not found or already processed" });
+      res.status(404).json({ error: "Invitation not found or already processed" });
+      return;
     }
 
     // Check if there are any remaining participants after rejection
@@ -811,14 +813,14 @@ export const rejectInvitation = async (req: Request, res: Response) => {
       throw remainingError;
     }
 
-    console.log("Remaining participants:", remainingParticipants);
+    // console.log("Remaining participants:", remainingParticipants);
 
     // If no participants remain, the goal automatically becomes a personal goal
     // (participantCount will be 1 when only the owner remains)
     const participantCount = remainingParticipants?.length || 0;
-    console.log("Participant count after rejection:", participantCount);
+    // console.log("Participant count after rejection:", participantCount);
 
-    console.log("Invitation rejected successfully");
+    // console.log("Invitation rejected successfully");
     res.status(200).json({ 
       message: "Goal invitation rejected successfully", 
       deletedParticipant: deletedParticipant[0],
