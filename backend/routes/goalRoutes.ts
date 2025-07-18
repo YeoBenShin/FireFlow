@@ -11,7 +11,8 @@ import{
     allocateToGoals,
     getPendingInvitations,
     acceptInvitation,
-    rejectInvitation
+    rejectInvitation,
+    debugDatabase
 }from '../controllers/goalController';
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.get('/', getAllGoals);
 router.get('/with-participants', getGoalsWithParticipants);
 router.get('/current-amounts', getCurrentAmounts);
 router.get('/pending-invitations', getPendingInvitations);
+router.get('/debug', debugDatabase);
 router.get('/:goalId/participants', getGoalParticipants);
 router.post('/create', createGoal);
 router.post('/:goalId/accept-invitation', acceptInvitation);
