@@ -53,25 +53,44 @@ export function GoalsSection() {
         throw new Error(`Failed to fetch goals: ${response.statusText}`)
       }
 
-      const data: GoalWithParticipant[] = await response.json()
+      const userGoals: GoalWithParticipant[] = await response.json()
 
-      // Group by goal_id and sum allocated_amounts for collaborative and personal goals
-      const aggregatedGoalsMap = new Map<number, { goal: Goal; totalAllocated: number }>()
-      for (const item of data) {
-        const key = item.goal.goal_id
-        if (aggregatedGoalsMap.has(key)) {
-          const existing = aggregatedGoalsMap.get(key)!
-          existing.totalAllocated += item.allocated_amount
-        } else {
-          aggregatedGoalsMap.set(key, { goal: item.goal, totalAllocated: item.allocated_amount })
-        }
+      const response2 = await fetch("http://localhost:5100/api/goal-participants", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response2.ok) {
+        throw new Error(`Failed to fetch goals: ${response2.statusText}`)
       }
 
-      // Convert map to array and sort
-      const upcomingGoals = Array.from(aggregatedGoalsMap.values())
-        .filter(({ goal }) => new Date(goal.target_date) >= new Date())
-        .sort((a, b) => new Date(a.goal.target_date).getTime() - new Date(b.goal.target_date).getTime())
-        .slice(0, 3)
+      const allParticipants: GoalWithParticipant[] = await response2.json()
+
+      // Group by goal_id and sum allocated_amounts for collaborative and personal goals
+     const aggregatedGoalsMap = new Map<number, { goal: Goal; totalAllocated: number }>();
+
+for (const item of userGoals) {
+  const goalId = item.goal.goal_id;
+
+  // ✅ Sum all participants' allocations for this goal
+  const totalAllocated = allParticipants
+    .filter((p) => p.goal_id === goalId)
+    .reduce((sum, p) => sum + p.allocated_amount, 0);
+
+  aggregatedGoalsMap.set(goalId, {
+    goal: item.goal,
+    totalAllocated,
+  });
+}
+
+// ✅ Filter future goals, sort, and take top 3
+const upcomingGoals = Array.from(aggregatedGoalsMap.values())
+  .filter(({ goal }) => new Date(goal.target_date) >= new Date())
+  .sort((a, b) => new Date(a.goal.target_date).getTime() - new Date(b.goal.target_date).getTime())
+  .slice(0, 3);
 
       setGoalData(
         upcomingGoals.map((entry) => ({

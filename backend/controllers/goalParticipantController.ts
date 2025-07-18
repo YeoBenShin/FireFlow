@@ -4,32 +4,21 @@ import { GoalParticipant } from '../models/goalParticipant';
 import jwt from 'jsonwebtoken';
 
 export const getGoalParticipants = async (req: Request, res: Response) => {
-  const user_id = (req.user as jwt.JwtPayload).sub;
   try {
-      const { data, error } = await supabase
+    const { data, error } = await supabase
       .from('goal_participants')
       .select(`
-        *,
-        goal:goal_id (
-          goal_id,
-          title,
-          target_amount,
-          status,
-          due_date
-        )
-      `)
-      .eq('user_id', user_id)
-      .order('due_date', {ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-      res.status(200).json(data);
-  
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch goals" });
-    }
-  };
+        *
+      `);
+
+    if (error) throw error;
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching goal participants:", error);
+    res.status(500).json({ error: "Failed to fetch goals" });
+  }
+};
  
 // Controller to create a new goal
 export const createGoalParticipant = async (req: Request, res: Response) => {
