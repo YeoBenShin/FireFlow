@@ -34,6 +34,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
       secure: true,
       sameSite: "none",
       maxAge: 60 * 60 * 1000, // 1 hour
+      domain: 'fire-flow-brown.vercel.app'
     });
 
     req.user = decoded; // e.g. { sub: auth_user_id, ... }

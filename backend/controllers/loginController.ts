@@ -70,6 +70,7 @@ export const logoutUser = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: true, // set to true in production
       sameSite: 'none',
+      domain: 'fire-flow-brown.vercel.app'
     });
 
     res.status(200).json({ message: 'Logout successful' });
