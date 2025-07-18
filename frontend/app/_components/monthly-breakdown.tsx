@@ -3,7 +3,6 @@
 import { Info } from "lucide-react"
 import { DonutChart } from "./charts/donut-chart"
 import { useEffect, useState } from "react"
-import { Transaction } from "@/types/transaction"
 import {
   Tooltip,
   TooltipContent,
@@ -11,6 +10,12 @@ import {
   TooltipTrigger,
 } from "@/app/_components/ui/tooltip"
 // import { isSameMonth, parseISO } from "date-fns" // Uncomment if date-fns is installed
+
+interface Transaction {
+  type: string;
+  dateTime: string;
+  amount: number;
+}
 
 interface ChartData {
   labels: string[]
@@ -36,7 +41,7 @@ const CHART_COLORS = [
   "#B91C1C", // red-700
 ]
 
-export function MonthlyBreakdown({monthlySavings}) {
+export function MonthlyBreakdown({monthlySavings}: {monthlySavings: number}) {
   const [chartData, setChartData] = useState<ChartData>({
     labels: [],
     datasets: [

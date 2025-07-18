@@ -10,7 +10,6 @@ import { Label } from "@/app/_components/ui/label"
 import { Progress } from "@/app/_components/ui/progress"
 import { Car, Plane, Home, ArrowLeft, Check } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 
 export default function AllocatePage() {
   const router = useRouter()
@@ -172,7 +171,7 @@ export default function AllocatePage() {
                         <Progress value={goal.progress} className="mb-2" />
 
                         <div className="space-y-2">
-                          <Label htmlFor={`allocation-${goal.id}`}>Allocate Amount</Label>
+                          <Label>Allocate Amount</Label>
                           <div className="flex gap-2">
                             <Input
                               id={`allocation-${goal.id}`}
@@ -262,7 +261,7 @@ export default function AllocatePage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor={`allocation-${goal.id}`}>Your Allocation</Label>
+                          <Label>Your Allocation</Label>
                           <div className="flex gap-2">
                             <Input
                               id={`allocation-${goal.id}`}

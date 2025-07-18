@@ -2,9 +2,15 @@
 
 import { ArrowUpRight, ArrowDownRight } from "lucide-react"
 import React, { useEffect, useState } from "react"
-import Transaction, { Transaction } from "@/types/transaction"
 
-
+interface Transaction {
+  id: number;
+  type: string;
+  dateTime: string;
+  amount: number;
+  description?: string;
+  category?: string;
+}
 
 export function RecentTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -80,7 +86,7 @@ export function RecentTransactions() {
                 minute: "2-digit",
               })
               return (
-                <div key={transaction.transId}>
+                <div key={transaction.id}>
                   <div className="text-sm text-gray-600 mb-2">{date}</div>
                   <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
                     <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">

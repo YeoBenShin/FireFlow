@@ -29,6 +29,7 @@ interface DisplayRecurringTransaction {
   category: string
   type: 'income' | 'expense'
   isActive: boolean
+  endDate?: string
 }
 
 export default function RecurringPage() {
@@ -228,7 +229,7 @@ export default function RecurringPage() {
                       No recurring expenses found
                     </p>
                   ) : (
-                    recurringExpenses.map((item) => (
+                    recurringExpenses.map((item: DisplayRecurringTransaction) => (
                       <div
                         key={item.id}
                         className="flex items-center p-4 bg-orange-50 rounded-lg gap-x-4"
@@ -285,7 +286,7 @@ export default function RecurringPage() {
                       No recurring income found
                     </p>
                   ) : (
-                    recurringIncome.map((item) => (
+                    recurringIncome.map((item: DisplayRecurringTransaction) => (
                       <div
                         key={item.id}
                         className="flex items-center p-4 bg-orange-50 rounded-lg gap-x-4"

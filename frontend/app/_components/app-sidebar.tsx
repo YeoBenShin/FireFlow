@@ -30,8 +30,8 @@ const navigationItems = [
   { icon: Target, label: "Goals", href: "/goals" },
 ];
 
-function useLocalStorage(key, initialValue) {
-  const [value, setValue] = useState(() => {
+function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(key);
       return saved !== null ? JSON.parse(saved) : initialValue;

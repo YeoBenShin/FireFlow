@@ -24,6 +24,38 @@ import {
   ToastTitle,
 } from "@radix-ui/react-toast";
 
+
+interface User {
+  username: string;
+  name: string;
+  avatar?: string;
+}
+
+interface FriendDetail {
+  status: string;
+  created_at: string;
+  relationship: string;
+}
+
+interface Friend {
+  username: string;
+  name: string;
+  avatar?: string;
+  friend: FriendDetail[];
+}
+
+interface FriendRequest {
+  user: User;
+  avatar?: string;
+}
+
+interface Toast {
+  id: number;
+  message: string;
+  type: string;
+  open: boolean;
+}
+
 interface GoalInvitation {
   goal_id: number;
   role: string;
@@ -45,10 +77,10 @@ interface GoalInvitation {
 
 export default function FriendsPage() {
   // Data states
-  const [friends, setFriends] = useState([]);
-  const [receivedRequests, setReceivedRequests] = useState([]);
-  const [sentRequests, setSentRequests] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
+  const [sentRequests, setSentRequests] = useState<FriendRequest[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [goalInvitations, setGoalInvitations] = useState<GoalInvitation[]>([]);
 
   // UI states
@@ -56,13 +88,13 @@ export default function FriendsPage() {
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [selectedFriends, setSelectedFriends] = useState<User[]>([]);
 
   // Toasts
-  const [toasts, setToasts] = useState([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Toast helpers
-  const addToast = (message, type = "info") => {
+  const addToast = (message: string, type: string = "info") => {
     setToasts((prev) => [
       ...prev,
       {
@@ -73,7 +105,7 @@ export default function FriendsPage() {
       },
     ]);
   };
-  const handleOpenChange = (id, open) => {
+  const handleOpenChange = (id: number, open: boolean) => {
     if (!open) {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }
@@ -90,7 +122,7 @@ export default function FriendsPage() {
       const data = await res.json();
       console.log("[DEBUG] Friends data:", data);
       setFriends(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[ERROR] fetchFriends:", err);
       setError(err.message || "Failed to load friends");
     }
@@ -108,7 +140,7 @@ export default function FriendsPage() {
       const data = await res.json();
       console.log("[DEBUG] Sent requests data:", data);
       setSentRequests(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[ERROR] fetchSentRequests:", err);
       setError(err.message || "Failed to load sent requests");
     }
@@ -126,7 +158,7 @@ export default function FriendsPage() {
       const data = await res.json();
       console.log("[DEBUG] Received requests data:", data);
       setReceivedRequests(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[ERROR] fetchReceivedRequests:", err);
       setError(err.message || "Failed to load received requests");
     }
@@ -144,7 +176,7 @@ export default function FriendsPage() {
       const data = await res.json();
       console.log("[DEBUG] Goal invitations data:", data);
       setGoalInvitations(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[ERROR] fetchGoalInvitations:", err);
       setError(err.message || "Failed to load goal invitations");
     }
@@ -185,7 +217,7 @@ export default function FriendsPage() {
         if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
         setUsers(data);
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message || "Failed to load users");
         setUsers([]);
       } finally {
@@ -204,19 +236,19 @@ export default function FriendsPage() {
   );
 
   // Add friend to selection
-  const handleAddSelectedFriend = (friend) => {
+  const handleAddSelectedFriend = (friend: User) => {
     if (!selectedFriends.some((f) => f.username === friend.username)) {
       setSelectedFriends([...selectedFriends, friend]);
     }
   };
 
   // Remove friend from selection
-  const handleRemoveFriend = (username) => {
+  const handleRemoveFriend = (username: string) => {
     setSelectedFriends(selectedFriends.filter((f) => f.username !== username));
   };
 
   // API call for actions
-  const callAPI = async (path, username, method, successMsg = "", errorMsg = "") => {
+  const callAPI = async (path: string, username: string, method: string, successMsg: string = "", errorMsg: string = "") => {
     try {
       const response = await fetch(path, {
         method,
@@ -237,7 +269,7 @@ export default function FriendsPage() {
   };
 
   // Handlers for friend actions
-  const handleAccept = async (username) => {
+  const handleAccept = async (username: string) => {
     const ok = await callAPI(
       "http://localhost:5100/api/friends/accept",
       username,
@@ -248,7 +280,7 @@ export default function FriendsPage() {
     if (ok) await refreshAll();
   };
 
-  const handleIgnore = async (username) => {
+  const handleIgnore = async (username: string) => {
     const ok = await callAPI(
       "http://localhost:5100/api/friends/reject",
       username,
@@ -259,7 +291,7 @@ export default function FriendsPage() {
     if (ok) await refreshAll();
   };
 
-  const handleRemoveExistingFriend = async (username) => {
+  const handleRemoveExistingFriend = async (username: string) => {
     const ok = await callAPI(
       "http://localhost:5100/api/friends/delete",
       username,
@@ -271,7 +303,7 @@ export default function FriendsPage() {
   };
 
   // Cancel sent request
-  const handleCancelSentRequest = async (username) => {
+  const handleCancelSentRequest = async (username: string) => {
     const ok = await callAPI(
       "http://localhost:5100/api/friends/cancel",
       username,
@@ -307,7 +339,7 @@ export default function FriendsPage() {
         } else {
           successCount++;
         }
-      } catch (err) {
+      } catch (err: any) {
         errorMessages.push(
           `Failed to add ${friend.username}: ${err.message || "Unknown error"}`
         );
@@ -432,7 +464,7 @@ export default function FriendsPage() {
                         <AvatarFallback className="bg-orange-500 text-white">
                           {(friendObj.name || friendObj.username)
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
@@ -445,7 +477,7 @@ export default function FriendsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2">
-                        {friendObj.friend.map((detail, idx) => (
+                        {friendObj.friend.map((detail: FriendDetail, idx: number) => (
                           <span key={idx} className="flex items-center gap-2">
                             <Badge
                               variant="secondary"
@@ -494,7 +526,7 @@ export default function FriendsPage() {
                         <AvatarFallback className="bg-orange-500 text-white">
                           {(friendObj.user.name || friendObj.user.username)
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
@@ -624,7 +656,7 @@ export default function FriendsPage() {
                         <AvatarFallback className="bg-orange-500 text-white">
                           {(friendObj.user.name || friendObj.user.username)
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>

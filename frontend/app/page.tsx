@@ -7,7 +7,6 @@ import { MonthlyBreakdown } from "./_components/monthly-breakdown"
 import { GoalsSection } from "./_components/goals-section"
 import { RecentTransactions } from "./_components/recent-transactions"
 import { useEffect, useState } from "react"
-import { Transaction } from "@/types/transaction"
 import { set } from "date-fns"
 
 export default function HomePage() {

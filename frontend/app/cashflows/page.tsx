@@ -49,8 +49,16 @@ import { AddExpenseForm } from "../_components/forms/add-expense-form";
 import { AddIncomeForm } from "../_components/forms/add-income-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { useIsMobile } from "../_hooks/use-mobile";
-import { Transaction } from "@/../backend/models/transaction";
 import { format, startOfMonth, endOfMonth } from "date-fns";
+
+interface Transaction {
+  id: number;
+  type: string;
+  dateTime: string;
+  amount: number;
+  description?: string;
+  category: string;
+}
 
 interface TransactionWithExtras extends Transaction {
   icon: JSX.Element;
@@ -334,7 +342,7 @@ const fetchChartData = async () => {
       });
       if (res.ok) {
         const data = await res.json();
-        const withIcons = data.map((tx) => ({
+        const withIcons = data.map((tx: Transaction) => ({
         ...tx,
         // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
         //   day: "2-digit",
