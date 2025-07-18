@@ -33,7 +33,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
       httpOnly: true,
       secure: true,
       sameSite: "none",
-    maxAge: 60 * 60 * 1000, // 1 hour
+      maxAge: 60 * 60 * 1000, // 1 hour
     });
 
     req.user = decoded; // e.g. { sub: auth_user_id, ... }
