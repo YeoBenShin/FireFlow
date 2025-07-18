@@ -46,7 +46,7 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
   const router = useRouter()
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0], // Changed to proper date format
-    enddate:  null, // Changed to proper date format
+    enddate: new Date().toISOString().split('T')[0] as string | null, // Allow null
     frequency: "monthly" as "daily" | "weekly" | "biweekly" | "monthly", // | "yearly",
     type: "expense" as "income" | "expense",
     category: "",
@@ -191,7 +191,7 @@ const incomeCategories = [
       )}
 
       <div>
-        <Label htmlFor="date">Start Date</Label>
+        <Label>Start Date</Label>
         <div className="relative">
           <Input
             id="date"
@@ -205,7 +205,7 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="date">End Date (optional)</Label>
+        <Label>End Date (optional)</Label>
         <div className="relative">
           <Input
             id="enddate"
@@ -228,7 +228,7 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="frequency">Frequency</Label>
+        <Label>Frequency</Label>
         <Select
           value={formData.frequency}
           onValueChange={(value) => handleSelectChange("frequency", value)}
@@ -247,7 +247,7 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="type">Type</Label>
+        <Label>Type</Label>
         <Select
           value={formData.type}
           onValueChange={(value) => handleSelectChange("type", value)}
@@ -263,7 +263,7 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="category">Category</Label>
+        <Label>Category</Label>
         <Select
           value={formData.category}
           onValueChange={(value) => handleSelectChange("category", value)}
@@ -290,7 +290,7 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="amount">Amount</Label>
+        <Label>Amount</Label>
         <Input
           id="amount"
           value={`$${formData.amount}`}
@@ -304,7 +304,7 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="title">Title</Label>
+        <Label>Title</Label>
         <Input
           id="title"
           value={formData.title}
@@ -316,7 +316,7 @@ const incomeCategories = [
       </div>
 
       <div>
-        <Label htmlFor="notes">Notes</Label>
+        <Label>Notes</Label>
         <Textarea
           id="notes"
           value={formData.notes}

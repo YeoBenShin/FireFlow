@@ -30,6 +30,12 @@ const navigationItems = [
   { icon: Target, label: "Goals", href: "/goals" },
 ];
 
+interface Profile {
+  name?: string;
+  username?: string;
+  avatar?: string;
+}
+
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     if (typeof window !== "undefined") {
@@ -51,7 +57,7 @@ export function AppSidebar() {
     "appSidebarCollapsed",
     false
   );
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -94,11 +100,11 @@ export function AppSidebar() {
   }
 
   // Helper: get initials from name or username
-  function getInitials(name, username) {
+  function getInitials(name?: string, username?: string): string {
     if (name && name.trim().length > 0) {
       return name
         .split(" ")
-        .map((n) => n[0])
+        .map((n: string) => n[0])
         .join("")
         .toUpperCase();
     }

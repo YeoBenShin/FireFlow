@@ -558,7 +558,7 @@ const fetchChartData = async () => {
   }
 
 
-  async function handleDeleteTransaction(transId: number){
+  async function handleDeleteTransaction(id: number){
     const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
     if (!confirmDelete) return;
     try {
@@ -566,15 +566,15 @@ const fetchChartData = async () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transId }),
+        body: JSON.stringify({ id }),
       });
 
       if (!response.ok) {
         throw new Error(`Failed to delete transaction: ${response.statusText}`);
       }
-      setTransactions((prev) => prev.filter((tx) => tx.transId !== transId));
+      setTransactions((prev) => prev.filter((tx) => tx.id !== id));
     setFilteredTransactions((prev) =>
-      prev ? prev.filter((tx) => tx.transId !== transId) : null
+      prev ? prev.filter((tx) => tx.id !== id) : null
     );
     fetchChartData(); // Refresh chart data after deletion
 
@@ -994,7 +994,7 @@ const fetchChartData = async () => {
                         const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
                         return (
                           <div
-                            key={transaction.transId}
+                            key={transaction.id}
                             className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                           >
                             <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
@@ -1024,7 +1024,7 @@ const fetchChartData = async () => {
                               </div>
                               <button
                                 onClick={() =>
-                                  handleDeleteTransaction(transaction.transId)
+                                  handleDeleteTransaction(transaction.id)
                                 }
                                 className="text-red-500 hover:text-red-700"
                                 title="Delete"
