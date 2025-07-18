@@ -415,7 +415,7 @@ export default function GoalsPage() {
                                 </p>
                               )}
                             </div>
-                            <StatusBadge status={goal.status} />
+                            <StatusBadge status={goal.status as "pending" | "in-progress" | "completed"} />
                           </div>
                           <div className="flex justify-between items-center mb-3 mt-4">
                             <span className="font-semibold text-base">
@@ -482,7 +482,7 @@ export default function GoalsPage() {
                                   </p>
                                 )}
                               </div>
-                              <StatusBadge status={goal.status} />
+                              <StatusBadge status={goal.status as "pending" | "in-progress" | "completed"} />
                             </div>
                             <div className="flex justify-between items-center mb-3 mt-4">
                               <span className="font-semibold text-base">
@@ -633,7 +633,7 @@ export default function GoalsPage() {
                                 </p>
                               )}
                             </div>
-                            <StatusBadge status={goal.status} />
+                            <StatusBadge status={goal.status as "pending" | "in-progress" | "completed"} />
                           </div>
 
                           <div className="flex justify-between items-center mb-3 mt-4">
@@ -808,7 +808,7 @@ export default function GoalsPage() {
                                 </p>
                               )}
                             </div>
-                            <StatusBadge status={goal.status} />
+                            <StatusBadge status={goal.status as "pending" | "in-progress" | "completed"} />
                           </div>
 
                           <div className="flex justify-between items-center mb-3 mt-4">
