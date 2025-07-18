@@ -132,9 +132,32 @@ export const getUserSavings = async (req: Request, res: Response) => {
     const totalAllocated = allocations?.reduce((sum, allocation) => 
       sum + (allocation.allocated_amount || 0), 0) || 0;
 
-    // For now, let's assume the user has a base savings amount
-    // This could come from user profile, transactions, or other sources
-    const baseSavings = user.monthlySavings * 12 || 10000; // Example: annual savings
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+
+    const { data: transaction, error: transactionsError } = await supabase
+      .from('transaction')
+      .select('amount, type, dateTime')
+      .eq('user_id', user_id)
+      .lt('dateTime', firstOfMonth); // Only before current month
+
+    if (transactionsError) {
+      console.error("Error fetching transactions:", transactionsError);
+      throw transactionsError;
+    }
+
+    let totalIncome = 0;
+    let totalExpenses = 0;
+
+    transaction?.forEach(tx => {
+      if (tx.type === 'income') {
+        totalIncome += tx.amount || 0;
+      } else if (tx.type === 'expense') {
+        totalExpenses += tx.amount || 0;
+      }
+    });
+
+    const baseSavings = totalIncome - totalExpenses;
     const availableSavings = Math.max(0, baseSavings - totalAllocated);
 
     console.log("Savings calculation:");
