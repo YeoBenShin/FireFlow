@@ -157,7 +157,7 @@ FireFlow/
 
 3. **Access the application**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5100
+   - Backend API: https://fireflow-m0z1.onrender.com
 
 ## 🔧 API Endpoints
 
