@@ -155,50 +155,52 @@ const upcomingGoals = Array.from(aggregatedGoalsMap.values())
   }))
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Imminent Goals</h3>
+  <div className="bg-white rounded-xl p-6 shadow-sm">
+    <h3 className="text-lg font-semibold text-gray-800 mb-4">Imminent Goals</h3>
 
-      {loading ? (
-        <p>Loading goals...</p>
-      ) : (
-        <div className="space-y-4">
-          {goals.map((goal) => {
-            const percentage = (goal.current / goal.target) * 100
+    {loading ? (
+      <p>Loading goals...</p>
+    ) : goals.length === 0 ? (
+      <p className="text-sm text-gray-500">No upcoming goals</p>
+    ) : (
+      <div className="space-y-4">
+        {goals.map((goal) => {
+          const percentage = (goal.current / goal.target) * 100
 
-            return (
-              <div key={goal.id} className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
-                    {goal.icon}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-800">{goal.title}</div>
-                    <div className="text-sm text-gray-600">
-                      {goal.daysLeft} Days Left ({goal.date})
-                    </div>
-                  </div>
+          return (
+            <div key={goal.id} className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+                  {goal.icon}
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">${goal.current.toLocaleString()}</span>
-                    <span className="text-gray-600">${goal.target.toLocaleString()}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(percentage, 100)}%` }}
-                    />
-                  </div>
-                  <div className="text-right text-xs text-orange-500 font-medium">
-                    {Math.round(percentage)}%
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-800">{goal.title}</div>
+                  <div className="text-sm text-gray-600">
+                    {goal.daysLeft} Days Left ({goal.date})
                   </div>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">${goal.current.toLocaleString()}</span>
+                  <span className="text-gray-600">${goal.target.toLocaleString()}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
+                </div>
+                <div className="text-right text-xs text-orange-500 font-medium">
+                  {Math.round(percentage)}%
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )}
+  </div>
+)
 }
