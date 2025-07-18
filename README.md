@@ -107,25 +107,18 @@ FireFlow/
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/YeoBenShin/FireFlow.git
-   cd FireFlow
-   ```
-
-2. **Install frontend dependencies**
+1. **Install frontend dependencies**
    ```bash
    cd frontend
    npm install
    ```
-
-3. **Install backend dependencies**
+2. **Install backend dependencies**
    ```bash
    cd ../backend
    npm install
    ```
 
-4. **Set up environment variables**
+3. **Set up environment variables**
    
    Create `.env.local` in the frontend directory:
    ```env
@@ -141,7 +134,7 @@ FireFlow/
    PORT=5100
    ```
 
-5. **Set up Supabase database**
+4. **Set up Supabase database**
    ```bash
    cd supabase
    npx supabase start
@@ -208,7 +201,6 @@ FireFlow/
 
 ### Smart Savings Allocation
 - **Available Savings**: Calculate savings available for goal allocation
-- **Intelligent Distribution**: Suggest optimal allocation strategies
 - **Progress Monitoring**: Track progress across multiple goals simultaneously
 
 ### Security Features
@@ -217,24 +209,6 @@ FireFlow/
 - **Input Validation**: Comprehensive input validation and sanitization
 - **CORS Protection**: Proper CORS configuration for secure API access
 
-## 🧪 Testing
-
-### Frontend Testing
-```bash
-cd frontend
-npm run test
-```
-
-### Backend Testing
-```bash
-cd backend
-npm run test
-```
-
-### E2E Testing
-```bash
-npm run test:e2e
-```
 
 ## 📦 Deployment
 
@@ -250,43 +224,8 @@ npm run deploy
 cd backend
 npm run build
 npm run deploy
-```
 
-### Database (Supabase)
-```bash
-npx supabase db push
-```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-- Follow TypeScript best practices
-- Use meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-- Follow the existing code style
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Supabase** for the amazing backend-as-a-service platform
-- **Next.js** team for the excellent React framework
-- **Tailwind CSS** for the utility-first CSS framework
-- **Radix UI** for accessible UI primitives
-- **Lucide** for the beautiful icon library
-
-## 📞 Support
-
-For support, email support@fireflow.app or join our Discord community.
 
 ## 🗺️ Roadmap
 
