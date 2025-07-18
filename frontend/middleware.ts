@@ -16,10 +16,10 @@ export async function middleware(request: NextRequest) {
 
   // Validate session with backend
   try {
-    console.log(localStorage.getItem('jwtToken'));
+    console.log(localStorage.getItem('authToken'));
     const res = await fetch("https://fireflow-m0z1.onrender.com/api", {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+        Authorization: `Bearer ${localStorage.getItem('authToken')}`,
       },
     });
 
