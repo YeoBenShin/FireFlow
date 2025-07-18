@@ -50,7 +50,7 @@ export const loginUser = async (req: Request, res: Response) => {
     // Set JWT in HTTP-only cookie
     res.cookie('token', access_token, {
       httpOnly: true,
-      secure: false, // set to true in production
+      secure: true, // set to true in production
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60, // 1 hour
     });
@@ -67,7 +67,7 @@ export const logoutUser = async (req: Request, res: Response) => {
     // Clear the cookie
     res.clearCookie('token', {
       httpOnly: true,
-      secure: false, // set to true in production
+      secure: true, // set to true in production
       sameSite: 'lax',
     });
 
