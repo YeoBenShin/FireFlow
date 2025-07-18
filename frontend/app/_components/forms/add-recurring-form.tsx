@@ -119,7 +119,7 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
 
       console.log('Sending request to backend:', requestBody)
 
-      const response = await fetch('https://fireflow-m0z1.onrender.com/api/recurring-transactions/create', {
+      const response = await fetch('http://localhost:5100/api/recurring-transactions/create', {
         method: 'POST',
         credentials: 'include',
         headers: {

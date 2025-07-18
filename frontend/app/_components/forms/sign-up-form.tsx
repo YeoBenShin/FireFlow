@@ -48,7 +48,7 @@ export function SignUpForm({
 
     try {
       // Example: POST to your signup endpoint
-      const response = await fetch("https://fireflow-m0z1.onrender.com/login/register", {
+      const response = await fetch("http://localhost:5100/login/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

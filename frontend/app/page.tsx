@@ -21,17 +21,17 @@ export default function HomePage() {
   useEffect(() => {
     const fetchTodaysExpenses = async () => {
       try {
-        const res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/todays-expenses", {
+        const res = await fetch("http://localhost:5100/api/transactions/todays-expenses", {
           credentials: "include",
         })
         const data = await res.json()
         setTodaysExpenses(data.total)
-        const expense = await fetch("https://fireflow-m0z1.onrender.com/api/dashboard/month-expense", {
+        const expense = await fetch("http://localhost:5100/api/dashboard/month-expense", {
               credentials: "include",
             })
         const expenseData = await expense.json()
         setTotalExpenses(expenseData)
-        const income = await fetch("https://fireflow-m0z1.onrender.com/api/dashboard/month-income", {
+        const income = await fetch("http://localhost:5100/api/dashboard/month-income", {
               credentials: "include",
             })
         const incomeData = await income.json()
@@ -40,7 +40,7 @@ export default function HomePage() {
         const totalDaysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
         const daysLeft = totalDaysInMonth - today.getDate() + 1 // include today
         setRemainingDays(daysLeft);
-        const user = await fetch("https://fireflow-m0z1.onrender.com/api/users", {
+        const user = await fetch("http://localhost:5100/api/users", {
           credentials: "include", 
         })
         const userData = await user.json()

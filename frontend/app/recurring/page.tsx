@@ -48,7 +48,7 @@ export default function RecurringPage() {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('https://fireflow-m0z1.onrender.com/api/recurring-transactions', {
+      const response = await fetch('http://localhost:5100/api/recurring-transactions', {
         method: 'GET',
         credentials: 'include', // Include cookies for authentication
         headers: {
@@ -182,7 +182,7 @@ export default function RecurringPage() {
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(`https://fireflow-m0z1.onrender.com/api/recurring-transactions/delete`, {
+      const response = await fetch(`http://localhost:5100/api/recurring-transactions/delete`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
