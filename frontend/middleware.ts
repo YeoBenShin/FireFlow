@@ -16,9 +16,15 @@ export async function middleware(request: NextRequest) {
 
   // Validate session with backend
   try {
+    const token = localStorage.getItem("authToken") || null;
+
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
     const res = await fetch("https://fireflow-m0z1.onrender.com/api", {
       headers: {
-        cookie: request.headers.get("cookie") || "",
+        Authorization: `Bearer ${token}`,
       },
     });
 
