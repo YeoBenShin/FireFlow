@@ -148,11 +148,6 @@ export default function GoalsPage() {
       const data = await response.json();
       console.log("Fetched goals data:", data);
       setGoalData(Array.isArray(data) ? data : []);
-
-      const pendingGoals = goalData.filter((goal) => goal.status === "pending");
-      const completedGoals = goalData.filter(
-        (goal) => goal.status === "completed"
-      );
     } catch (error: any) {
       console.error("Error fetching goals:", error.message || error);
     } finally {
@@ -205,9 +200,16 @@ export default function GoalsPage() {
   );
 
   const pendingGoals = personalGoals.filter(
-    (goal) => goal.status === "pending"
+    (goal) => goal.status === "pending" || goal.status === "in-progress"
   );
   const completedGoals = personalGoals.filter(
+    (goal) => goal.status === "completed"
+  );
+  
+  const pendingCollaborativeGoals = collaborativeGoals.filter(
+    (goal) => goal.status === "pending" || goal.status === "in-progress"
+  );
+  const completedCollaborativeGoals = collaborativeGoals.filter(
     (goal) => goal.status === "completed"
   );
 
@@ -328,7 +330,7 @@ export default function GoalsPage() {
         data-[state=inactive]:text-orange-700 
         hover:data-[state=inactive]:bg-orange-200"
                   >
-                    Pending Goals
+                    In Progress
                   </Tabs.Trigger>
                   {/* Completed Tab */}
                   <Tabs.Trigger
@@ -348,7 +350,6 @@ export default function GoalsPage() {
                   value="pending"
                   className="p-4 rounded-b-md bg-white"
                 >
-                  <p>This is the pending tab</p>
                   {pendingGoals.length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-gray-500">
@@ -415,7 +416,7 @@ export default function GoalsPage() {
                   value="completed"
                   className="p-4 rounded-b-md bg-white"
                 >
-                  <p>This is the completed tab</p>
+                
                   <CardContent className="space-y-4">
                     {completedGoals.length === 0 ? (
                       <div className="text-center py-8">
@@ -494,174 +495,376 @@ export default function GoalsPage() {
                 Collaborative Goals
                 <Info className="w-4 h-4 text-gray-400" />
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {collaborativeGoals.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">
-                    No collaborative goals found. Start by creating a
-                    collaborative goal!
-                  </p>
-                </div>
-              ) : (
-                collaborativeGoals.map((goal) => {
-                  const daysLeft = getDaysLeft(goal.target_date);
-                  const currentAmount = goal.current_amount || 0;
-                  const calculatedProgress = Math.round(
-                    (currentAmount / goal.amount) * 100
-                  );
-
-                  return (
-                    <div
-                      key={goal.goal_id}
-                      className="p-4 bg-orange-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3 mb-3">
-                        <CategoryBadge category={goal.category} />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-base leading-tight">
-                              {goal.title}
-                            </h4>
-                            {goal.participantCount > 1 && (
-                              <Badge variant="outline" className="text-xs">
-                                <Users className="w-3 h-3 mr-1" />
-                                {goal.participantCount} people
-                              </Badge>
-                            )}
-                            {goal.userRole && (
-                              <Badge
-                                variant={
-                                  goal.userRole === "owner"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className="text-xs"
-                              >
-                                {goal.userRole}
-                              </Badge>
-                            )}
-                          </div>
-
-                          <p className="text-sm text-gray-600 mt-1">
-                            {daysLeft} Days Left ({formatDate(goal.target_date)}
-                            )
-                          </p>
-
-                          {goal.description && (
-                            <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                              {goal.description}
-                            </p>
-                          )}
-                        </div>
-                        <StatusBadge status={goal.status} />
-                      </div>
-
-                      <div className="flex justify-between items-center mb-3 mt-4">
-                        <span className="font-semibold text-base">
-                          ${(currentAmount || 0).toLocaleString()}
-                        </span>
-                        <span className="text-gray-600 text-base font-medium">
-                          ${(goal.amount || 0).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-                        <div
-                          className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
-                          style={{
-                            width: `${Math.min(calculatedProgress, 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="text-right text-sm text-orange-500 font-medium mb-3">
-                        {calculatedProgress}%
-                      </div>
-
-                      <div className="pt-2 border-t">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">
-                            Your contribution:
-                          </span>
-                          <span className="text-sm font-medium">
-                            ${(goal.userAllocatedAmount || 0).toLocaleString()}
-                          </span>
-                        </div>
-
-                        {/* Expandable Participants Section */}
-                        {goal.participantCount > 1 && (
-                          <div className="mt-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleGoalExpansion(goal.goal_id)}
-                              className="w-full text-sm text-gray-600 hover:text-gray-800 h-8"
-                            >
-                              <span>View all participants</span>
-                              {expandedGoals.has(goal.goal_id) ? (
-                                <ChevronUp className="w-4 h-4 ml-1" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 ml-1" />
-                              )}
-                            </Button>
-
-                            {expandedGoals.has(goal.goal_id) &&
-                              participants[goal.goal_id] && (
-                                <div className="mt-4 space-y-4">
-                                  {participants[goal.goal_id].map(
-                                    (participant) => (
-                                      <div
-                                        key={participant.user_id}
-                                        className="flex items-center justify-between p-4 bg-orange-25 rounded-lg border border-orange-100"
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                            <span className="text-orange-600 font-semibold text-lg">
-                                              {participant.user.name
-                                                .charAt(0)
-                                                .toUpperCase()}
-                                            </span>
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <span className="text-base font-semibold text-gray-800">
-                                              {participant.user.name}
-                                            </span>
-                                            <Badge
-                                              variant="secondary"
-                                              className="text-xs w-fit mt-1"
-                                            >
-                                              {participant.role === "owner"
-                                                ? "👑 Owner"
-                                                : participant.role ===
-                                                  "collaborator"
-                                                ? "🤝 Collaborator"
-                                                : "⏳ Pending"}
-                                            </Badge>
-                                          </div>
-                                        </div>
-                                        <div className="text-right">
-                                          <div className="text-lg font-bold text-gray-800">
-                                            $
-                                            {(
-                                              participant.allocated_amount || 0
-                                            ).toLocaleString()}
-                                          </div>
-                                          <div className="text-sm text-gray-600">
-                                            contributed
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              )}
-                          </div>
-                        )}
-                      </div>
+              <Tabs.Root defaultValue="pending" className="w-full">
+                {/* Tab List */}
+                <Tabs.List className="flex w-full rounded-md bg-orange-100 overflow-hidden">
+                  {/* Pending Tab */}
+                  <Tabs.Trigger
+                    value="pending"
+                    className="flex-1 text-center px-4 py-2 text-sm font-semibold transition-all duration-200
+        data-[state=active]:bg-orange-500 
+        data-[state=active]:text-white 
+        data-[state=inactive]:bg-transparent 
+        data-[state=inactive]:text-orange-700 
+        hover:data-[state=inactive]:bg-orange-200"
+                  >
+                    In Progress
+                  </Tabs.Trigger>
+                  {/* Completed Tab */}
+                  <Tabs.Trigger
+                    value="completed"
+                    className="flex-1 text-center px-4 py-2 text-sm font-semibold transition-all duration-200
+        data-[state=active]:bg-orange-500 
+        data-[state=active]:text-white 
+        data-[state=inactive]:bg-transparent 
+        data-[state=inactive]:text-orange-700 
+        hover:data-[state=inactive]:bg-orange-200"
+                  >
+                    Completed Goals
+                  </Tabs.Trigger>
+                </Tabs.List>
+                {/* Content Areas */}
+                <Tabs.Content
+                  value="pending"
+                  className="p-4 rounded-b-md bg-white"
+                >
+                  {pendingCollaborativeGoals.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">
+                        No pending collaborative goals found. Start by creating a
+                        collaborative goal!
+                      </p>
                     </div>
-                  );
-                })
-              )}
-            </CardContent>
+                  ) : (
+                    pendingCollaborativeGoals.map((goal) => {
+                      const daysLeft = getDaysLeft(goal.target_date);
+                      const currentAmount = goal.current_amount || 0;
+                      const calculatedProgress = Math.round(
+                        (currentAmount / goal.amount) * 100
+                      );
+
+                      return (
+                        <div
+                          key={goal.goal_id}
+                          className="p-4 bg-orange-50 rounded-lg mb-4"
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <CategoryBadge category={goal.category} />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-base leading-tight">
+                                  {goal.title}
+                                </h4>
+                                {goal.participantCount > 1 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Users className="w-3 h-3 mr-1" />
+                                    {goal.participantCount} people
+                                  </Badge>
+                                )}
+                                {goal.userRole && (
+                                  <Badge
+                                    variant={
+                                      goal.userRole === "owner"
+                                        ? "default"
+                                        : "secondary"
+                                    }
+                                    className="text-xs"
+                                  >
+                                    {goal.userRole}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <p className="text-sm text-gray-600 mt-1">
+                                {daysLeft} Days Left ({formatDate(goal.target_date)}
+                                )
+                              </p>
+
+                              {goal.description && (
+                                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                                  {goal.description}
+                                </p>
+                              )}
+                            </div>
+                            <StatusBadge status={goal.status} />
+                          </div>
+
+                          <div className="flex justify-between items-center mb-3 mt-4">
+                            <span className="font-semibold text-base">
+                              ${(currentAmount || 0).toLocaleString()}
+                            </span>
+                            <span className="text-gray-600 text-base font-medium">
+                              ${(goal.amount || 0).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                            <div
+                              className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
+                              style={{
+                                width: `${Math.min(calculatedProgress, 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <div className="text-right text-sm text-orange-500 font-medium mb-3">
+                            {calculatedProgress}%
+                          </div>
+
+                          <div className="pt-2 border-t">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-500">
+                                Your contribution:
+                              </span>
+                              <span className="text-sm font-medium">
+                                ${(goal.userAllocatedAmount || 0).toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Expandable Participants Section */}
+                            {goal.participantCount > 1 && (
+                              <div className="mt-3">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleGoalExpansion(goal.goal_id)}
+                                  className="w-full text-sm text-gray-600 hover:text-gray-800 h-8"
+                                >
+                                  <span>View all participants</span>
+                                  {expandedGoals.has(goal.goal_id) ? (
+                                    <ChevronUp className="w-4 h-4 ml-1" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 ml-1" />
+                                  )}
+                                </Button>
+
+                                {expandedGoals.has(goal.goal_id) &&
+                                  participants[goal.goal_id] && (
+                                    <div className="mt-4 space-y-4">
+                                      {participants[goal.goal_id].map(
+                                        (participant) => (
+                                          <div
+                                            key={participant.user_id}
+                                            className="flex items-center justify-between p-4 bg-orange-25 rounded-lg border border-orange-100"
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                                <span className="text-orange-600 font-semibold text-lg">
+                                                  {participant.user.name
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-base font-semibold text-gray-800">
+                                                  {participant.user.name}
+                                                </span>
+                                                <Badge
+                                                  variant="secondary"
+                                                  className="text-xs w-fit mt-1"
+                                                >
+                                                  {participant.role === "owner"
+                                                    ? "👑 Owner"
+                                                    : participant.role ===
+                                                      "collaborator"
+                                                    ? "🤝 Collaborator"
+                                                    : "⏳ Pending"}
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <div className="text-lg font-bold text-gray-800">
+                                                $
+                                                {(
+                                                  participant.allocated_amount || 0
+                                                ).toLocaleString()}
+                                              </div>
+                                              <div className="text-sm text-gray-600">
+                                                contributed
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </Tabs.Content>
+                <Tabs.Content
+                  value="completed"
+                  className="p-4 rounded-b-md bg-white"
+                >
+                  {completedCollaborativeGoals.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">
+                        No completed collaborative goals found.
+                      </p>
+                    </div>
+                  ) : (
+                    completedCollaborativeGoals.map((goal) => {
+                      const daysLeft = getDaysLeft(goal.target_date);
+                      const currentAmount = goal.current_amount || 0;
+                      const calculatedProgress = Math.round(
+                        (currentAmount / goal.amount) * 100
+                      );
+
+                      return (
+                        <div
+                          key={goal.goal_id}
+                          className="p-4 bg-orange-50 rounded-lg mb-4"
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <CategoryBadge category={goal.category} />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-base leading-tight">
+                                  {goal.title}
+                                </h4>
+                                {goal.participantCount > 1 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Users className="w-3 h-3 mr-1" />
+                                    {goal.participantCount} people
+                                  </Badge>
+                                )}
+                                {goal.userRole && (
+                                  <Badge
+                                    variant={
+                                      goal.userRole === "owner"
+                                        ? "default"
+                                        : "secondary"
+                                    }
+                                    className="text-xs"
+                                  >
+                                    {goal.userRole}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <p className="text-sm text-gray-600 mt-1">
+                                {daysLeft} Days Left ({formatDate(goal.target_date)}
+                                )
+                              </p>
+
+                              {goal.description && (
+                                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                                  {goal.description}
+                                </p>
+                              )}
+                            </div>
+                            <StatusBadge status={goal.status} />
+                          </div>
+
+                          <div className="flex justify-between items-center mb-3 mt-4">
+                            <span className="font-semibold text-base">
+                              ${(currentAmount || 0).toLocaleString()}
+                            </span>
+                            <span className="text-gray-600 text-base font-medium">
+                              ${(goal.amount || 0).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                            <div
+                              className="bg-orange-500 h-3 rounded-full transition-all duration-300 ease-in-out"
+                              style={{
+                                width: `${Math.min(calculatedProgress, 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <div className="text-right text-sm text-orange-500 font-medium mb-3">
+                            {calculatedProgress}%
+                          </div>
+
+                          <div className="pt-2 border-t">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-500">
+                                Your contribution:
+                              </span>
+                              <span className="text-sm font-medium">
+                                ${(goal.userAllocatedAmount || 0).toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Expandable Participants Section */}
+                            {goal.participantCount > 1 && (
+                              <div className="mt-3">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleGoalExpansion(goal.goal_id)}
+                                  className="w-full text-sm text-gray-600 hover:text-gray-800 h-8"
+                                >
+                                  <span>View all participants</span>
+                                  {expandedGoals.has(goal.goal_id) ? (
+                                    <ChevronUp className="w-4 h-4 ml-1" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 ml-1" />
+                                  )}
+                                </Button>
+
+                                {expandedGoals.has(goal.goal_id) &&
+                                  participants[goal.goal_id] && (
+                                    <div className="mt-4 space-y-4">
+                                      {participants[goal.goal_id].map(
+                                        (participant) => (
+                                          <div
+                                            key={participant.user_id}
+                                            className="flex items-center justify-between p-4 bg-orange-25 rounded-lg border border-orange-100"
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                                <span className="text-orange-600 font-semibold text-lg">
+                                                  {participant.user.name
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-base font-semibold text-gray-800">
+                                                  {participant.user.name}
+                                                </span>
+                                                <Badge
+                                                  variant="secondary"
+                                                  className="text-xs w-fit mt-1"
+                                                >
+                                                  {participant.role === "owner"
+                                                    ? "👑 Owner"
+                                                    : participant.role ===
+                                                      "collaborator"
+                                                    ? "🤝 Collaborator"
+                                                    : "⏳ Pending"}
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <div className="text-lg font-bold text-gray-800">
+                                                $
+                                                {(
+                                                  participant.allocated_amount || 0
+                                                ).toLocaleString()}
+                                              </div>
+                                              <div className="text-sm text-gray-600">
+                                                contributed
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </Tabs.Content>
+              </Tabs.Root>
+            </CardHeader>
           </Card>
         </div>
 
