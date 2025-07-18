@@ -53,7 +53,7 @@ export const loginUser = async (req: Request, res: Response) => {
       secure: true, // set to true in production
       sameSite: 'none',
       maxAge: 1000 * 60 * 60, // 1 hour
-      domain: 'https://fire-flow-brown.vercel.app'
+      domain: 'fire-flow-brown.vercel.app'
     });
     res.status(200).json({ message: 'Login successful', token: access_token  });
 
