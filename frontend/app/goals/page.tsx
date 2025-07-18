@@ -46,6 +46,13 @@ interface GoalWithParticipant {
   goal: Goal;
 }
 
+interface SavingsData {
+  availableSavings: number
+  availableSavingsLastMonth: number
+  totalAllocated: number
+  baseSavings: number
+}
+
 export default function GoalsPage() {
   const CategoryBadge = ({ category }: { category: string }) => (
     <Badge
@@ -64,15 +71,17 @@ export default function GoalsPage() {
     >
       {status}
     </Badge>
-  );
 
-  const [showForm, setShowForm] = useState(false);
-  const [goalData, setGoalData] = useState<GoalWithParticipant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set());
-  const [participants, setParticipants] = useState<
-    Record<number, Participant[]>
-  >({});
+  )
+  
+  const [showForm, setShowForm] = useState(false)
+  const [goalData, setGoalData] = useState<GoalWithParticipant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
+  const [participants, setParticipants] = useState<Record<number, Participant[]>>({})
+  const [savingsData, setSavingsData] = useState<SavingsData>()
+
+
 
   const toggleGoalExpansion = async (goalId: number) => {
     const newExpanded = new Set(expandedGoals);
@@ -155,24 +164,44 @@ export default function GoalsPage() {
     }
   };
 
+  const savingData = async() => {
+  try {
+        const savingsResponse = await fetch('http://localhost:5100/api/users/savings', {
+          credentials: 'include'
+        })
+        if (savingsResponse.ok) {
+          const savings = await savingsResponse.json()
+          setSavingsData(savings)
+        }
+      } catch (error) {
+        console.warn('Savings endpoint not available')
+      }
+
+    }
+
   const handleGoalCreated = () => {
     setShowForm(false); // Close the form
     fetchGoals(); // Refresh the data
   };
 
   useEffect(() => {
-    fetchGoals();
+
+    fetchGoals()
+    savingData()
 
     // Refresh data when user returns to this page (e.g., from allocation page)
     const handleFocus = () => {
-      console.log("Page gained focus, refreshing goals data...");
-      fetchGoals();
-    };
+      console.log("Page gained focus, refreshing goals data...")
+      fetchGoals()
+      savingData()
+    }
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log("Page became visible, refreshing goals data...");
-        fetchGoals();
+        console.log("Page became visible, refreshing goals data...")
+        fetchGoals()
+        savingData()
+
       }
     };
 
@@ -271,44 +300,21 @@ export default function GoalsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-screen">
         {/* My Goals Section - Fixed width */}
         <div className="lg:col-span-2">
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">My Goals</CardTitle>
-                <div className="flex gap-8">
-                  <div>
-                    <p className="text-sm text-gray-600">Available Savings</p>
-                    <p className="text-2xl font-bold text-orange-500">
-                      $7,783.00
-                    </p>{" "}
-                    {/* TODO: replace with actual data */}
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Month's Saving</p>
-                    <p className="text-2xl font-bold text-gray-600">
-                      $1,187.40
-                    </p>{" "}
-                    {/* TODO: replace with actual data */}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  className="bg-orange-500 hover:bg-orange-600"
-                  onClick={() => setShowForm(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Goal
-                </Button>
-                <Link href="/allocate">
-                  <Button className="bg-blue-500 hover:bg-blue-600">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Allocate Savings
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-          </Card>
+
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+              My Goals
+            </h2>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600"
+              onClick={() => setShowForm(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Goal
+            </Button>
+          </div>
+
+
 
           {/* Personal Goals */}
           <Card className="mb-6">
@@ -891,28 +897,35 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle className="text-xl">Available Savings</CardTitle>
-                <p className="text-sm text-gray-600">
-                  Ready to allocate to your goals
-                </p>
-                <p className="text-2xl font-bold text-orange-500">$7,783.00</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">
-                    You have savings ready to allocate to your goals. Click the
-                    button above to start allocating.
-                  </p>
-                  <Link href="/allocate">
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                      Go to Allocation Page
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+
+         <Card className="sticky top-4">
+  <CardHeader>
+    <CardTitle className="text-xl">Available Savings</CardTitle>
+    <p className="text-sm text-gray-600">Total savings available for allocation</p>
+    <p className="text-2xl font-bold text-orange-500">${(savingsData?.availableSavings)?.toFixed(2)}</p>
+
+    {/* New Section */}
+    <div className="mt-4">
+      <p className="text-sm text-gray-600">Savings from last month</p>
+      <p className="text-2xl font-bold text-blue-500">${(savingsData?.availableSavingsLastMonth)?.toFixed(2)}</p>
+    </div>
+  </CardHeader>
+
+  <CardContent className="space-y-4">
+    <div className="text-center py-8">
+      <p className="text-gray-600 mb-4">
+        You have savings ready to allocate to your goals. Click the button above to start allocating.
+      </p>
+      <Link href="/allocate">
+        <Button className="bg-blue-500 hover:bg-blue-600">
+          Go to Allocation Page
+        </Button>
+      </Link>
+    </div>
+  </CardContent>
+</Card>
+
+
           )}
         </div>
       </div>
