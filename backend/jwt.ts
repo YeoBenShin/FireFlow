@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.cookies.token;
+  const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
     res.status(401).json({ error: 'No token provided' });
@@ -22,19 +22,19 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   try {
     const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload;
     
-    // refresh the token
-    const refreshedToken = jwt.sign(
-      { sub: decoded.sub },
-      jwtSecret,
-      { expiresIn: "1h" }
-    );
+    // // refresh the token
+    // const refreshedToken = jwt.sign(
+    //   { sub: decoded.sub },
+    //   jwtSecret,
+    //   { expiresIn: "1h" }
+    // );
 
-    res.cookie("token", refreshedToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 60 * 60 * 1000, // 1 hour
-    });
+    // res.cookie("token", refreshedToken, {
+    //   httpOnly: true,
+    //   secure: true,
+    //   sameSite: "none",
+    //   maxAge: 60 * 60 * 1000, // 1 hour
+    // });
 
     req.user = decoded; // e.g. { sub: auth_user_id, ... }
     next();

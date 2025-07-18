@@ -48,12 +48,12 @@ export const loginUser = async (req: Request, res: Response) => {
     const { access_token } = data.session;
 
     // Set JWT in HTTP-only cookie
-    res.cookie('token', access_token, {
-      httpOnly: true,
-      secure: true, // set to true in production
-      sameSite: 'none',
-      maxAge: 1000 * 60 * 60, // 1 hour
-    });
+    // res.cookie('token', access_token, {
+    //   httpOnly: true,
+    //   secure: true, // set to true in production
+    //   sameSite: 'none',
+    //   maxAge: 1000 * 60 * 60, // 1 hour
+    // });
     res.status(200).json({ message: 'Login successful', token: access_token  });
 
   } catch (error: any) {
@@ -65,11 +65,11 @@ export const loginUser = async (req: Request, res: Response) => {
 export const logoutUser = async (req: Request, res: Response) => {
   try {
     // Clear the cookie
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: true, // set to true in production
-      sameSite: 'none',
-    });
+    // res.clearCookie('token', {
+    //   httpOnly: true,
+    //   secure: true, // set to true in production
+    //   sameSite: 'none',
+    // });
 
     res.status(200).json({ message: 'Logout successful' });
   } catch (error: any) {
