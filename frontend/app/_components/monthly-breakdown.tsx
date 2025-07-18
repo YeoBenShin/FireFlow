@@ -4,6 +4,12 @@ import { Info } from "lucide-react"
 import { DonutChart } from "./charts/donut-chart"
 import { useEffect, useState } from "react"
 import { Transaction } from "@/types/transaction"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/app/_components/ui/tooltip"
 // import { isSameMonth, parseISO } from "date-fns" // Uncomment if date-fns is installed
 
 interface ChartData {
@@ -116,8 +122,26 @@ export function MonthlyBreakdown({monthlySavings}) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm">
       <div className="flex items-center gap-2 mb-6">
-        <h3 className="text-lg font-semibold text-gray-800">Monthly Breakdown</h3>
-        <Info className="w-4 h-4 text-gray-400" />
+        <h3 className="text-lg font-semibold text-gray-800">
+          Monthly Breakdown
+        </h3>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+            </TooltipTrigger>
+            <TooltipContent className = "text-white px-3 py-2 text-xs" side="top" align="start"
+             style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}>
+              <p>
+                The chart shows your total expenses categorized by type for the current month.
+                <br />
+                The total remaining budget is calculated as your total income subtracted by the 
+                <br/>
+                total expenses and the amount you want to save this month.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {loading ? (
@@ -132,10 +156,20 @@ export function MonthlyBreakdown({monthlySavings}) {
           <div key={label} className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: chartData.datasets[0].backgroundColor[index % chartData.datasets[0].backgroundColor.length] }}
+              style={{
+                backgroundColor:
+                  chartData.datasets[0].backgroundColor[
+                    index % chartData.datasets[0].backgroundColor.length
+                  ],
+              }}
             />
             <span className="text-sm text-gray-600">{label}</span>
-            <span className="text-sm font-medium ml-auto">${(chartData.datasets[0].data[index] ?? 0).toFixed(2).toLocaleString()}</span>
+            <span className="text-sm font-medium ml-auto">
+              $
+              {(chartData.datasets[0].data[index] ?? 0)
+                .toFixed(2)
+                .toLocaleString()}
+            </span>
           </div>
         ))}
       </div>
@@ -143,13 +177,30 @@ export function MonthlyBreakdown({monthlySavings}) {
       <div className="flex justify-between mt-6 pt-4 border-t">
         <div className="text-center">
           <div className="text-sm text-gray-600 mb-1">Total Income:</div>
-          <div className="text-lg font-bold text-gray-800">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-lg font-bold text-gray-800">
+            $
+            {totalIncome.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
         </div>
         <div className="text-center">
-          <div className="text-sm text-gray-600 mb-1">Total Remaining Budget:</div>
-          <div className="text-lg font-bold text-gray-800">${(totalIncome === 0 ? 0 : totalIncome - totalExpenses - monthlySavings).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-sm text-gray-600 mb-1">
+            Total Remaining Budget:
+          </div>
+          <div className="text-lg font-bold text-gray-800">
+            $
+            {(totalIncome === 0
+              ? 0
+              : totalIncome - totalExpenses - monthlySavings
+            ).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

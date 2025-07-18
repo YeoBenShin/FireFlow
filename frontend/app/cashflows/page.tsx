@@ -39,6 +39,12 @@ import {
   Gift,
   GraduationCap,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/app/_components/ui/tooltip"
 import { AddExpenseForm } from "../_components/forms/add-expense-form";
 import { AddIncomeForm } from "../_components/forms/add-income-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
@@ -824,7 +830,19 @@ const fetchChartData = async () => {
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  {/* <Info className="w-5 h-5 text-gray-400" /> */}
+                  <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+            </TooltipTrigger>
+            <TooltipContent className = "text-white px-3 py-2 text-xs" side="top" align="start"
+             style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}>
+              <p>
+                The filter option allows you to view the chart based on the specific transaction filters you applied below
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
                 </div>
               </CardHeader>
               <CardContent>
