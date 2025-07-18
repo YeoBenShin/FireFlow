@@ -3,15 +3,15 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
-import { verifyJWT } from "./jwt";
-import loginRoutes from "./routes/loginRoutes";
-import userRoutes from "./routes/userRoutes";
-import transactionRoutes from "./routes/transactionRoutes";
-import dashboardRoutes from "./routes/dashboardRoutes";
-import recurringTransactionRoutes from "./routes/recurringTransactionRoutes";
-import friendRoutes from "./routes/friendRoutes";
-import goalRoutes from "./routes/goalRoutes";
-import goalParticipantRoutes from "./routes/goalParticipantRoutes";
+import { verifyJWT } from "../jwt";
+import loginRoutes from "../routes/loginRoutes";
+import userRoutes from "../routes/userRoutes";
+import transactionRoutes from "../routes/transactionRoutes";
+import dashboardRoutes from "../routes/dashboardRoutes";
+import recurringTransactionRoutes from "../routes/recurringTransactionRoutes";
+import friendRoutes from "../routes/friendRoutes";
+import goalRoutes from "../routes/goalRoutes";
+import goalParticipantRoutes from "../routes/goalParticipantRoutes";
 dotenv.config();
 
 const app = express();
@@ -46,7 +46,7 @@ app.get("/", (_req, res) => {
   res.send("API is running...");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}`);
+// });
+module.exports = app;
