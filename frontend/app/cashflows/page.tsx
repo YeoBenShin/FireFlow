@@ -37,6 +37,7 @@ import {
   FileText,
   Banknote,
   Gift,
+  GraduationCap,
 } from "lucide-react";
 import { AddExpenseForm } from "../_components/forms/add-expense-form";
 import { AddIncomeForm } from "../_components/forms/add-income-form";
@@ -78,7 +79,7 @@ export default function CashflowsPage() {
     }
   }, [searchParams]);
 
-  type IconName = "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils" | "Briefcase" | "Laptop" | "BookOpen" | "BarChart" | "Sparkles" | "Building2" | "FileText" | "Banknote" | "Gift";
+  type IconName = "GraduationCap" | "DollarSign" | "ShoppingBag" | "Home" | "Bus" | "Utensils" | "Briefcase" | "Laptop" | "BookOpen" | "BarChart" | "Sparkles" | "Building2" | "FileText" | "Banknote" | "Gift";
 
   const categoryIconMap: Record<string, IconName> = {
     food: "Utensils",
@@ -91,7 +92,7 @@ export default function CashflowsPage() {
     entertainment: "ShoppingBag",
     utilities: "DollarSign",
     shopping: "ShoppingBag",
-    education: "DollarSign",
+    education: "GraduationCap",
     other: "DollarSign",
     salary: "Briefcase",
     freelance: "Laptop",
@@ -107,6 +108,7 @@ export default function CashflowsPage() {
 
   const iconMap: Record<IconName, JSX.Element> = {
     DollarSign: <DollarSign className="w-5 h-5" />,
+    GraduationCap: <GraduationCap className="w-5 h-5" />,
     ShoppingBag: <ShoppingBag className="w-5 h-5" />,
     Home: <Home className="w-5 h-5" />,
     Bus: <Bus className="w-5 h-5" />,
