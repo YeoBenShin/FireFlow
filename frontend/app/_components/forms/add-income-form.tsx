@@ -104,7 +104,7 @@ export function AddIncomeForm({
         type: "income",
       }
 
-      const response = await fetch("http://localhost:5100/api/transactions/create", {
+      const response = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/create", {
         method: "POST",
         credentials: "include",
         headers: {

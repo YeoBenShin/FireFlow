@@ -114,7 +114,7 @@ export default function FriendsPage() {
   // Fetch helpers
   const fetchFriends = async () => {
     try {
-      const res = await fetch(`http://localhost:5100/api/friends?_t=${Date.now()}`, {
+      const res = await fetch(`https://fireflow-m0z1.onrender.com/api/friends?_t=${Date.now()}`, {
         credentials: "include",
         cache: "no-store"
       });
@@ -130,7 +130,7 @@ export default function FriendsPage() {
   const fetchSentRequests = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5100/api/friends/requests?toAccept=false&_t=${Date.now()}`,
+        `https://fireflow-m0z1.onrender.com/api/friends/requests?toAccept=false&_t=${Date.now()}`,
         { 
           credentials: "include",
           cache: "no-store"
@@ -148,7 +148,7 @@ export default function FriendsPage() {
   const fetchReceivedRequests = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5100/api/friends/requests?toAccept=true&_t=${Date.now()}`,
+        `https://fireflow-m0z1.onrender.com/api/friends/requests?toAccept=true&_t=${Date.now()}`,
         { 
           credentials: "include",
           cache: "no-store"
@@ -166,7 +166,7 @@ export default function FriendsPage() {
   const fetchGoalInvitations = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5100/api/goals/pending-invitations?_t=${Date.now()}`,
+        `https://fireflow-m0z1.onrender.com/api/goals/pending-invitations?_t=${Date.now()}`,
         { 
           credentials: "include",
           cache: "no-store"
@@ -208,7 +208,7 @@ export default function FriendsPage() {
     const timeout = setTimeout(async () => {
       setUsersLoading(true);
       try {
-        const res = await fetch("http://localhost:5100/api/users/filter", {
+        const res = await fetch("https://fireflow-m0z1.onrender.com/api/users/filter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -271,7 +271,7 @@ export default function FriendsPage() {
   // Handlers for friend actions
   const handleAccept = async (username: string) => {
     const ok = await callAPI(
-      "http://localhost:5100/api/friends/accept",
+      "https://fireflow-m0z1.onrender.com/api/friends/accept",
       username,
       "POST",
       "Friend request accepted!",
@@ -282,7 +282,7 @@ export default function FriendsPage() {
 
   const handleIgnore = async (username: string) => {
     const ok = await callAPI(
-      "http://localhost:5100/api/friends/reject",
+      "https://fireflow-m0z1.onrender.com/api/friends/reject",
       username,
       "POST",
       "Friend request ignored.",
@@ -293,7 +293,7 @@ export default function FriendsPage() {
 
   const handleRemoveExistingFriend = async (username: string) => {
     const ok = await callAPI(
-      "http://localhost:5100/api/friends/delete",
+      "https://fireflow-m0z1.onrender.com/api/friends/delete",
       username,
       "DELETE",
       "Friend removed successfully!",
@@ -305,7 +305,7 @@ export default function FriendsPage() {
   // Cancel sent request
   const handleCancelSentRequest = async (username: string) => {
     const ok = await callAPI(
-      "http://localhost:5100/api/friends/cancel",
+      "https://fireflow-m0z1.onrender.com/api/friends/cancel",
       username,
       "POST",
       "Friend request cancelled.",
@@ -325,7 +325,7 @@ export default function FriendsPage() {
     let errorMessages = [];
     for (const friend of selectedFriends) {
       try {
-        const res = await fetch("http://localhost:5100/api/friends/send", {
+        const res = await fetch("https://fireflow-m0z1.onrender.com/api/friends/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -373,7 +373,7 @@ export default function FriendsPage() {
     try {
       console.log("Accepting goal invitation for goal ID:", goalId);
       
-      const res = await fetch(`http://localhost:5100/api/goals/${goalId}/accept-invitation`, {
+      const res = await fetch(`https://fireflow-m0z1.onrender.com/api/goals/${goalId}/accept-invitation`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -408,7 +408,7 @@ export default function FriendsPage() {
     try {
       console.log("Rejecting goal invitation for goal ID:", goalId);
       
-      const res = await fetch(`http://localhost:5100/api/goals/${goalId}/reject-invitation`, {
+      const res = await fetch(`https://fireflow-m0z1.onrender.com/api/goals/${goalId}/reject-invitation`, {
         method: "POST",
         credentials: "include",
         headers: {

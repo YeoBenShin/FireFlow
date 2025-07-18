@@ -40,7 +40,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
   const fetchFriends = async () => {
     setLoadingFriends(true)
     try {
-      const response = await fetch('http://localhost:5100/api/friends/for-goals', {
+      const response = await fetch('https://fireflow-m0z1.onrender.com/api/friends/for-goals', {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -100,7 +100,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
     }
 
       // Send POST request to create the goal
-      const response = await fetch('http://localhost:5100/api/goals/create', {
+      const response = await fetch('https://fireflow-m0z1.onrender.com/api/goals/create', {
         method: 'POST',
         credentials: 'include',
         headers: {

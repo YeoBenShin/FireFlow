@@ -61,7 +61,7 @@ export function MonthlyBreakdown({monthlySavings}: {monthlySavings: number}) {
       setLoading(true)
       try {
         // Fetch category expenses for the current month
-        const res = await fetch("http://localhost:5100/api/transactions/category-expenses-monthly", {
+        const res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/category-expenses-monthly", {
           credentials: "include",
         })
         const categoryData: Record<string, number> = await res.json()
@@ -89,7 +89,7 @@ export function MonthlyBreakdown({monthlySavings}: {monthlySavings: number}) {
         setTotalExpenses(values.reduce((sum, v) => sum + v, 0))
 
         // Fetch all transactions to sum income for the month
-        const txRes = await fetch("http://localhost:5100/api/transactions", {
+        const txRes = await fetch("https://fireflow-m0z1.onrender.com/api/transactions", {
           credentials: "include",
         })
         const transactions: Transaction[] = await txRes.json()

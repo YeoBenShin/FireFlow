@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
 
   // Validate session with backend
   try {
-    const res = await fetch("http://localhost:5100/api", {
+    const res = await fetch("https://fireflow-m0z1.onrender.com/api", {
     headers: {
       cookie: request.headers.get("cookie") || "",
     },
