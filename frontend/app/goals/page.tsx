@@ -53,10 +53,10 @@ interface GoalWithParticipant {
 }
 
 interface SavingsData {
-  availableSavings: number
-  availableSavingsLastMonth: number
-  totalAllocated: number
-  baseSavings: number
+  availableSavings: number;
+  availableSavingsLastMonth: number;
+  totalAllocated: number;
+  baseSavings: number;
 }
 
 export default function GoalsPage() {
@@ -70,24 +70,31 @@ export default function GoalsPage() {
     </Badge>
   );
 
-  const StatusBadge = ({ status }: { status: string }) => (
+  const statusToVariant = {
+    completed: "success",
+    "in-progress": "warning",
+    pending: "destructive",
+  } as const;
+
+  type StatusType = keyof typeof statusToVariant;
+
+  const StatusBadge = ({ status }: { status: StatusType }) => (
     <Badge
-      variant={status === "completed" ? "default" : "secondary"}
+      variant={statusToVariant[status] || "secondary"}
       className="text-xs px-3 py-1 min-w-[80px] text-center font-medium capitalize justify-center flex items-center"
     >
       {status}
     </Badge>
+  );
 
-  )
-  
-  const [showForm, setShowForm] = useState(false)
-  const [goalData, setGoalData] = useState<GoalWithParticipant[]>([])
-  const [loading, setLoading] = useState(true)
-  const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
-  const [participants, setParticipants] = useState<Record<number, Participant[]>>({})
-  const [savingsData, setSavingsData] = useState<SavingsData>()
-
-
+  const [showForm, setShowForm] = useState(false);
+  const [goalData, setGoalData] = useState<GoalWithParticipant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set());
+  const [participants, setParticipants] = useState<
+    Record<number, Participant[]>
+  >({});
+  const [savingsData, setSavingsData] = useState<SavingsData>();
 
   const toggleGoalExpansion = async (goalId: number) => {
     const newExpanded = new Set(expandedGoals);
@@ -170,20 +177,22 @@ export default function GoalsPage() {
     }
   };
 
-  const savingData = async() => {
-  try {
-        const savingsResponse = await fetch('http://localhost:5100/api/users/savings', {
-          credentials: 'include'
-        })
-        if (savingsResponse.ok) {
-          const savings = await savingsResponse.json()
-          setSavingsData(savings)
+  const savingData = async () => {
+    try {
+      const savingsResponse = await fetch(
+        "http://localhost:5100/api/users/savings",
+        {
+          credentials: "include",
         }
-      } catch (error) {
-        console.warn('Savings endpoint not available')
+      );
+      if (savingsResponse.ok) {
+        const savings = await savingsResponse.json();
+        setSavingsData(savings);
       }
-
+    } catch (error) {
+      console.warn("Savings endpoint not available");
     }
+  };
 
   const handleGoalCreated = () => {
     setShowForm(false); // Close the form
@@ -191,23 +200,21 @@ export default function GoalsPage() {
   };
 
   useEffect(() => {
-
-    fetchGoals()
-    savingData()
+    fetchGoals();
+    savingData();
 
     // Refresh data when user returns to this page (e.g., from allocation page)
     const handleFocus = () => {
-      console.log("Page gained focus, refreshing goals data...")
-      fetchGoals()
-      savingData()
-    }
+      console.log("Page gained focus, refreshing goals data...");
+      fetchGoals();
+      savingData();
+    };
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log("Page became visible, refreshing goals data...")
-        fetchGoals()
-        savingData()
-
+        console.log("Page became visible, refreshing goals data...");
+        fetchGoals();
+        savingData();
       }
     };
 
@@ -240,7 +247,7 @@ export default function GoalsPage() {
   const completedGoals = personalGoals.filter(
     (goal) => goal.status === "completed"
   );
-  
+
   const pendingCollaborativeGoals = collaborativeGoals.filter(
     (goal) => goal.status === "pending" || goal.status === "in-progress"
   );
@@ -306,7 +313,6 @@ export default function GoalsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-screen">
         {/* My Goals Section - Fixed width */}
         <div className="lg:col-span-2">
-
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">
               My Goals
@@ -319,8 +325,6 @@ export default function GoalsPage() {
               Add Goal
             </Button>
           </div>
-
-
 
           {/* Personal Goals */}
           <Card className="mb-6">
@@ -438,7 +442,6 @@ export default function GoalsPage() {
                   value="completed"
                   className="p-4 rounded-b-md bg-white"
                 >
-                
                   <CardContent className="space-y-4">
                     {completedGoals.length === 0 ? (
                       <div className="text-center py-8">
@@ -564,8 +567,8 @@ export default function GoalsPage() {
                   {pendingCollaborativeGoals.length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-gray-500">
-                        No pending collaborative goals found. Start by creating a
-                        collaborative goal!
+                        No pending collaborative goals found. Start by creating
+                        a collaborative goal!
                       </p>
                     </div>
                   ) : (
@@ -609,8 +612,8 @@ export default function GoalsPage() {
                               </div>
 
                               <p className="text-sm text-gray-600 mt-1">
-                                {daysLeft} Days Left ({formatDate(goal.target_date)}
-                                )
+                                {daysLeft} Days Left (
+                                {formatDate(goal.target_date)})
                               </p>
 
                               {goal.description && (
@@ -648,7 +651,10 @@ export default function GoalsPage() {
                                 Your contribution:
                               </span>
                               <span className="text-sm font-medium">
-                                ${(goal.userAllocatedAmount || 0).toLocaleString()}
+                                $
+                                {(
+                                  goal.userAllocatedAmount || 0
+                                ).toLocaleString()}
                               </span>
                             </div>
 
@@ -658,7 +664,9 @@ export default function GoalsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => toggleGoalExpansion(goal.goal_id)}
+                                  onClick={() =>
+                                    toggleGoalExpansion(goal.goal_id)
+                                  }
                                   className="w-full text-sm text-gray-600 hover:text-gray-800 h-8"
                                 >
                                   <span>View all participants</span>
@@ -707,7 +715,8 @@ export default function GoalsPage() {
                                               <div className="text-lg font-bold text-gray-800">
                                                 $
                                                 {(
-                                                  participant.allocated_amount || 0
+                                                  participant.allocated_amount ||
+                                                  0
                                                 ).toLocaleString()}
                                               </div>
                                               <div className="text-sm text-gray-600">
@@ -778,8 +787,8 @@ export default function GoalsPage() {
                               </div>
 
                               <p className="text-sm text-gray-600 mt-1">
-                                {daysLeft} Days Left ({formatDate(goal.target_date)}
-                                )
+                                {daysLeft} Days Left (
+                                {formatDate(goal.target_date)})
                               </p>
 
                               {goal.description && (
@@ -817,7 +826,10 @@ export default function GoalsPage() {
                                 Your contribution:
                               </span>
                               <span className="text-sm font-medium">
-                                ${(goal.userAllocatedAmount || 0).toLocaleString()}
+                                $
+                                {(
+                                  goal.userAllocatedAmount || 0
+                                ).toLocaleString()}
                               </span>
                             </div>
 
@@ -827,7 +839,9 @@ export default function GoalsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => toggleGoalExpansion(goal.goal_id)}
+                                  onClick={() =>
+                                    toggleGoalExpansion(goal.goal_id)
+                                  }
                                   className="w-full text-sm text-gray-600 hover:text-gray-800 h-8"
                                 >
                                   <span>View all participants</span>
@@ -876,7 +890,8 @@ export default function GoalsPage() {
                                               <div className="text-lg font-bold text-gray-800">
                                                 $
                                                 {(
-                                                  participant.allocated_amount || 0
+                                                  participant.allocated_amount ||
+                                                  0
                                                 ).toLocaleString()}
                                               </div>
                                               <div className="text-sm text-gray-600">
@@ -924,35 +939,41 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
           ) : (
+            <Card className="sticky top-4">
+              <CardHeader>
+                <CardTitle className="text-xl">Available Savings</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Total savings available for allocation
+                </p>
+                <p className="text-2xl font-bold text-orange-500">
+                  ${savingsData?.availableSavings?.toFixed(2)}
+                </p>
 
-         <Card className="sticky top-4">
-  <CardHeader>
-    <CardTitle className="text-xl">Available Savings</CardTitle>
-    <p className="text-sm text-gray-600">Total savings available for allocation</p>
-    <p className="text-2xl font-bold text-orange-500">${(savingsData?.availableSavings)?.toFixed(2)}</p>
+                {/* New Section */}
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600">
+                    Savings from last month
+                  </p>
+                  <p className="text-2xl font-bold text-blue-500">
+                    ${savingsData?.availableSavingsLastMonth?.toFixed(2)}
+                  </p>
+                </div>
+              </CardHeader>
 
-    {/* New Section */}
-    <div className="mt-4">
-      <p className="text-sm text-gray-600">Savings from last month</p>
-      <p className="text-2xl font-bold text-blue-500">${(savingsData?.availableSavingsLastMonth)?.toFixed(2)}</p>
-    </div>
-  </CardHeader>
-
-  <CardContent className="space-y-4">
-    <div className="text-center py-8">
-      <p className="text-gray-600 mb-4">
-        You have savings ready to allocate to your goals. Click the button above to start allocating.
-      </p>
-      <Link href="/allocate">
-        <Button className="bg-blue-500 hover:bg-blue-600">
-          Go to Allocation Page
-        </Button>
-      </Link>
-    </div>
-  </CardContent>
-</Card>
-
-
+              <CardContent className="space-y-4">
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">
+                    You have savings ready to allocate to your goals. Click the
+                    button above to start allocating.
+                  </p>
+                  <Link href="/allocate">
+                    <Button className="bg-blue-500 hover:bg-blue-600">
+                      Go to Allocation Page
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
