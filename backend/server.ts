@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 5100;
 // middleware
 app.use(
   cors({
-    origin: ["https://fire-flow-brown.vercel.app", "https://fireflow-m0z1.onrender.com"],
+    origin: "https://fire-flow-brown.vercel.app",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
