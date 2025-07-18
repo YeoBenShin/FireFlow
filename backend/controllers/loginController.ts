@@ -51,7 +51,7 @@ export const loginUser = async (req: Request, res: Response) => {
     res.cookie('token', access_token, {
       httpOnly: true,
       secure: true, // set to true in production
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: 1000 * 60 * 60, // 1 hour
     });
     res.status(200).json({ message: 'Login successful', token: access_token  });
@@ -68,7 +68,7 @@ export const logoutUser = async (req: Request, res: Response) => {
     res.clearCookie('token', {
       httpOnly: true,
       secure: true, // set to true in production
-      sameSite: 'lax',
+      sameSite: 'none',
     });
 
     res.status(200).json({ message: 'Logout successful' });

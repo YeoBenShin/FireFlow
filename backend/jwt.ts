@@ -32,7 +32,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
     res.cookie("token", refreshedToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "lax",
+      sameSite: "none",
     maxAge: 60 * 60 * 1000, // 1 hour
     });
 
