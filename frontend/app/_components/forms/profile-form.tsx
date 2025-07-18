@@ -13,6 +13,13 @@ import {
 } from "@/app/_components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Info } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/app/_components/ui/tooltip"
 import * as z from "zod";
 
 // Schema: monthlyResetDate is string but will be transformed to number before sending
@@ -180,13 +187,35 @@ export function ProfilePage() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="monthlySavings"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Monthly Savings</FormLabel>
+                <FormLabel>
+                  <div className="flex items-center gap-1">
+                    Monthly Savings
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          className="text-white px-3 py-2 text-xs"
+                          side="top"
+                          align="start"
+                          style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+                        >
+                          <p>
+                            This is the amount you want to save each month. It
+                            will be used to calculate your daily budget.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </FormLabel>
                 <FormControl>
                   <Input
                     {...field}

@@ -831,42 +831,47 @@ const fetchChartData = async () => {
                     </TabsList>
                   </Tabs>
                   <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
-            </TooltipTrigger>
-            <TooltipContent className = "text-white px-3 py-2 text-xs" side="top" align="start"
-             style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}>
-              <p>
-                The filter option allows you to view the chart based on the specific transaction filters you applied below
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        className="text-white px-3 py-2 text-xs"
+                        side="top"
+                        align="start"
+                        style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+                      >
+                        <p>
+                          The filter option allows you to view the chart based
+                          on the specific transaction filters you applied below
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="h-80 mb-6">
-                  {chartData[timeFilter as keyof typeof chartData] ?
-                  <LineChart
-                    data={chartData[timeFilter as keyof typeof chartData]}
-                  />
-                  : <Box sx={{ display: 'flex' }}>
+                  {chartData[timeFilter as keyof typeof chartData] ? (
+                    <LineChart
+                      data={chartData[timeFilter as keyof typeof chartData]}
+                    />
+                  ) : (
+                    <Box sx={{ display: "flex" }}>
                       <CircularProgress color="inherit" />
-                    </Box>}
+                    </Box>
+                  )}
                 </div>
                 {/* Legend and summary cards ... */}
                 <div className="flex justify-center gap-8 mb-6">
                   <span className="text-xl font-medium">
-                    {
-                      timeFilter === "Yearly"
-                        ? "Life Time Cashflow"
-                        : timeFilter === "Monthly"
-                        ? "Cashflow This Year"
-                        : timeFilter === "Daily"
-                        ? "Cashflow This Month"
-                        : "Filtered Cashflow"
-                    }
+                    {timeFilter === "Yearly"
+                      ? "Life Time Cashflow"
+                      : timeFilter === "Monthly"
+                      ? "Cashflow This Year"
+                      : timeFilter === "Daily"
+                      ? "Cashflow This Month"
+                      : "Filtered Cashflow"}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
@@ -896,9 +901,11 @@ const fetchChartData = async () => {
                         Total Balance
                       </span>
                     </div>
-                    <div className={`text-2xl font-bold ${
-                      totalBalance > 0 ? "text-green-600" : "text-red-600"
-                    }`}>
+                    <div
+                      className={`text-2xl font-bold ${
+                        totalBalance > 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
                       ${totalBalance.toFixed(2)}
                     </div>
                   </Card>
@@ -917,7 +924,7 @@ const fetchChartData = async () => {
                   type="button"
                   className="bg-gray-100 text-gray-800 px-3 py-2 rounded"
                   onClick={() => {
-                    const today = format(new Date(), 'yyyy-MM-dd');
+                    const today = format(new Date(), "yyyy-MM-dd");
                     setStartDate(today);
                     setEndDate(today);
                     // Optionally trigger filter here if you want instant effect:
@@ -930,8 +937,11 @@ const fetchChartData = async () => {
                   type="button"
                   className="bg-gray-100 text-gray-800 px-3 py-2 rounded"
                   onClick={() => {
-                    const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-                    const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+                    const start = format(
+                      startOfMonth(new Date()),
+                      "yyyy-MM-dd"
+                    );
+                    const end = format(endOfMonth(new Date()), "yyyy-MM-dd");
                     setStartDate(start);
                     setEndDate(end);
                     // Optionally trigger filter here if you want instant effect:
@@ -944,67 +954,80 @@ const fetchChartData = async () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <TransactionFilterForm onFilter={handleFilter} startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+                <TransactionFilterForm
+                  onFilter={handleFilter}
+                  startDate={startDate}
+                  endDate={endDate}
+                  setStartDate={setStartDate}
+                  setEndDate={setEndDate}
+                />
                 <div className="space-y-4">
-                  {((filteredTransactions || transactions).length === 0) ? (
+                  {(filteredTransactions || transactions).length === 0 ? (
                     <div className="text-gray-500 text-center py-8">
                       No transactions found for the selected filters.
                     </div>
                   ) : (
-                    (filteredTransactions || transactions).map((transaction) => {
-                      const dateObj = new Date(transaction.dateTime);
-                      const day = dateObj.getDate();
-                      const month = dateObj.toLocaleString('default', { month: 'long' });
-                      const year = dateObj.getFullYear();
-                      let hour = dateObj.getHours();
-                      const minute = String(dateObj.getMinutes()).padStart(2, '0');
-                      const ampm = hour >= 12 ? 'PM' : 'AM';
-                      hour = hour % 12;
-                      hour = hour ? hour : 12; // the hour '0' should be '12'
-                      const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
-                      return (
-                        <div
-                          key={transaction.transId}
-                          className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
-                        >
-                          <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
-                            {transaction.icon}
+                    (filteredTransactions || transactions).map(
+                      (transaction) => {
+                        const dateObj = new Date(transaction.dateTime);
+                        const day = dateObj.getDate();
+                        const month = dateObj.toLocaleString("default", {
+                          month: "long",
+                        });
+                        const year = dateObj.getFullYear();
+                        let hour = dateObj.getHours();
+                        const minute = String(dateObj.getMinutes()).padStart(
+                          2,
+                          "0"
+                        );
+                        const ampm = hour >= 12 ? "PM" : "AM";
+                        hour = hour % 12;
+                        hour = hour ? hour : 12; // the hour '0' should be '12'
+                        const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
+                        return (
+                          <div
+                            key={transaction.transId}
+                            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                          >
+                            <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+                              {transaction.icon}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-800">
+                                {transaction.description}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {transaction.category}
+                              </div>
+                              <div className="text-xs text-orange-500">
+                                {formattedDate}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div
+                                className={`font-bold ${
+                                  transaction.type === "income"
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }`}
+                              >
+                                {transaction.type === "income" ? "+" : "-"}$
+                                {Math.abs(transaction.amount).toFixed(2)}
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handleDeleteTransaction(transaction.transId)
+                                }
+                                className="text-red-500 hover:text-red-700"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-800">
-                              {transaction.description}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {transaction.category}
-                            </div>
-                            <div className="text-xs text-orange-500">
-                              {formattedDate}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div
-                              className={`font-bold ${
-                                transaction.type === "income"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {transaction.type === "income" ? "+" : "-"}$
-                              {Math.abs(transaction.amount).toFixed(2)}
-                            </div>
-                            <button
-                              onClick={() =>
-                                handleDeleteTransaction(transaction.transId)
-                              }
-                              className="text-red-500 hover:text-red-700"
-                              title = "Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
+                        );
+                      }
+                    )
                   )}
                 </div>
               </div>
