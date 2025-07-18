@@ -96,7 +96,7 @@ useEffect(() => {
       setError(null)
       
       // Fetch goals using the same endpoint as before (getAllGoals)
-      const goalsResponse = await fetch('http://localhost:5100/api/goals', {
+      const goalsResponse = await fetch('https://fireflow-m0z1.onrender.com/api/goals', {
         credentials: 'include'
       })
       if (!goalsResponse.ok) throw new Error('Failed to fetch goals')
@@ -105,7 +105,7 @@ useEffect(() => {
       // Fetch savings data
       let savingsData = null
       try {
-        const savingsResponse = await fetch('http://localhost:5100/api/users/savings', {
+        const savingsResponse = await fetch('https://fireflow-m0z1.onrender.com/api/users/savings', {
           credentials: 'include'
         })
         if (savingsResponse.ok) {
@@ -183,7 +183,7 @@ useEffect(() => {
         throw new Error('Please allocate at least some amount to one goal')
       }
 
-      const response = await fetch('http://localhost:5100/api/goals/allocate', {
+      const response = await fetch('https://fireflow-m0z1.onrender.com/api/goals/allocate', {
         method: 'POST',
         credentials: 'include',
         headers: {
