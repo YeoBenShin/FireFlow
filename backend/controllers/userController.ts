@@ -134,12 +134,20 @@ export const getUserSavings = async (req: Request, res: Response) => {
 
     const today = new Date();
     const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+    const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString();
 
     const { data: transaction, error: transactionsError } = await supabase
       .from('transaction')
       .select('amount, type, dateTime')
       .eq('user_id', user_id)
-      .lt('dateTime', firstOfMonth); // Only before current month
+      .lt('dateTime', firstOfMonth) // Only before current month
+
+      const { data: transaction2, error: transactionsError2 } = await supabase
+      .from('transaction')
+      .select('amount, type, dateTime')
+      .eq('user_id', user_id)
+      .gte('dateTime', startOfLastMonth) // Only from last month
+      .lt('dateTime', firstOfMonth) // Only before current month
 
     if (transactionsError) {
       console.error("Error fetching transactions:", transactionsError);
@@ -157,16 +165,31 @@ export const getUserSavings = async (req: Request, res: Response) => {
       }
     });
 
+    let totalIncomeLastMonth = 0;
+    let totalExpensesLastMonth = 0;
+
+      transaction2?.forEach(tx => {
+      if (tx.type === 'income') {
+        totalIncomeLastMonth += tx.amount || 0;
+      } else if (tx.type === 'expense') {
+        totalExpensesLastMonth += tx.amount || 0;
+      }
+    });
+
     const baseSavings = totalIncome - totalExpenses;
+    const baseSavingsLastMonth = totalIncomeLastMonth - totalExpensesLastMonth;
     const availableSavings = Math.max(0, baseSavings - totalAllocated);
+    const availableSavingsLastMonth = Math.min(baseSavingsLastMonth, availableSavings);
 
     console.log("Savings calculation:");
     console.log("- Base savings:", baseSavings);
     console.log("- Total allocated:", totalAllocated);
     console.log("- Available:", availableSavings);
+    console.log("- Base savings last month:", baseSavingsLastMonth);
 
     res.status(200).json({
       availableSavings,
+      availableSavingsLastMonth,
       totalAllocated,
       baseSavings
     });
