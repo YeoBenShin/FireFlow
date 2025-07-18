@@ -202,39 +202,39 @@ function setSummaryData() {
 
 const fetchChartData = async () => {
     // monthly expenses
-    let res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=expense", {
+    let res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/monthly-transactions?type=expense", {
         credentials: "include",
       });
     const monthlyExpenses = await res.json();
 
     // monthly income
-    res = await fetch("http://localhost:5100/api/transactions/monthly-transactions?type=income", {
+    res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/monthly-transactions?type=income", {
         credentials: "include",
       });
     const monthlyIncome = await res.json();
     const monthLabels = getAllMonthsOfCurrentYear(); //[...new Set([...Object.keys(monthlyExpenses || {}), ...Object.keys(monthlyIncome || {})])];
 
     // yearly expenses
-    res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=expense", {
+    res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/yearly-transactions?type=expense", {
         credentials: "include",
       });
     const yearlyExpenses = await res.json();
 
     // yearly income
-    res = await fetch("http://localhost:5100/api/transactions/yearly-transactions?type=income", {
+    res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/yearly-transactions?type=income", {
         credentials: "include",
       });
     const yearlyIncome = await res.json();
     const yearLabels = [...new Set([...Object.keys(yearlyExpenses || {}), ...Object.keys(yearlyIncome || {})])].sort();
 
     // month expenses
-    res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=expense", {
+    res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/month-transactions?type=expense", {
         credentials: "include",
       });
     const monthExpenses = await res.json();
 
     // month income
-    res = await fetch("http://localhost:5100/api/transactions/month-transactions?type=income", {
+    res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/month-transactions?type=income", {
         credentials: "include",
       });
     const monthIncome = await res.json();
@@ -335,7 +335,7 @@ const fetchChartData = async () => {
      const fetchAll = async () => {
       const token = localStorage.getItem("authToken");
       if (!token) return;
-      const res = await fetch("http://localhost:5100/api/transactions", {
+      const res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions", {
         method: "GET",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -562,7 +562,7 @@ const fetchChartData = async () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
     if (!confirmDelete) return;
     try {
-      const response = await fetch(`http://localhost:5100/api/transactions/delete`, {
+      const response = await fetch(`https://fireflow-m0z1.onrender.com/api/transactions/delete`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

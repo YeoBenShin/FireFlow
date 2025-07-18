@@ -111,7 +111,7 @@ export default function GoalsPage() {
         try {
           console.log(`Fetching participants for goal ${goalId}...`);
           const response = await fetch(
-            `http://localhost:5100/api/goals/${goalId}/participants`,
+            `https://fireflow-m0z1.onrender.com/api/goals/${goalId}/participants`,
             {
               method: "GET",
               credentials: "include",
@@ -147,11 +147,11 @@ export default function GoalsPage() {
       setLoading(true);
       console.log(
         "Attempting to fetch from:",
-        "http://localhost:5100/api/goals/with-participants"
+        "https://fireflow-m0z1.onrender.com/api/goals/with-participants"
       ); // Debug log
 
       const response = await fetch(
-        "http://localhost:5100/api/goals/with-participants",
+        "https://fireflow-m0z1.onrender.com/api/goals/with-participants",
         {
           method: "GET",
           credentials: "include",
@@ -180,7 +180,7 @@ export default function GoalsPage() {
   const savingData = async () => {
     try {
       const savingsResponse = await fetch(
-        "http://localhost:5100/api/users/savings",
+        "https://fireflow-m0z1.onrender.com/api/users/savings",
         {
           credentials: "include",
         }

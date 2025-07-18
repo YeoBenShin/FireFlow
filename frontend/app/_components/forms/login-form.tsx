@@ -42,7 +42,7 @@ export function LoginForm({ onClose, onLoginSuccess }: LoginFormProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:5100/login", {
+      const response = await fetch("https://fireflow-m0z1.onrender.com/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

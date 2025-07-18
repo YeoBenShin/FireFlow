@@ -65,7 +65,7 @@ export function AppSidebar() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const response = await fetch("http://localhost:5100/api/users", {
+        const response = await fetch("https://fireflow-m0z1.onrender.com/api/users", {
           method: "GET",
           credentials: "include",
         });
@@ -89,7 +89,7 @@ export function AppSidebar() {
 
   async function handleLogout() {
     try {
-      await fetch("http://localhost:5100/login/logout", {
+      await fetch("https://fireflow-m0z1.onrender.com/login/logout", {
         credentials: "include",
       });
       localStorage.removeItem("authToken");
