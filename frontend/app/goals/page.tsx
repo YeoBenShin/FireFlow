@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/app/_components/ui/tooltip"
+} from "@/app/_components/ui/tooltip";
 import { AddGoalForm } from "../_components/forms/add-goal-form";
 import { Badge } from "@/app/_components/ui/badge";
 import Link from "next/link";
@@ -331,17 +331,19 @@ export default function GoalsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Personal Goals
-                         <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
-            </TooltipTrigger>
-            <TooltipContent className = "text-white px-3 py-2 text-xs" side="top" align="start"
-             style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}>
-              <p>Add personal goals to track and allocate to it yourself</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className="text-white px-3 py-2 text-xs rounded z-50 shadow"
+                    side="top"
+                    align="start"
+                    style={{ backgroundColor: "rgba(0,0,0,0.75)" }}
+                  >
+                    Add personal goals to track and allocate to it yourself
+                  </TooltipContent>
+                </Tooltip>
               </CardTitle>
               <Tabs.Root defaultValue="pending" className="w-full">
                 {/* Tab List */}
@@ -518,18 +520,24 @@ export default function GoalsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Collaborative Goals
-                                        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
-            </TooltipTrigger>
-            <TooltipContent className = "text-white px-3 py-2 text-xs" side="top" align="start"
-             style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}>
-              <p>Add collaborative goals to track and allocate with friend(s)! <br/>
-              Head over to the friends page to add other users and collaborate with them</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className="text-white px-3 py-2 text-xs rounded z-50 shadow"
+                    side="top"
+                    align="start"
+                    style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+                  >
+                    <p>
+                      Add collaborative goals to track and allocate with
+                      friend(s)! <br />
+                      Head over to the friends page to add other users and
+                      collaborate with them.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </CardTitle>
               <Tabs.Root defaultValue="pending" className="w-full">
                 {/* Tab List */}
