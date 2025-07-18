@@ -15,15 +15,21 @@ export async function middleware(request: NextRequest) {
   }
 
   // Validate session with backend
-  const res = await fetch("http://localhost:5100/api", {
+  try {
+    const res = await fetch("http://localhost:5100/api", {
     headers: {
       cookie: request.headers.get("cookie") || "",
-  },
-  });
+    },
+    });
 
-  if (res.status === 401) {
+    if (res.status === 401) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return NextResponse.next();
+
+  } catch (error) {
+    console.error("Error validating session:", error);
     return NextResponse.redirect(new URL("/login", request.url));
   }
-
-  return NextResponse.next();
+  
 }
