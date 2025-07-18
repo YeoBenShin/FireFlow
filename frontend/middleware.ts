@@ -16,8 +16,8 @@ export async function middleware(request: NextRequest) {
 
   // Validate session with backend
   try {
-    const token = localStorage.getItem("authToken") || null;
-    console.log("Token from localStorage:", token);
+    const token = request.cookies.get("token")?.value || null;
+    console.log("Token from cookies:", token);
 
     if (!token) {
       return NextResponse.redirect(new URL("/login", request.url));
