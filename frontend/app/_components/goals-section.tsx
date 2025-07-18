@@ -53,7 +53,8 @@ export function GoalsSection() {
         throw new Error(`Failed to fetch goals: ${response.statusText}`)
       }
 
-      const userGoals: GoalWithParticipant[] = await response.json()
+      const rawUserGoals: GoalWithParticipant[] = await response.json()
+      const userGoals = rawUserGoals.filter((g) => g.goal.status !== "completed")
 
       const response2 = await fetch("http://localhost:5100/api/goal-participants", {
         method: "GET",
@@ -75,7 +76,7 @@ export function GoalsSection() {
 for (const item of userGoals) {
   const goalId = item.goal.goal_id;
 
-  // ✅ Sum all participants' allocations for this goal
+  // Sum all participants' allocations for this goal
   const totalAllocated = allParticipants
     .filter((p) => p.goal_id === goalId)
     .reduce((sum, p) => sum + p.allocated_amount, 0);
