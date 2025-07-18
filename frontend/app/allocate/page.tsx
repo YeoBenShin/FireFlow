@@ -82,6 +82,8 @@ export default function AllocatePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
   const totalAllocated = Object.values(allocations).reduce((sum, amount) => sum + amount, 0)
   const remainingSavings = (savingsData?.availableSavings || 0) - totalAllocated
 
@@ -147,7 +149,27 @@ useEffect(() => {
   // Update handleSubmit to make real API call:
   const handleSubmit = async () => {
     if (!savingsData) return
-    
+
+    // Check for excessive allocations before submitting
+    const excessiveAllocations = Object.entries(allocations).filter(([goalId, amount]) => {
+      const goal = goals.find(g => g.goal_id.toString() === goalId)
+      return goal && amount > (goal.amount - goal.current_amount)
+    })
+
+    if (excessiveAllocations.length > 0) {
+      const goalTitles = excessiveAllocations.map(([goalId]) => {
+        const goal = goals.find(g => g.goal_id.toString() === goalId)
+        return goal?.title || goalId
+      }).join(', ')
+
+      const confirmed = confirm(
+        `Warning: You're allocating more than needed for: ${goalTitles}. ` +
+        `This may result in over-funding these goals. Do you want to proceed?`
+      )
+
+      if (!confirmed) return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -204,13 +226,39 @@ useEffect(() => {
     return (newCurrent / goal.amount) * 100
   }
 
+  // Update handleAllocationChange with gentle validation
   const handleAllocationChange = (goalId: string, value: string) => {
-  const amount = Number.parseFloat(value) || 0
-  setAllocations((prev) => ({
-    ...prev,
-    [goalId]: amount,
-  }))
-}
+    const amount = Number.parseFloat(value) || 0
+    const goal = goals.find(g => g.goal_id.toString() === goalId)
+    
+    if (goal) {
+      // Clear previous error for this goal
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[goalId]
+        return newErrors
+      })
+      
+      // Only show warning for excessive amounts, don't block input
+      const remainingNeeded = goal.amount - goal.current_amount
+      if (amount > goal.amount) {
+        setValidationErrors(prev => ({
+          ...prev,
+          [goalId]: `This exceeds the total goal amount of $${goal.amount.toLocaleString()}`
+        }))
+      } else if (amount > remainingNeeded) {
+        setValidationErrors(prev => ({
+          ...prev,
+          [goalId]: `Only $${remainingNeeded.toLocaleString()} needed to complete this goal`
+        }))
+      }
+    }
+    
+    setAllocations((prev) => ({
+      ...prev,
+      [goalId]: amount,
+    }))
+  }
 
     // Add these helper functions after your handlers
 
@@ -392,6 +440,12 @@ useEffect(() => {
                               Max
                             </Button>
                           </div>
+                          {validationErrors[goalId] && (
+                            <p className="text-amber-600 text-xs mt-1 flex items-center gap-1">
+                              <span>⚠️</span>
+                              {validationErrors[goalId]}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-500">
                             Max available: ${maxPossible.toLocaleString()}
                           </p>
@@ -484,6 +538,12 @@ useEffect(() => {
                               Max
                             </Button>
                           </div>
+                          {validationErrors[goalId] && (
+                            <p className="text-amber-600 text-xs mt-1 flex items-center gap-1">
+                              <span>⚠️</span>
+                              {validationErrors[goalId]}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-500">
                             Max available: ${maxPossible.toLocaleString()}
                           </p>
