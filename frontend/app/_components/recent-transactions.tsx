@@ -86,7 +86,7 @@ export function RecentTransactions() {
                 minute: "2-digit",
               })
               return (
-                <div key={transaction.id}>
+                <React.Fragment key={transaction.id}>
                   <div className="text-sm text-gray-600 mb-2">{date}</div>
                   <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
                     <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
@@ -105,7 +105,7 @@ export function RecentTransactions() {
                       {transaction.type === "income" ? "+" : "-"}${Math.abs(transaction.amount).toLocaleString()}
                     </div>
                   </div>
-                </div>
+                </React.Fragment>
               )
             })
           )}
