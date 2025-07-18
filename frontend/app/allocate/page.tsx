@@ -93,7 +93,7 @@ useEffect(() => {
       setIsLoading(true)
       setError(null)
       
-      // Fetch goals with current amounts and participant counts included
+      // Fetch goals using the same endpoint as before (getAllGoals)
       const goalsResponse = await fetch('http://localhost:5100/api/goals', {
         credentials: 'include'
       })
@@ -175,7 +175,19 @@ useEffect(() => {
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
 
-      console.log("Allocations completed successfully")
+      const result = await response.json()
+      console.log("Allocations completed successfully", result)
+
+      // Show success message with completed goals if any
+      if (result.completedGoals && result.completedGoals.length > 0) {
+        const completedGoalTitles = result.completedGoals.map((goalId: number) => {
+          const goal = goals.find(g => g.goal_id === goalId)
+          return goal?.title || `Goal ${goalId}`
+        }).join(', ')
+        
+        alert(`🎉 Congratulations! You've completed: ${completedGoalTitles}`)
+      }
+
       router.push("/goals")
     } catch (err) {
       console.error('Error allocating funds:', err)
@@ -226,11 +238,12 @@ useEffect(() => {
   }
  // Filter goals
   const personalGoals = goals.filter(goal => 
-    goal.participantCount <= 1 && goal.userRole !== 'pending'
+    goal.participantCount <= 1 && goal.userRole !== 'pending' && goal.status !== 'completed'
   )
   const collaborativeGoals = goals.filter(goal => 
-    goal.participantCount > 1 && goal.userRole !== 'pending'
+    goal.participantCount > 1 && goal.userRole !== 'pending' && goal.status !== 'completed'
   )
+  const completedGoals = goals.filter(goal => goal.status === 'completed')
 
   const calculateDaysLeft = (targetDate: string) => {
     const target = new Date(targetDate)
@@ -502,18 +515,71 @@ useEffect(() => {
           )}
         </div>
 
+        {/* Completed Goals */}
+        {completedGoals.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-500" />
+                Completed Goals
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {completedGoals.map((goal) => {
+                const currentAmount = goal.current_amount
+                const currentProgress = (currentAmount / goal.amount) * 100
+
+                return (
+                  <div key={goal.goal_id} className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white">
+                        {getCategoryIcon(goal.category)}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-green-800">{goal.title}</h4>
+                        <p className="text-sm text-green-600">
+                          Completed • {formatDate(goal.target_date)}
+                        </p>
+                      </div>
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <Check className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm text-green-700">
+                        <span>Achieved: ${currentAmount.toLocaleString()}</span>
+                        <span>Target: ${goal.amount.toLocaleString()}</span>
+                      </div>
+                      <Progress value={100} className="bg-green-100" />
+                      <p className="text-xs text-right text-green-600">
+                        100% Complete 🎉
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+        )}
+
         {/* No Goals Message */}
-        {goals.length === 0 && (
+        {(personalGoals.length === 0 && collaborativeGoals.length === 0) && (
           <Card>
             <CardContent className="text-center py-12">
               <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Goals Found</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {goals.length === 0 ? 'No Goals Found' : 'No Active Goals to Allocate'}
+              </h3>
               <p className="text-gray-600 mb-4">
-                You haven't created any goals yet. Create some goals to start allocating your savings!
+                {goals.length === 0 
+                  ? "You haven't created any goals yet. Create some goals to start allocating your savings!"
+                  : "All your goals are either completed or pending. Create new goals to continue saving!"
+                }
               </p>
               <Link href="/goals">
                 <Button className="bg-orange-500 hover:bg-orange-600">
-                  Create Your First Goal
+                  {goals.length === 0 ? 'Create Your First Goal' : 'View All Goals'}
                 </Button>
               </Link>
             </CardContent>
@@ -521,7 +587,7 @@ useEffect(() => {
         )}
 
         {/* Action Buttons */}
-        {goals.length > 0 && (
+        {(personalGoals.length > 0 || collaborativeGoals.length > 0) && (
           <div className="flex justify-between items-center">
             <Link href="/goals">
               <Button variant="outline">Cancel</Button>
