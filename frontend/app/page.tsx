@@ -17,9 +17,9 @@ export default function HomePage() {
   const [monthlySavings, setMonthlySavings] = useState<number>(0)
   const [remainingDays, setRemainingDays] = useState<number>(0)
   
-  const token = localStorage.getItem("authToken");
 
   useEffect(() => {
+    const token = localStorage.getItem("authToken");
     const fetchTodaysExpenses = async () => {
       try {
         const res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/todays-expenses", {
