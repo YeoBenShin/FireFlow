@@ -31,56 +31,13 @@ interface SavingsData {
 
 export default function AllocatePage() {
   const router = useRouter()
-  // const [allocations, setAllocations] = useState<Record<string, number>>({})
-  // const [isSubmitting, setIsSubmitting] = useState(false)
-  // const availableSavings = 7783.0
-  // Hardcoded values
-  // const goals = [
-  //   {
-  //     id: "1",
-  //     title: "Red Tesla",
-  //     daysLeft: 10,
-  //     date: "21 May 2025",
-  //     current: 2000,
-  //     target: 4000,
-  //     icon: <Car className="w-5 h-5" />,
-  //     progress: 50,
-  //     type: "personal",
-  //   },
-  //   {
-  //     id: "2",
-  //     title: "Bathroom Renovation",
-  //     daysLeft: 30,
-  //     date: "11 June 2025",
-  //     current: 912.09,
-  //     target: 3040.3,
-  //     icon: <Home className="w-5 h-5" />,
-  //     progress: 30,
-  //     type: "personal",
-  //   },
-  //   {
-  //     id: "3",
-  //     title: "Korea Trip",
-  //     daysLeft: 20,
-  //     date: "31 May 2025",
-  //     current: 2000,
-  //     target: 4000,
-  //     icon: <Plane className="w-5 h-5" />,
-  //     progress: 50,
-  //     type: "collaborative",
-  //     contributors: [
-  //       { name: "Ben", amount: 1000, color: "bg-yellow-400" },
-  //       { name: "Weichoon", amount: 1000, color: "bg-orange-400" },
-  //     ],
-  //   },
-  // ]
-
   const [goals, setGoals] = useState<Goal[]>([])
   const [savingsData, setSavingsData] = useState<SavingsData | null>(null)
   const [allocations, setAllocations] = useState<Record<string, number>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(null)
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
@@ -90,11 +47,15 @@ export default function AllocatePage() {
 // Update your useEffect to fetch current amounts separately
 
 useEffect(() => {
+  const incomingToken = localStorage.getItem("authToken");
+  setToken(incomingToken);
+}, []);
+
+useEffect(() => {
   const fetchData = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      const token = localStorage.getItem("authToken");
       
       // Fetch goals using the same endpoint as before (getAllGoals)
       const goalsResponse = await fetch('https://fireflow-m0z1.onrender.com/api/goals', {
@@ -190,7 +151,6 @@ useEffect(() => {
         throw new Error('Please allocate at least some amount to one goal')
       }
       
-      const token = localStorage.getItem("authToken");
       const response = await fetch('https://fireflow-m0z1.onrender.com/api/goals/allocate', {
         method: 'POST',
         credentials: 'include',
