@@ -20,6 +20,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
+    console.log("Token from localStorage:", token);
     const fetchTodaysExpenses = async () => {
       try {
         const res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/todays-expenses", {
