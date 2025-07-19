@@ -59,7 +59,7 @@ export function LoginForm({ onClose, onLoginSuccess }: LoginFormProps) {
       const result = await response.json();
 
       localStorage.setItem("authToken", result.token);
-      document.cookie = `token=${result.token}; path=/; secure; samesite=none; max-age=${60 * 60 * 24}`;
+      document.cookie = `token=${result.token}; path=/; max-age=${60 * 60 * 24}`; // 1 day
 
       onLoginSuccess?.();
       router.push("/"); // Redirect to dashboard after login
