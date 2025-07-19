@@ -16,9 +16,8 @@ export async function middleware(request: NextRequest) {
 
   // Validate session with backend
   try {
-    const token = request.cookies.get("token")?.value || null;
-    console.log("Token from cookies:", token);
-    console.log("cookie:", document.cookie);
+    const token = request.headers.get("Authorization")?.split(" ")[1];
+    console.log("Token from header:", token);
 
     if (!token) {
       return NextResponse.redirect(new URL("/login", request.url));
