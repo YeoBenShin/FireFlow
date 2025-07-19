@@ -68,7 +68,7 @@ export function SignUpForm({
 
       // Optional: Call onSignupSuccess or navigate
       onSignupSuccess?.();
-      router.push("/"); // Redirect to dashboard after signup
+      router.push("/login"); // Redirect to login after signup
       }
     
       if (onClose) onClose();
