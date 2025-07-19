@@ -316,10 +316,10 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
       .eq('user_id', user_id)
       .order('goal(target_date)', { ascending: true });
       
-    console.log("Goal participants query result:");
-    console.log("- Data:", JSON.stringify(data, null, 2));
-    console.log("- Error:", error);
-    console.log("- Data length:", data?.length || 0);
+    // console.log("Goal participants query result:");
+    // console.log("- Data:", JSON.stringify(data, null, 2));
+    // console.log("- Error:", error);
+    // console.log("- Data length:", data?.length || 0);
       
     if (error) {
       console.error("Supabase error details:", JSON.stringify(error, null, 2));
@@ -347,7 +347,7 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
       throw countError;
     }
 
-    console.log("Participant counts:", participantCounts);
+    // console.log("Participant counts:", participantCounts);
 
     // Group participant counts by goal_id
     const participantCountMap = participantCounts?.reduce((acc, participant) => {
@@ -461,9 +461,9 @@ export const allocateToGoals = async (req: Request, res: Response) => {
   const user_id = (req.user as jwt.JwtPayload).sub;
   const { allocations } = req.body; // { goalId: amount, goalId2: amount2, ... }
 
-  console.log("=== ALLOCATE TO GOALS DEBUG ===");
-  console.log("User ID:", user_id);
-  console.log("Allocations:", allocations);
+  // console.log("=== ALLOCATE TO GOALS DEBUG ===");
+  // console.log("User ID:", user_id);
+  // console.log("Allocations:", allocations);
 
   try {
     // Validate input
@@ -506,10 +506,10 @@ export const allocateToGoals = async (req: Request, res: Response) => {
         const oldAmount = existingParticipant.allocated_amount || 0;
         const newAmount = oldAmount + Number(amount);
         
-        console.log(`Updating existing participant for goal ${goalId}:`);
-        console.log(`  - Old amount: ${oldAmount}`);
-        console.log(`  - Additional amount: ${amount}`);
-        console.log(`  - New total amount: ${newAmount}`);
+        // console.log(`Updating existing participant for goal ${goalId}:`);
+        // console.log(`  - Old amount: ${oldAmount}`);
+        // console.log(`  - Additional amount: ${amount}`);
+        // console.log(`  - New total amount: ${newAmount}`);
         
         const { error: updateError } = await supabase
           .from('goal_participants')
@@ -538,10 +538,10 @@ export const allocateToGoals = async (req: Request, res: Response) => {
 
         const role = goalData.user_id === user_id ? 'owner' : 'collaborator';
 
-        console.log(`Creating new participant for goal ${goalId}:`);
-        console.log(`  - User ID: ${user_id}`);
-        console.log(`  - Role: ${role}`);
-        console.log(`  - Amount: ${amount}`);
+        // console.log(`Creating new participant for goal ${goalId}:`);
+        // console.log(`  - User ID: ${user_id}`);
+        // console.log(`  - Role: ${role}`);
+        // console.log(`  - Amount: ${amount}`);
 
         const { error: insertError } = await supabase
           .from('goal_participants')
@@ -587,12 +587,12 @@ export const allocateToGoals = async (req: Request, res: Response) => {
       const totalAllocated = allParticipants?.reduce((sum, participant) => 
         sum + (participant.allocated_amount || 0), 0) || 0;
 
-      console.log(`\n=== GOAL COMPLETION CHECK ===`);
-      console.log(`Goal ${goalId}:`);
-      console.log(`  - Target amount: ${goalData.amount}`);
-      console.log(`  - Total allocated: ${totalAllocated}`);
-      console.log(`  - Current status: ${goalData.status}`);
-      console.log(`  - All participants:`, allParticipants);
+      // console.log(`\n=== GOAL COMPLETION CHECK ===`);
+      // console.log(`Goal ${goalId}:`);
+      // console.log(`  - Target amount: ${goalData.amount}`);
+      // console.log(`  - Total allocated: ${totalAllocated}`);
+      // console.log(`  - Current status: ${goalData.status}`);
+      // console.log(`  - All participants:`, allParticipants);
 
       // If goal is completed and status isn't already 'completed'
       if (totalAllocated >= goalData.amount && goalData.status !== 'completed') {
@@ -858,9 +858,9 @@ export const debugDatabase = async (req: Request, res: Response) => {
       .select('*')
       .in('goal_id', goalIds);
 
-    console.log("User's goals:", goals);
-    console.log("User's participations:", participants);
-    console.log("All participants in user's goals:", allParticipants);
+    // console.log("User's goals:", goals);
+    // console.log("User's participations:", participants);
+    // console.log("All participants in user's goals:", allParticipants);
 
     res.status(200).json({
       user_id,
