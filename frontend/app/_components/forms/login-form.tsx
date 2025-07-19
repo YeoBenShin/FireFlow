@@ -53,16 +53,19 @@ export function LoginForm({ onClose, onLoginSuccess }: LoginFormProps) {
 
       if (!response.ok) {
         alert("Login failed. Please check your credentials.");
+        router.push("/login");
         // throw new Error(`Failed to login: ${response.statusText}`);
+      } else {
+
+        const result = await response.json();
+
+        localStorage.setItem("authToken", result.token);
+        document.cookie = `token=${result.token}; path=/; max-age=${60 * 30}`; // Set cookie for 30 minutes
+
+        onLoginSuccess?.();
+        router.push("/"); // Redirect to dashboard after login
       }
-
-      const result = await response.json();
-
-      localStorage.setItem("authToken", result.token);
-      document.cookie = `token=${result.token}; path=/; max-age=${60 * 30}`; // Set cookie for 30 minutes
-
-      onLoginSuccess?.();
-      router.push("/"); // Redirect to dashboard after login
+      
       if (onClose) onClose();
     } catch (error) {
       console.error("Error logging in:", error);
