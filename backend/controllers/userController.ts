@@ -181,11 +181,11 @@ export const getUserSavings = async (req: Request, res: Response) => {
     const availableSavings = Math.max(0, baseSavings - totalAllocated);
     const availableSavingsLastMonth = Math.min(baseSavingsLastMonth, availableSavings);
 
-    console.log("Savings calculation:");
-    console.log("- Base savings:", baseSavings);
-    console.log("- Total allocated:", totalAllocated);
-    console.log("- Available:", availableSavings);
-    console.log("- Base savings last month:", baseSavingsLastMonth);
+    // console.log("Savings calculation:");
+    // console.log("- Base savings:", baseSavings);
+    // console.log("- Total allocated:", totalAllocated);
+    // console.log("- Available:", availableSavings);
+    // console.log("- Base savings last month:", baseSavingsLastMonth);
 
     res.status(200).json({
       availableSavings,

@@ -47,10 +47,9 @@ export default function AllocatePage() {
 // Update your useEffect to fetch current amounts separately
 
 useEffect(() => {
-  const incomingToken = localStorage.getItem("authToken");
-  setToken(incomingToken);
-
   const fetchData = async () => {
+    const incomingToken = localStorage.getItem("authToken");
+    setToken(incomingToken);
     try {
       setIsLoading(true)
       setError(null)

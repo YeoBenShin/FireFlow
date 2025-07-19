@@ -295,7 +295,7 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
   
   try {
     // Get goals where user is either owner or participant (including pending)
-    console.log("Querying goal_participants table...");
+    // console.log("Querying goal_participants table...");
     const { data, error } = await supabase
       .from('goal_participants')
       .select(`
@@ -328,7 +328,7 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
 
     // Get participant counts for each goal
     const goalIds = data?.map(item => item.goal_id) || [];
-    console.log("Goal IDs found:", goalIds);
+    // console.log("Goal IDs found:", goalIds);
     
     if (goalIds.length === 0) {
       console.log("No goal participants found - returning empty array");
@@ -384,7 +384,7 @@ export const getGoalsWithParticipants = async (req: Request, res: Response) => {
       }
     }));
 
-    console.log("Final enhanced data:", JSON.stringify(enhancedData, null, 2));
+    // console.log("Final enhanced data:", JSON.stringify(enhancedData, null, 2));
     res.status(200).json(enhancedData);
   } catch (error) {
     console.error("Error fetching goals with participants:", error);
