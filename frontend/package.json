@@ -2,6 +2,7 @@
   "name": "fireflow-finance",
   "version": "0.1.0",
   "private": true,
+  "proxy": "https://fireflow-m0z1.onrender.com",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
