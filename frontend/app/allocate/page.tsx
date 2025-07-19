@@ -55,6 +55,7 @@ useEffect(() => {
       setError(null)
       
       // Fetch goals using the same endpoint as before (getAllGoals)
+      console.log(token)
       const goalsResponse = await fetch('https://fireflow-m0z1.onrender.com/api/goals', {
         credentials: 'include',
         headers: {
