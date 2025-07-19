@@ -132,7 +132,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
       // Reset form data
       setFormData({
         title: "",
-        targetDate: "",
+        targetDate: new Date().toISOString().split("T")[0],
         amount: "",
         category: "",
         notes: "",
