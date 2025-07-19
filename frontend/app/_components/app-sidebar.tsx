@@ -97,6 +97,7 @@ export function AppSidebar() {
         credentials: "include",
       });
       localStorage.removeItem("authToken");
+      document.cookie = "token=; path=/; max-age=0"; // Clear cookie
       router.push("/login");
     } catch (err) {
       alert("Failed to log out.");
