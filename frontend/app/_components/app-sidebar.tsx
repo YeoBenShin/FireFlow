@@ -53,7 +53,6 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
 }
 
 export function AppSidebar() {
-  const token = localStorage.getItem("authToken");
   const [isCollapsed, setIsCollapsed] = useLocalStorage(
     "appSidebarCollapsed",
     false
@@ -64,6 +63,7 @@ export function AppSidebar() {
   const router = useRouter();
 
   useEffect(() => {
+    const token = localStorage.getItem("authToken");
     async function fetchProfile() {
       try {
         const response = await fetch("https://fireflow-m0z1.onrender.com/api/users", {
