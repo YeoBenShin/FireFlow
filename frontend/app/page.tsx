@@ -17,22 +17,32 @@ export default function HomePage() {
   const [monthlySavings, setMonthlySavings] = useState<number>(0)
   const [remainingDays, setRemainingDays] = useState<number>(0)
   
+  const token = localStorage.getItem("authToken");
 
   useEffect(() => {
     const fetchTodaysExpenses = async () => {
       try {
         const res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/todays-expenses", {
           credentials: "include",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         })
         const data = await res.json()
         setTodaysExpenses(data.total)
         const expense = await fetch("https://fireflow-m0z1.onrender.com/api/dashboard/month-expense", {
               credentials: "include",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
             })
         const expenseData = await expense.json()
         setTotalExpenses(expenseData)
         const income = await fetch("https://fireflow-m0z1.onrender.com/api/dashboard/month-income", {
               credentials: "include",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
             })
         const incomeData = await income.json()
         setTotalIncome(incomeData)
@@ -42,6 +52,9 @@ export default function HomePage() {
         setRemainingDays(daysLeft);
         const user = await fetch("https://fireflow-m0z1.onrender.com/api/users", {
           credentials: "include", 
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         })
         const userData = await user.json()
         setMonthlySavings(userData.monthly_savings)
