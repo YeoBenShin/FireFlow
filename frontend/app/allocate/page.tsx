@@ -37,7 +37,6 @@ export default function AllocatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [token, setToken] = useState<string | null>(null)
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
@@ -48,9 +47,7 @@ export default function AllocatePage() {
 
 useEffect(() => {
   const fetchData = async () => {
-    const incomingToken = localStorage.getItem("authToken");
-    console.log("Fetching data with token:", incomingToken)
-    setToken(incomingToken);
+    const token = localStorage.getItem("authToken");
     try {
       setIsLoading(true)
       setError(null)
@@ -150,6 +147,7 @@ useEffect(() => {
         throw new Error('Please allocate at least some amount to one goal')
       }
       
+      const token = localStorage.getItem("authToken");
       const response = await fetch('https://fireflow-m0z1.onrender.com/api/goals/allocate', {
         method: 'POST',
         credentials: 'include',
