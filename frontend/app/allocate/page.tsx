@@ -49,9 +49,7 @@ export default function AllocatePage() {
 useEffect(() => {
   const incomingToken = localStorage.getItem("authToken");
   setToken(incomingToken);
-}, []);
 
-useEffect(() => {
   const fetchData = async () => {
     try {
       setIsLoading(true)
