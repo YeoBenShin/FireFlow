@@ -94,10 +94,14 @@ useEffect(() => {
     try {
       setIsLoading(true)
       setError(null)
+      const token = localStorage.getItem("authToken");
       
       // Fetch goals using the same endpoint as before (getAllGoals)
       const goalsResponse = await fetch('https://fireflow-m0z1.onrender.com/api/goals', {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       })
       if (!goalsResponse.ok) throw new Error('Failed to fetch goals')
       const goalsData = await goalsResponse.json()
@@ -106,7 +110,10 @@ useEffect(() => {
       let savingsData = null
       try {
         const savingsResponse = await fetch('https://fireflow-m0z1.onrender.com/api/users/savings', {
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         })
         if (savingsResponse.ok) {
           savingsData = await savingsResponse.json()
@@ -182,12 +189,14 @@ useEffect(() => {
       if (Object.keys(validAllocations).length === 0) {
         throw new Error('Please allocate at least some amount to one goal')
       }
-
+      
+      const token = localStorage.getItem("authToken");
       const response = await fetch('https://fireflow-m0z1.onrender.com/api/goals/allocate', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ allocations: validAllocations }),
       })

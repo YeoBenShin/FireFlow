@@ -39,12 +39,14 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
 
   const fetchFriends = async () => {
     setLoadingFriends(true)
+    const token = localStorage.getItem("authToken");
     try {
       const response = await fetch('https://fireflow-m0z1.onrender.com/api/friends/for-goals', {
         method: 'GET',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Include token for authentication
         },
       })
 
@@ -87,6 +89,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    const token = localStorage.getItem("authToken");
 
     try {
       const goalData = {
@@ -105,6 +108,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(goalData),
       })

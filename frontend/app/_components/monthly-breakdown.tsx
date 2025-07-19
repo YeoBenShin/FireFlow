@@ -61,8 +61,14 @@ export function MonthlyBreakdown({monthlySavings}: {monthlySavings: number}) {
       setLoading(true)
       try {
         // Fetch category expenses for the current month
+        const token = localStorage.getItem("authToken");
         const res = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/category-expenses-monthly", {
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          
         })
         const categoryData: Record<string, number> = await res.json()
         // Sort categories by amount descending
@@ -91,6 +97,10 @@ export function MonthlyBreakdown({monthlySavings}: {monthlySavings: number}) {
         // Fetch all transactions to sum income for the month
         const txRes = await fetch("https://fireflow-m0z1.onrender.com/api/transactions", {
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         })
         const transactions: Transaction[] = await txRes.json()
         const now = new Date()

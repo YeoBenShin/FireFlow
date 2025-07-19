@@ -62,13 +62,15 @@ export function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       setLoading(true);
+      const token = localStorage.getItem("authToken");
       try {
         const response = await fetch("https://fireflow-m0z1.onrender.com/api/users", {
           method: "GET",
           credentials: "include",
-          // headers: {
-          //   "Content-Type": "application/json",
-          // },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
         if (!response.ok) throw new Error("Failed to fetch profile");
         const data = await response.json();
@@ -90,12 +92,13 @@ export function ProfilePage() {
   async function onSubmit(values: ProfileFormValues) {
     console.log(values);
     setIsSubmitting(true);
+    const token = localStorage.getItem("authToken");
     try {
       // Send as numbers
       const response = await fetch("https://fireflow-m0z1.onrender.com/api/users/update", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           username: values.username,
           monthly_savings: Number(values.monthlySavings),
@@ -128,11 +131,12 @@ export function ProfilePage() {
       return;
     }
     setIsDeleting(true);
+    const token = localStorage.getItem("authToken");
     try {
       const response = await fetch("https://fireflow-m0z1.onrender.com/api/users/delete", {
         method: "DELETE",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to delete user");
       alert("Your account has been deleted.");

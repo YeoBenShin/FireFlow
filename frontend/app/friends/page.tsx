@@ -113,10 +113,14 @@ export default function FriendsPage() {
 
   // Fetch helpers
   const fetchFriends = async () => {
+    const token = localStorage.getItem("authToken");
     try {
       const res = await fetch(`https://fireflow-m0z1.onrender.com/api/friends?_t=${Date.now()}`, {
         credentials: "include",
-        cache: "no-store"
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       if (!res.ok) throw new Error("Failed to fetch friends");
       const data = await res.json();
@@ -128,12 +132,16 @@ export default function FriendsPage() {
     }
   };
   const fetchSentRequests = async () => {
+    const token = localStorage.getItem("authToken");
     try {
       const res = await fetch(
         `https://fireflow-m0z1.onrender.com/api/friends/requests?toAccept=false&_t=${Date.now()}`,
         { 
           credentials: "include",
-          cache: "no-store"
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
       );
       if (!res.ok) throw new Error("Failed to fetch sent requests");
@@ -146,12 +154,16 @@ export default function FriendsPage() {
     }
   };
   const fetchReceivedRequests = async () => {
+    const token = localStorage.getItem("authToken");
     try {
       const res = await fetch(
         `https://fireflow-m0z1.onrender.com/api/friends/requests?toAccept=true&_t=${Date.now()}`,
         { 
           credentials: "include",
-          cache: "no-store"
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
       );
       if (!res.ok) throw new Error("Failed to fetch received requests");
@@ -164,12 +176,16 @@ export default function FriendsPage() {
     }
   };
   const fetchGoalInvitations = async () => {
+    const token = localStorage.getItem("authToken");
     try {
       const res = await fetch(
         `https://fireflow-m0z1.onrender.com/api/goals/pending-invitations?_t=${Date.now()}`,
         { 
           credentials: "include",
-          cache: "no-store"
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
       );
       if (!res.ok) throw new Error("Failed to fetch goal invitations");
@@ -206,11 +222,15 @@ export default function FriendsPage() {
       return;
     }
     const timeout = setTimeout(async () => {
+      const token = localStorage.getItem("authToken");
       setUsersLoading(true);
       try {
         const res = await fetch("https://fireflow-m0z1.onrender.com/api/users/filter", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
           credentials: "include",
           body: JSON.stringify({ username: searchTerm }),
         });
@@ -249,10 +269,14 @@ export default function FriendsPage() {
 
   // API call for actions
   const callAPI = async (path: string, username: string, method: string, successMsg: string = "", errorMsg: string = "") => {
+    const token = localStorage.getItem("authToken");
     try {
       const response = await fetch(path, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         credentials: "include",
         body: JSON.stringify({ username }),
       });
@@ -323,11 +347,15 @@ export default function FriendsPage() {
     setLoading(true);
     let successCount = 0;
     let errorMessages = [];
+    const token = localStorage.getItem("authToken");
     for (const friend of selectedFriends) {
       try {
         const res = await fetch("https://fireflow-m0z1.onrender.com/api/friends/send", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
           credentials: "include",
           body: JSON.stringify({ username: friend.username }),
         });
@@ -370,6 +398,7 @@ export default function FriendsPage() {
   // Accept goal invitation
   // Accept goal invitation
   const handleAcceptGoalInvitation = async (goalId: number) => {
+    const token = localStorage.getItem("authToken");
     try {
       console.log("Accepting goal invitation for goal ID:", goalId);
       
@@ -378,6 +407,7 @@ export default function FriendsPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
       });
 
@@ -405,6 +435,7 @@ export default function FriendsPage() {
 
   // Reject goal invitation
   const handleRejectGoalInvitation = async (goalId: number) => {
+    const token = localStorage.getItem("authToken");
     try {
       console.log("Rejecting goal invitation for goal ID:", goalId);
       
@@ -413,6 +444,7 @@ export default function FriendsPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
       });
 

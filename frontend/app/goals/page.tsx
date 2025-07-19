@@ -98,6 +98,7 @@ export default function GoalsPage() {
 
   const toggleGoalExpansion = async (goalId: number) => {
     const newExpanded = new Set(expandedGoals);
+    const token = localStorage.getItem("authToken");
 
     if (newExpanded.has(goalId)) {
       newExpanded.delete(goalId);
@@ -117,6 +118,7 @@ export default function GoalsPage() {
               credentials: "include",
               headers: {
                 "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
               },
             }
           );
@@ -143,6 +145,7 @@ export default function GoalsPage() {
   };
 
   const fetchGoals = async () => {
+    const token = localStorage.getItem("authToken");
     try {
       setLoading(true);
       console.log(
@@ -157,6 +160,7 @@ export default function GoalsPage() {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
           },
         }
       );
@@ -178,11 +182,15 @@ export default function GoalsPage() {
   };
 
   const savingData = async () => {
+    const token = localStorage.getItem("authToken");
     try {
       const savingsResponse = await fetch(
         "https://fireflow-m0z1.onrender.com/api/users/savings",
         {
           credentials: "include",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
       );
       if (savingsResponse.ok) {

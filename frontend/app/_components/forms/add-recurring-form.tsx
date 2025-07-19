@@ -118,12 +118,14 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
       }
 
       console.log('Sending request to backend:', requestBody)
+      const token = localStorage.getItem("authToken");
 
       const response = await fetch('https://fireflow-m0z1.onrender.com/api/recurring-transactions/create', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
       })

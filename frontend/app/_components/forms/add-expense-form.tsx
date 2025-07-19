@@ -98,6 +98,7 @@ export function AddExpenseForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) { 
     setIsSubmitting(true)
+    const token = localStorage.getItem("authToken");
 
     // console.log("Form data ready to send:", values) //check in console if the object is really created
     
@@ -118,6 +119,7 @@ export function AddExpenseForm({
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       })

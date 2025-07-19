@@ -104,11 +104,13 @@ export function AddIncomeForm({
         type: "income",
       }
 
+      const token = localStorage.getItem("authToken");
       const response = await fetch("https://fireflow-m0z1.onrender.com/api/transactions/create", {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       })

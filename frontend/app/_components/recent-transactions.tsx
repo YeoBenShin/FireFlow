@@ -19,6 +19,7 @@ export function RecentTransactions() {
 
   useEffect(() => {
     const fetchTransactions = async () => {
+      const token = localStorage.getItem("authToken");
       setLoading(true)
       setError(null)
       try {
@@ -37,6 +38,7 @@ export function RecentTransactions() {
           credentials: "include",
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({}), // Request 5 most recent transactions
         })

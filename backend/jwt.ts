@@ -6,9 +6,9 @@ import jwt from 'jsonwebtoken';
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
-  console.log(`verifying header: `, req.headers.authorization);
+  // console.log(`verifying header: `, req.headers.authorization);
   const token = req.headers.authorization?.split(' ')[1];
-  console.log(`[DEBUG] Verifying JWT:`, token);
+  // console.log(`[DEBUG] Verifying JWT:`, token);
 
   if (!token) {
     res.status(401).json({ error: 'No token provided' });

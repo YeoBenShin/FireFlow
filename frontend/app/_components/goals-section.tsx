@@ -40,12 +40,14 @@ export function GoalsSection() {
   const fetchGoals = async () => {
     try {
       setLoading(true)
+      const token = localStorage.getItem("authToken");
 
       const response = await fetch("https://fireflow-m0z1.onrender.com/api/goals/with-participants", {
         method: "GET",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, 
         },
       })
 
@@ -61,6 +63,7 @@ export function GoalsSection() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       })
 

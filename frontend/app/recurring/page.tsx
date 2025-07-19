@@ -45,6 +45,7 @@ export default function RecurringPage() {
 
  const fetchRecurringTransactions = async () => {
     try {
+      const token = localStorage.getItem("authToken");
       setLoading(true)
       setError(null)
       
@@ -53,6 +54,7 @@ export default function RecurringPage() {
         credentials: 'include', // Include cookies for authentication
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
       })
 
