@@ -22,7 +22,7 @@ export function AddGoalForm({ onClose, onGoalCreated }: { onClose?: () => void; 
   const router = useRouter()
   const [formData, setFormData] = useState({
     title: "",
-    targetDate: "",
+    targetDate: new Date().toISOString().split("T")[0],
     amount: "",
     category: "",
     notes: "",
