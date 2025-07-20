@@ -960,7 +960,29 @@ export default function GoalsPage() {
           ) : (
             <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle className="text-xl">Available Savings</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-xl">Available Savings</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        className="text-white px-3 py-2 text-xs rounded z-50 shadow"
+                        side="top"
+                        align="start"
+                        style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+                      >
+                       
+                        <p>
+                         This shows the total savings available for allocation to your goals.
+                         <br />Only savings still available from last month or earlier can be 
+                         <br/> allocated to your various goals.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <p className="text-sm text-gray-600">
                   Total savings available for allocation
                 </p>

@@ -590,10 +590,14 @@ const fetchChartData = async () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
     if (!confirmDelete) return;
     try {
+      const token = localStorage.getItem("authToken");
       const response = await fetch(`https://fireflow-m0z1.onrender.com/api/transactions/delete`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ id }),
       });
 
@@ -607,8 +611,6 @@ const fetchChartData = async () => {
     fetchChartData(); // Refresh chart data after deletion
 
     console.log("Transaction deleted");
-
-      
     } catch (error) {
       console.error("Error deleting transaction:", error);
       alert("Failed to delete transaction.");

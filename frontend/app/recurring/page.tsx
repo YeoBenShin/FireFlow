@@ -8,6 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/_components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/app/_components/ui/tooltip";
+import { Info } from "lucide-react";
 import { Button } from "@/app/_components/ui/button";
 import { Plus, X, Trash2 } from "lucide-react";
 import { AddRecurringForm } from "../_components/forms/add-recurring-form";
@@ -216,13 +223,17 @@ export default function RecurringPage() {
     if (!confirmDelete) return;
 
     try {
+      const token = localStorage.getItem("authToken");
       const response = await fetch(
         `https://fireflow-m0z1.onrender.com/api/recurring-transactions/delete`,
         {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recTransId }), // <-- use correct field name and type
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ recTransId }),
         }
       );
 
@@ -246,7 +257,28 @@ export default function RecurringPage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-xl">Recurring Items</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-xl">Recurring Items</CardTitle>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-pointer" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      className="text-white px-3 py-2 text-xs"
+                      side="top"
+                      align="start"
+                      style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+                    >
+                      <p>
+                        For recurring items added after 8am that start today, they
+                        <br />
+                        will only be added to your transactions tomorrow.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Button
                 className="bg-orange-500 hover:bg-orange-600"
                 onClick={() => setShowForm(true)}
