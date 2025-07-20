@@ -588,6 +588,7 @@ const fetchChartData = async () => {
 
   async function handleDeleteTransaction(id: number){
     const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
+    console.log("Transaction ID to delete:", id);
     if (!confirmDelete) return;
     try {
       const token = localStorage.getItem("authToken");
