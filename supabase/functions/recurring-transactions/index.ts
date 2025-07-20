@@ -62,7 +62,6 @@ serve(async () => {
         category: recurring.category,
         description: recurring.description,
         dateTime: getSingaporeISOString(),
-,
       })
 
       // update next_run_date (e.g., add 1 month)
