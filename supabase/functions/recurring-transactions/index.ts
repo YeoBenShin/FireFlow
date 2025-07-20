@@ -51,10 +51,11 @@ serve(async () => {
 
   // Loop through each and insert today's transaction if needed
   for (const recurring of data) {
+    let nextDate = recurring.next_recurring_date;
     const today = new Date().toISOString().slice(0, 10);
 
-    if (recurring.next_recurring_date <= today) {
-      // console.log(`Inserting transaction for ${recurring.description} on ${today}`);
+    // Loop to catch up all missed cycles
+    while (nextDate <= today) {
       await supabase.from("transaction").insert({
         user_id: recurring.user_id,
         amount: recurring.amount,
@@ -62,11 +63,10 @@ serve(async () => {
         category: recurring.category,
         description: recurring.description,
         dateTime: getSingaporeISOString(),
-      })
+      });
 
-      // update next_run_date (e.g., add 1 month)
-      const nextRunDate = calculateNextRunDate(recurring.next_recurring_date, recurring.frequency);
-      // console.log(`Next run date for ${recurring.description} is ${nextRunDate}`);
+      // Calculate the next run date
+      const nextRunDate = calculateNextRunDate(nextDate, recurring.frequency);
 
       // Only deactivate if endDate exists and nextRunDate is after endDate
       if (recurring.endDate) {
@@ -79,12 +79,15 @@ serve(async () => {
           await supabase.from("recurring_transaction")
             .update({ isActive: false })
             .eq("rec_trans_id", recurring.rec_trans_id);
+          break; // Stop processing if deactivated
         }
       }
 
       await supabase.from("recurring_transaction")
         .update({ next_recurring_date: nextRunDate })
         .eq("rec_trans_id", recurring.rec_trans_id);
+
+      nextDate = nextRunDate.toISOString().slice(0, 10);
     }
   }
 
