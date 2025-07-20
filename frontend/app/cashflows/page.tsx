@@ -52,7 +52,7 @@ import { useIsMobile } from "../_hooks/use-mobile";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 interface Transaction {
-  transID: number;
+  transId: number;
   type: string;
   dateTime: string;
   amount: number;
@@ -605,9 +605,9 @@ const fetchChartData = async () => {
       if (!response.ok) {
         throw new Error(`Failed to delete transaction: ${response.statusText}`);
       }
-      setTransactions((prev) => prev.filter((tx) => tx.transID !== id));
+      setTransactions((prev) => prev.filter((tx) => tx.transId !== id));
       setFilteredTransactions((prev) =>
-        prev ? prev.filter((tx) => tx.transID !== id) : null
+        prev ? prev.filter((tx) => tx.transId !== id) : null
       );
       fetchChartData(); // Refresh chart data after deletion
 
@@ -1024,10 +1024,10 @@ const fetchChartData = async () => {
                         hour = hour ? hour : 12; // the hour '0' should be '12'
                         const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
                         console.log("Transaction:", transaction);
-                        console.log("transaction.id:", transaction.transID);
+                        console.log("transaction.id:", transaction.transId);
                         return (
                           <div
-                            key={transaction.transID}
+                            key={transaction.transId}
                             className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                           >
                             <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
@@ -1057,7 +1057,7 @@ const fetchChartData = async () => {
                               </div>
                               <button
                                 onClick={() =>
-                                  handleDeleteTransaction(transaction.transID)
+                                  handleDeleteTransaction(transaction.transId)
                                 }
                                 className="text-red-500 hover:text-red-700"
                                 title="Delete"
