@@ -52,7 +52,7 @@ import { useIsMobile } from "../_hooks/use-mobile";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 interface Transaction {
-  id: number;
+  trans_id: number;
   type: string;
   dateTime: string;
   amount: number;
@@ -370,7 +370,7 @@ const fetchChartData = async () => {
       });
       if (res.ok) {
         const data = await res.json();
-        console.log("Fetched transactions:", data);
+        // console.log("Fetched transactions:", data);
         const withIcons = data.map((tx: Transaction) => ({
         ...tx,
         // dateTime: new Date(tx.dateTime).toLocaleDateString("en-GB", {
@@ -605,9 +605,9 @@ const fetchChartData = async () => {
       if (!response.ok) {
         throw new Error(`Failed to delete transaction: ${response.statusText}`);
       }
-      setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+      setTransactions((prev) => prev.filter((tx) => tx.trans_id !== id));
       setFilteredTransactions((prev) =>
-        prev ? prev.filter((tx) => tx.id !== id) : null
+        prev ? prev.filter((tx) => tx.trans_id !== id) : null
       );
       fetchChartData(); // Refresh chart data after deletion
 
@@ -1025,7 +1025,7 @@ const fetchChartData = async () => {
                         const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
                         return (
                           <div
-                            key={transaction.id}
+                            key={transaction.trans_id}
                             className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                           >
                             <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center text-white">
@@ -1055,7 +1055,7 @@ const fetchChartData = async () => {
                               </div>
                               <button
                                 onClick={() =>
-                                  handleDeleteTransaction(transaction.id)
+                                  handleDeleteTransaction(transaction.trans_id)
                                 }
                                 className="text-red-500 hover:text-red-700"
                                 title="Delete"
