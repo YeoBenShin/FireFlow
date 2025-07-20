@@ -2,32 +2,30 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 function calculateNextRunDate(date: string, frequency: string): Date {
-    // calculating the next run date based on frequency
-      const selectedDate = new Date(date);
-      let nextRunDate = new Date();
-      nextRunDate.setDate(selectedDate.getDate() + 1);
-      const todayDay = new Date().getDay();
+    const selectedDate = new Date(date);
+    let nextRunDate = new Date(selectedDate);
 
-      if (frequency === "weekly") {
-        const daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
-        nextRunDate = new Date(todayDay + daysUntilNext);
-
-      } else if (frequency === "biweekly") {
-        let daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
-        daysUntilNext += 7; // Add an additional week for biweekly
-        nextRunDate.setDate(selectedDate.getDate() + daysUntilNext);
-
-      } else if (frequency === "monthly") {
-        if (selectedDate.getDate() >= selectedDate.getDate()) {
-          nextRunDate.setMonth(selectedDate.getMonth() + 1);
+    if (frequency === "weekly") {
+        nextRunDate.setDate(selectedDate.getDate() + 7);
+    } else if (frequency === "biweekly") {
+        nextRunDate.setDate(selectedDate.getDate() + 14);
+    } else if (frequency === "monthly") {
+        // Add 1 month, keeping the same day if possible
+        const month = selectedDate.getMonth();
+        nextRunDate.setMonth(month + 1);
+        // Handle month overflow (e.g., Jan 31 + 1 month = Feb 28/29)
+        if (nextRunDate.getDate() < selectedDate.getDate()) {
+            // Set to last day of previous month if overflowed
+            nextRunDate.setDate(0);
         }
-        nextRunDate.setDate(selectedDate.getDate());  
+    } else {
+        // Default: daily
+        nextRunDate.setDate(selectedDate.getDate() + 1);
+    }
+    return nextRunDate;
+}
 
-      }
-      return nextRunDate
-  }
-
-  function getSingaporeISOString(): string {
+function getSingaporeISOString(): string {
   const now = new Date();
   // Convert to Singapore time (UTC+8)
   now.setHours(now.getHours() + 8);
@@ -71,20 +69,23 @@ serve(async () => {
       const nextRunDate = calculateNextRunDate(recurring.next_recurring_date, recurring.frequency);
       // console.log(`Next run date for ${recurring.description} is ${nextRunDate}`);
 
-      // remove if nextRunDate is older than endDate
-      const endDate: Date = recurring.endDate ? new Date(recurring.endDate) : new Date();
-      if (nextRunDate.getFullYear() > endDate.getFullYear() || 
-        nextRunDate.getMonth() > endDate.getMonth() || 
-        nextRunDate.getDate() > endDate.getDate()) {
-
+      // Only deactivate if endDate exists and nextRunDate is after endDate
+      if (recurring.endDate) {
+        const endDate: Date = new Date(recurring.endDate);
+        if (
+          nextRunDate.getFullYear() > endDate.getFullYear() || 
+          (nextRunDate.getFullYear() === endDate.getFullYear() && nextRunDate.getMonth() > endDate.getMonth()) || 
+          (nextRunDate.getFullYear() === endDate.getFullYear() && nextRunDate.getMonth() === endDate.getMonth() && nextRunDate.getDate() > endDate.getDate())
+        ) {
           await supabase.from("recurring_transaction")
-          .update({ isActive: false })
-          .eq("rec_trans_id", recurring.rec_trans_id);
+            .update({ isActive: false })
+            .eq("rec_trans_id", recurring.rec_trans_id);
+        }
       }
 
       await supabase.from("recurring_transaction")
-      .update({ next_recurring_date: nextRunDate})
-      .eq("rec_trans_id", recurring.rec_trans_id);
+        .update({ next_recurring_date: nextRunDate })
+        .eq("rec_trans_id", recurring.rec_trans_id);
     }
   }
 
