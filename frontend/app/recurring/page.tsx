@@ -1,110 +1,142 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { MainLayout } from "../_components/layout/main-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card"
-import { Button } from "@/app/_components/ui/button"
-import { Plus, X, Trash2 } from "lucide-react"
-import { AddRecurringForm } from "../_components/forms/add-recurring-form"
-import { Badge } from "@/app/_components/ui/badge"
+import { useState, useEffect } from "react";
+import { MainLayout } from "../_components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/_components/ui/card";
+import { Button } from "@/app/_components/ui/button";
+import { Plus, X, Trash2 } from "lucide-react";
+import { AddRecurringForm } from "../_components/forms/add-recurring-form";
+import { Badge } from "@/app/_components/ui/badge";
 
 interface BackendRecurringTransaction {
-  rec_trans_id: number
-  description: string
-  type: 'income' | 'expense'
-  amount: number
-  category: string
-  frequency: 'daily' | 'weekly' | 'biweekly' | 'bimonthly' | 'monthly' | 'yearly'
-  repeatDay: string
-  endDate?: string
-  isActive: boolean
-  userId: string
+  rec_trans_id: number;
+  description: string;
+  type: "income" | "expense";
+  amount: number;
+  category: string;
+  frequency:
+    | "daily"
+    | "weekly"
+    | "biweekly"
+    | "bimonthly"
+    | "monthly"
+    | "yearly";
+  repeatDay: string;
+  endDate?: string;
+  isActive: boolean;
+  userId: string;
 }
 
 interface DisplayRecurringTransaction {
-  id: string
-  title: string
-  frequency: string
-  amount: number
-  category: string
-  type: 'income' | 'expense'
-  isActive: boolean
-  endDate?: string
+  id: string;
+  title: string;
+  frequency: string;
+  amount: number;
+  category: string;
+  type: "income" | "expense";
+  isActive: boolean;
+  endDate?: string;
 }
 
 export default function RecurringPage() {
-  const [showForm, setShowForm] = useState(false)
-  const [recurringExpenses, setRecurringExpenses] = useState<DisplayRecurringTransaction[]>([])
-  const [recurringIncome, setRecurringIncome] = useState<DisplayRecurringTransaction[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false);
+  const [recurringExpenses, setRecurringExpenses] = useState<
+    DisplayRecurringTransaction[]
+  >([]);
+  const [recurringIncome, setRecurringIncome] = useState<
+    DisplayRecurringTransaction[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchRecurringTransactions()
-  }, [])
+    fetchRecurringTransactions();
+  }, []);
 
- const fetchRecurringTransactions = async () => {
+  const fetchRecurringTransactions = async () => {
     try {
       const token = localStorage.getItem("authToken");
-      setLoading(true)
-      setError(null)
-      
-      const response = await fetch('https://fireflow-m0z1.onrender.com/api/recurring-transactions', {
-        method: 'GET',
-        credentials: 'include', // Include cookies for authentication
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-      })
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        "https://fireflow-m0z1.onrender.com/api/recurring-transactions",
+        {
+          method: "GET",
+          credentials: "include", // Include cookies for authentication
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const backendTransactions: BackendRecurringTransaction[] = await response.json()
-      
-      console.log('Backend response:', backendTransactions)
+      const backendTransactions: BackendRecurringTransaction[] =
+        await response.json();
+
+      console.log("Backend response:", backendTransactions);
 
       if (!backendTransactions || backendTransactions.length === 0) {
-      console.log('No transactions found')
-      setRecurringExpenses([])
-      setRecurringIncome([])
-      return
-    }
+        console.log("No transactions found");
+        setRecurringExpenses([]);
+        setRecurringIncome([]);
+        return;
+      }
       // Transform backend data to frontend format
-      const displayTransactions: DisplayRecurringTransaction[] = backendTransactions.map(transaction => {
-      // Check if transaction has the expected properties
-      if (!transaction || typeof transaction !== 'object') {
-        console.warn('Invalid transaction object:', transaction)
-        return null
-      }
+      const displayTransactions: DisplayRecurringTransaction[] =
+        backendTransactions
+          .map((transaction) => {
+            // Check if transaction has the expected properties
+            if (!transaction || typeof transaction !== "object") {
+              console.warn("Invalid transaction object:", transaction);
+              return null;
+            }
 
-      return {
-        id: transaction.rec_trans_id?.toString() || 'unknown',
-        title: transaction.description || 'No description',
-        frequency: formatFrequency(transaction.frequency || 'monthly', transaction.repeatDay || ''),
-        amount: transaction.amount || 0,
-        category: transaction.category || 'other',
-        type: transaction.type || 'expense',
-        endDate: transaction.endDate,
-        isActive: transaction.isActive !== undefined ? transaction.isActive : true
-      }
-    }).filter(transaction => transaction !== null) as DisplayRecurringTransaction[]
+            return {
+              id: transaction.rec_trans_id?.toString() || "unknown",
+              title: transaction.description || "No description",
+              frequency: formatFrequency(
+                transaction.frequency || "monthly",
+                transaction.repeatDay || ""
+              ),
+              amount: transaction.amount || 0,
+              category: transaction.category || "other",
+              type: transaction.type || "expense",
+              endDate: transaction.endDate,
+              isActive:
+                transaction.isActive !== undefined
+                  ? transaction.isActive
+                  : true,
+            };
+          })
+          .filter(
+            (transaction) => transaction !== null
+          ) as DisplayRecurringTransaction[];
 
       // Filter active transactions and separate by type
-      const activeTransactions = displayTransactions.filter(t => t.isActive)
-      setRecurringExpenses(activeTransactions.filter(t => t.type === 'expense'))
-      setRecurringIncome(activeTransactions.filter(t => t.type === 'income'))
-
+      const activeTransactions = displayTransactions.filter((t) => t.isActive);
+      setRecurringExpenses(
+        activeTransactions.filter((t) => t.type === "expense")
+      );
+      setRecurringIncome(activeTransactions.filter((t) => t.type === "income"));
     } catch (error) {
-      console.error("Error fetching recurring transactions:", error)
-      setError("Failed to load recurring transactions. Please try again later.")
+      console.error("Error fetching recurring transactions:", error);
+      setError(
+        "Failed to load recurring transactions. Please try again later."
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
- }
-      
+  };
 
   const getCategoryColor = (category: string) => {
     const colors = {
@@ -117,41 +149,39 @@ export default function RecurringPage() {
       freelance: "bg-teal-100 text-teal-800",
       investment: "bg-indigo-100 text-indigo-800",
       other: "bg-gray-100 text-gray-800",
-    }
-    return colors[category as keyof typeof colors] || colors.other
-  }
-
+    };
+    return colors[category as keyof typeof colors] || colors.other;
+  };
 
   const formatFrequency = (frequency: string, repeatDay: string): string => {
     const dayMap: { [key: string]: string } = {
-      'monday': 'Monday',
-      'tuesday': 'Tuesday',
-      'wednesday': 'Wednesday',
-      'thursday': 'Thursday',
-      'friday': 'Friday',
-      'saturday': 'Saturday',
-      'sunday': 'Sunday'
-    }
+      monday: "Monday",
+      tuesday: "Tuesday",
+      wednesday: "Wednesday",
+      thursday: "Thursday",
+      friday: "Friday",
+      saturday: "Saturday",
+      sunday: "Sunday",
+    };
 
     switch (frequency) {
-      case 'daily':
-        return 'Every Day'
-      case 'weekly':
-        return `Every Week, ${dayMap[repeatDay.toLowerCase()] || repeatDay}`
-      case 'biweekly':
-        return `Every 2 Weeks, ${dayMap[repeatDay.toLowerCase()] || repeatDay}`
-      case 'monthly':
-        return `Every ${repeatDay} Of The Month`
-      case 'bimonthly':
-        return `Every 2 Months, ${repeatDay}`
-      case 'yearly':
-        return `Every Year, ${repeatDay}`
+      case "daily":
+        return "Every Day";
+      case "weekly":
+        return `Every Week, ${dayMap[repeatDay.toLowerCase()] || repeatDay}`;
+      case "biweekly":
+        return `Every 2 Weeks, ${dayMap[repeatDay.toLowerCase()] || repeatDay}`;
+      case "monthly":
+        return `Every ${repeatDay} Of The Month`;
+      case "bimonthly":
+        return `Every 2 Months, ${repeatDay}`;
+      case "yearly":
+        return `Every Year, ${repeatDay}`;
       default:
-        return `Every ${frequency}`
+        return `Every ${frequency}`;
     }
-  }
+  };
 
-  
   const getCategoryLabel = (category: string) => {
     const labels = {
       health: "Health & Fitness",
@@ -163,41 +193,47 @@ export default function RecurringPage() {
       freelance: "Freelance",
       investment: "Investment",
       other: "Other",
-    }
-    return labels[category as keyof typeof labels] || "Other"
-  }
+    };
+    return labels[category as keyof typeof labels] || "Other";
+  };
 
   const handleCloseForm = () => {
-    setShowForm(false)
+    setShowForm(false);
     // Refresh data after closing form
-    fetchRecurringTransactions()
-  }
+    fetchRecurringTransactions();
+  };
 
   const handleAddSuccess = () => {
-    setShowForm(false)
+    setShowForm(false);
     // Refresh data after successful add
-    fetchRecurringTransactions()
-  }
+    fetchRecurringTransactions();
+  };
 
-  async function handleDeleteRecurring(recTransId: string){
-    const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
+  async function handleDeleteRecurring(recTransId: string) {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this transaction?"
+    );
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(`https://fireflow-m0z1.onrender.com/api/recurring-transactions/delete`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recTransId }),
-      });
+      const response = await fetch(
+        `https://fireflow-m0z1.onrender.com/api/recurring-transactions/delete`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rec_trans_id: Number(recTransId) }), // <-- use correct field name and type
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`Failed to delete recurring transaction: ${response.statusText}`);
+        throw new Error(
+          `Failed to delete recurring transaction: ${response.statusText}`
+        );
       }
 
       setRecurringExpenses((prev) => prev.filter((tx) => tx.id !== recTransId));
       setRecurringIncome((prev) => prev.filter((tx) => tx.id !== recTransId));
-
     } catch (error) {
       console.error("Error deleting recurring transaction:", error);
     }
@@ -231,48 +267,52 @@ export default function RecurringPage() {
                       No recurring expenses found
                     </p>
                   ) : (
-                    recurringExpenses.map((item: DisplayRecurringTransaction) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center p-4 bg-orange-50 rounded-lg gap-x-4"
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                          <Badge
-                            className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(
-                              item.category
-                            )}`}
-                          >
-                            {getCategoryLabel(item.category)}
-                          </Badge>
-                          <div>
-                            <h4 className="font-semibold">{item.title}</h4>
-                            <p className="text-sm text-gray-600">
-                               {item.endDate
-                                ? item.frequency + " until " +
-                                  new Date(item.endDate).toLocaleDateString("en-GB",
-                                    {
-                                      day: "2-digit",
-                                      month: "long",
-                                      year: "numeric",
-                                    }
-                                  )
-                                : item.frequency}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="font-bold text-red-600">
-                          ${Math.abs(item.amount).toFixed(2)}
-                        </span>
-
-                        <button
-                          onClick={() => handleDeleteRecurring(item.id)}
-                          className="text-red-500 hover:text-red-700 p-2 rounded-full transition-colors"
-                          title="Delete"
+                    recurringExpenses.map(
+                      (item: DisplayRecurringTransaction) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center p-4 bg-orange-50 rounded-lg gap-x-4"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))
+                          <div className="flex items-center gap-3 flex-1">
+                            <Badge
+                              className={`min-w-[100px] text-center flex items-center justify-center ${getCategoryColor(
+                                item.category
+                              )}`}
+                            >
+                              {getCategoryLabel(item.category)}
+                            </Badge>
+                            <div>
+                              <h4 className="font-semibold">{item.title}</h4>
+                              <p className="text-sm text-gray-600">
+                                {item.endDate
+                                  ? item.frequency +
+                                    " until " +
+                                    new Date(item.endDate).toLocaleDateString(
+                                      "en-GB",
+                                      {
+                                        day: "2-digit",
+                                        month: "long",
+                                        year: "numeric",
+                                      }
+                                    )
+                                  : item.frequency}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="font-bold text-red-600">
+                            ${Math.abs(item.amount).toFixed(2)}
+                          </span>
+
+                          <button
+                            onClick={() => handleDeleteRecurring(item.id)}
+                            className="text-red-500 hover:text-red-700 p-2 rounded-full transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )
+                    )
                   )}
                 </div>
               </div>
@@ -306,8 +346,10 @@ export default function RecurringPage() {
                             <h4 className="font-semibold">{item.title}</h4>
                             <p className="text-sm text-gray-600">
                               {item.endDate
-                                ? item.frequency + " until " +
-                                  new Date(item.endDate).toLocaleDateString("en-GB",
+                                ? item.frequency +
+                                  " until " +
+                                  new Date(item.endDate).toLocaleDateString(
+                                    "en-GB",
                                     {
                                       day: "2-digit",
                                       month: "long",
