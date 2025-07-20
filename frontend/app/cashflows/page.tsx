@@ -385,6 +385,7 @@ const fetchChartData = async () => {
           month: "long",
         }),
       }));
+      console.log("Transactions with icons:", withIcons);
 
       setTransactions(withIcons);
         setFilteredTransactions(null);
