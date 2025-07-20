@@ -598,25 +598,24 @@ const fetchChartData = async () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ transId: id }), // <-- send as transId to match backend
       });
 
       if (!response.ok) {
         throw new Error(`Failed to delete transaction: ${response.statusText}`);
       }
       setTransactions((prev) => prev.filter((tx) => tx.id !== id));
-    setFilteredTransactions((prev) =>
-      prev ? prev.filter((tx) => tx.id !== id) : null
-    );
-    fetchChartData(); // Refresh chart data after deletion
+      setFilteredTransactions((prev) =>
+        prev ? prev.filter((tx) => tx.id !== id) : null
+      );
+      fetchChartData(); // Refresh chart data after deletion
 
-    console.log("Transaction deleted");
+      console.log("Transaction deleted");
     } catch (error) {
       console.error("Error deleting transaction:", error);
       alert("Failed to delete transaction.");
       // Optionally, show user-friendly error notification here
     }
-
   } ;
 
   // Filter handler: filter in memory
@@ -1075,4 +1074,5 @@ const fetchChartData = async () => {
       </div>
     </MainLayout>
   );
+}
 }
