@@ -1023,8 +1023,8 @@ const fetchChartData = async () => {
                         hour = hour % 12;
                         hour = hour ? hour : 12; // the hour '0' should be '12'
                         const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
-                        console.log("Transaction:", transaction);
-                        console.log("transaction.id:", transaction.transId);
+                        // console.log("Transaction:", transaction);
+                        // console.log("transaction.id:", transaction.transId);
                         return (
                           <div
                             key={transaction.transId}
