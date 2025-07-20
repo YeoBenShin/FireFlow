@@ -385,7 +385,6 @@ const fetchChartData = async () => {
           month: "long",
         }),
       }));
-      console.log("Transactions with icons:", withIcons);
 
       setTransactions(withIcons);
         setFilteredTransactions(null);
@@ -1024,6 +1023,8 @@ const fetchChartData = async () => {
                         hour = hour % 12;
                         hour = hour ? hour : 12; // the hour '0' should be '12'
                         const formattedDate = `${day} ${month} ${year}, ${hour}:${minute} ${ampm}`;
+                        console.log("Transaction:", transaction);
+                        console.log("transaction.id:", transaction.trans_id);
                         return (
                           <div
                             key={transaction.trans_id}
