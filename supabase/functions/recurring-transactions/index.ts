@@ -53,7 +53,7 @@ serve(async () => {
   for (const recurring of data) {
     const today = new Date().toISOString().slice(0, 10);
 
-    if (recurring.next_recurring_date === today) {
+    if (recurring.next_recurring_date <= today) {
       // console.log(`Inserting transaction for ${recurring.description} on ${today}`);
       await supabase.from("transaction").insert({
         user_id: recurring.user_id,

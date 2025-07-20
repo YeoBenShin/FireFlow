@@ -1,99 +1,93 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/app/_components/ui/button"
-import { Input } from "@/app/_components/ui/input"
-import { Label } from "@/app/_components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/_components/ui/select"
-import { Textarea } from "@/app/_components/ui/textarea"
-import { Calendar } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { Button } from "@/app/_components/ui/button";
+import { Input } from "@/app/_components/ui/input";
+import { Label } from "@/app/_components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/_components/ui/select";
+import { Textarea } from "@/app/_components/ui/textarea";
+import { Calendar } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface AddRecurringFormProps {
-  onClose?: () => void
-  onSuccess?: () => void
+  onClose?: () => void;
+  onSuccess?: () => void;
 }
 
-function calculateNextRunDate(date: string, frequency: string): Date {
-    // calculating the next run date based on frequency
-      const selectedDate = new Date(date);
-      let nextRunDate = new Date();
-      nextRunDate.setDate(selectedDate.getDate() + 1);
-      const todayDay = new Date().getDay();
 
-      if (frequency === "weekly") {
-        const daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
-        nextRunDate = new Date(todayDay + daysUntilNext);
-
-      } else if (frequency === "biweekly") {
-        let daysUntilNext = (selectedDate.getDay() + 7 - todayDay) % 7 || 7;
-        daysUntilNext += 7; // Add an additional week for biweekly
-        nextRunDate.setDate(selectedDate.getDate() + daysUntilNext);
-
-      } else if (frequency === "monthly") {
-        if (selectedDate.getDate() >= selectedDate.getDate()) {
-          nextRunDate.setMonth(selectedDate.getMonth() + 1);
-        }
-        nextRunDate.setDate(selectedDate.getDate());  
-
-      }
-      return nextRunDate;
-  }
-
-export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) {
-  const router = useRouter()
+export function AddRecurringForm({
+  onClose,
+  onSuccess,
+}: AddRecurringFormProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0], // Changed to proper date format
-    enddate: new Date().toISOString().split('T')[0] as string | null, // Allow null
+    date: new Date().toISOString().split("T")[0], // Changed to proper date format
+    enddate: new Date().toISOString().split("T")[0] as string | null, // Allow null
     frequency: "monthly" as "daily" | "weekly" | "biweekly" | "monthly", // | "yearly",
     type: "expense" as "income" | "expense",
     category: "",
     amount: "",
     title: "",
     notes: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target
-    setFormData((prev) => ({ ...prev, [id]: value }))
-  }
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
 
   const handleSelectChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   // Helper function to calculate repeatDay based on date and frequency
   const calculateRepeatDay = (date: string, frequency: string): string => {
-    const selectedDate = new Date(date)
-    
+    const selectedDate = new Date(date);
+
     switch (frequency) {
-      case 'daily':
-        return 'daily'
-      case 'weekly':
-      case 'biweekly':
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-        return days[selectedDate.getDay()]
-      case 'monthly':
-        return selectedDate.getDate().toString()
+      case "daily":
+        return "daily";
+      case "weekly":
+      case "biweekly":
+        const days = [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+        ];
+        return days[selectedDate.getDay()];
+      case "monthly":
+        return selectedDate.getDate().toString();
       // case 'yearly':
       //   return selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
       default:
-        return ''
+        return "";
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setError(null)
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       // const token = localStorage.getItem("authToken")
-      
+
       // if (!token) {
       //   setError("No authentication token found. Please login.")
       //   setIsSubmitting(false)
@@ -101,7 +95,7 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
       // }
 
       // Calculate repeatDay based on selected date and frequency
-      const repeatDay = calculateRepeatDay(formData.date, formData.frequency)
+      const repeatDay = calculateRepeatDay(formData.date, formData.frequency);
 
       // Prepare the request body to match your backend schema
       const requestBody = {
@@ -113,76 +107,83 @@ export function AddRecurringForm({ onClose, onSuccess }: AddRecurringFormProps) 
         repeatDay: repeatDay,
         endDate: formData.enddate, // Optional field
         isActive: true,
-        next_recurring_date: calculateNextRunDate(formData.date, formData.frequency),
+        next_recurring_date: formData.date, // <-- Set to start date, not next cycle
         ...(formData.enddate ? { endDate: formData.enddate } : {}),
-      }
+      };
 
-      console.log('Sending request to backend:', requestBody)
+      console.log("Sending request to backend:", requestBody);
       const token = localStorage.getItem("authToken");
 
-      const response = await fetch('https://fireflow-m0z1.onrender.com/api/recurring-transactions/create', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestBody),
-      })
+      const response = await fetch(
+        "https://fireflow-m0z1.onrender.com/api/recurring-transactions/create",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
       }
 
-      const result = await response.json()
-      console.log('Recurring transaction created successfully:', result)
+      const result = await response.json();
+      console.log("Recurring transaction created successfully:", result);
 
       // Reset form data
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split("T")[0],
         frequency: "monthly",
         type: "expense",
         category: "",
         amount: "",
         title: "",
         notes: "",
-        enddate: new Date().toISOString().split('T')[0], // Reset end date
-      })
+        enddate: new Date().toISOString().split("T")[0], // Reset end date
+      });
 
       // Call success callback if provided
       if (onSuccess) {
-        onSuccess()
+        onSuccess();
       } else if (onClose) {
-        onClose()
+        onClose();
       }
 
       // Refresh the page to simulate data update
-      router.refresh()
-
+      router.refresh();
     } catch (err) {
-      console.error('Error creating recurring transaction:', err)
-      setError(err instanceof Error ? err.message : 'An error occurred while creating the recurring transaction')
+      console.error("Error creating recurring transaction:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred while creating the recurring transaction"
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const expenseCategories = [
-  { id: "food", label: "Food & Dining" },
-  { id: "transport", label: "Transportation" },
-  { id: "entertainment", label: "Entertainment" },
-  { id: "utilities", label: "Utilities" },
-  { id: "health", label: "Health & Fitness" },
-];
+    { id: "food", label: "Food & Dining" },
+    { id: "transport", label: "Transportation" },
+    { id: "entertainment", label: "Entertainment" },
+    { id: "utilities", label: "Utilities" },
+    { id: "health", label: "Health & Fitness" },
+  ];
 
-const incomeCategories = [
-  { id: "salary", label: "Salary" },
-  { id: "freelance", label: "Freelance" },
-  { id: "investment", label: "Investment" },
-  { id: "other", label: "Other" },
-];
-
+  const incomeCategories = [
+    { id: "salary", label: "Salary" },
+    { id: "freelance", label: "Freelance" },
+    { id: "investment", label: "Investment" },
+    { id: "other", label: "Other" },
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
