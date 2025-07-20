@@ -222,7 +222,7 @@ export default function RecurringPage() {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rec_trans_id: Number(recTransId) }), // <-- use correct field name and type
+          body: JSON.stringify({ recTransId }), // <-- use correct field name and type
         }
       );
 
